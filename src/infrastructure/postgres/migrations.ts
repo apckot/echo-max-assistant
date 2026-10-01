@@ -5,6 +5,20 @@ import type { Pool } from 'pg';
 
 type Migration = { name: string; sql: string; checksum: string };
 
+function transactionalSql(migration: Migration): string {
+  const delimiter = (prefix: string) => {
+    let tag = `$${prefix}_${migration.checksum}$`;
+    for (let suffix = 1; migration.sql.includes(tag); suffix += 1) {
+      tag = `$${prefix}_${migration.checksum}_${suffix}$`;
+    }
+    return tag;
+  };
+  const outer = delimiter('migration');
+  const inner = delimiter('sql');
+  // SPI executes the SQL inside a function, where PostgreSQL rejects transaction control.
+  return `DO ${outer} BEGIN EXECUTE ${inner}${migration.sql}${inner}; END ${outer};`;
+}
+
 async function readMigrations(directory: string): Promise<Migration[]> {
   const names = (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort();
   return Promise.all(names.map(async (name) => {
@@ -41,7 +55,7 @@ export async function runMigrations(pool: Pool, directory: string): Promise<void
         if (checksums.has(migration.name)) continue;
         await client.query('BEGIN');
         try {
-          await client.query(migration.sql);
+          await client.query(transactionalSql(migration));
           await client.query(
             'INSERT INTO public.schema_migrations (name, checksum) VALUES ($1, $2)',
             [migration.name, migration.checksum],

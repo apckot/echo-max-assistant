@@ -8,8 +8,11 @@ export async function startPostgres() {
   return {
     pool,
     async stop() {
-      await pool.end();
-      await container.stop();
+      try {
+        await pool.end();
+      } finally {
+        await container.stop();
+      }
     },
   };
 }

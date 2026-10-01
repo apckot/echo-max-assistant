@@ -54,6 +54,17 @@ describe('PostgreSQL migrations', () => {
       .toEqual([]);
   });
 
+  test('cannot commit a migration before a later statement fails', async () => {
+    await migration('001_embedded_commit.sql',
+      'CREATE TABLE committed_early (id integer); COMMIT; SELECT 1 / 0;');
+
+    await expect(runMigrations(database.pool, directory)).rejects.toMatchObject({ code: '0A000' });
+    expect((await database.pool.query("SELECT to_regclass('committed_early') AS table_name")).rows[0])
+      .toEqual({ table_name: null });
+    expect((await database.pool.query("SELECT name FROM schema_migrations WHERE name = '001_embedded_commit.sql'")).rows)
+      .toEqual([]);
+  });
+
   test('serializes concurrent runners across separate connections', async () => {
     await migration('001_slow.sql', 'SELECT pg_sleep(0.2); CREATE TABLE migration_probe (id integer PRIMARY KEY); INSERT INTO migration_probe (id) VALUES (3);');
     const secondPool = new Pool({ connectionString: database.pool.options.connectionString });
