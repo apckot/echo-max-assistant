@@ -48,7 +48,7 @@ describe('protected system state', () => {
     }>(`SELECT id, schema_version, restore_fence, restored_snapshot_at, deployment_epoch
         FROM public.system_state`);
     expect(result.rows).toEqual([{
-      id: 1, schema_version: 2, restore_fence: false,
+      id: 1, schema_version: 3, restore_fence: false,
       restored_snapshot_at: null, deployment_epoch: '0',
     }]);
   });
