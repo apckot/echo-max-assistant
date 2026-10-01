@@ -45,7 +45,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
     try {
       const url = new URL(urls[role]);
       if (!['postgres:', 'postgresql:'].includes(url.protocol) ||
-        decodeURIComponent(url.username) !== `echo_${role}`) {
+        decodeURIComponent(url.username) !== `echo_${role}` || url.searchParams.has('user')) {
         throw new Error('role mismatch');
       }
     } catch {
@@ -71,6 +71,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
     }
     let active = true;
     let begun = false;
+    let discardClient = false;
     try {
       await client.query('BEGIN');
       begun = true;
@@ -99,12 +100,12 @@ export function createDatabase(urls: DatabaseUrls): Database {
     } catch (error) {
       active = false;
       if (begun) {
-        try { await client.query('ROLLBACK'); } catch { /* connection is discarded below */ }
+        try { await client.query('ROLLBACK'); } catch { discardClient = true; }
       }
       if (error instanceof DatabaseError || !(error instanceof Error) || !('code' in error)) throw error;
       throw databaseError(error);
     } finally {
-      client.release();
+      client.release(discardClient);
     }
   }
 

@@ -27,3 +27,5 @@ npm exec --yes --package=node@22 -- node --input-type=module -e 'import {Pool} f
 ```
 
 Finally set the four separate `DATABASE_URL_GATEWAY`, `DATABASE_URL_WORKER`, `DATABASE_URL_DELIVERY`, and `DATABASE_URL_SCHEDULER` credentials from the corresponding roles. The application transaction API checks each URL's role name and keeps its pools private. Only the migrator owns schema changes; application roles have no schema `CREATE` privilege and no general RLS bypass. Later migrations grant narrow table and function permissions as those objects are introduced.
+
+Gateway transactions currently set a 150 ms PostgreSQL `statement_timeout` for each statement. This is not a deadline for the whole transaction; the total gateway transaction deadline belongs to gateway integration in iteration 15.

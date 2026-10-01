@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { createDatabase, type UserId } from '../../../src/infrastructure/postgres/database.js';
 import { runMigrations } from '../../../src/infrastructure/postgres/migrations.js';
 import { startPostgres } from '../../support/postgres.js';
@@ -82,6 +82,43 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     })).toThrowError(expect.objectContaining({ code: 'DB_ROLE_MISMATCH' }));
   });
 
+  test('rejects a URL whose query parameters override the application role', async () => {
+    const overridden = new URL(urls.gateway);
+    overridden.searchParams.set('user', 'echo_migrator');
+    overridden.searchParams.set('password', testPassword);
+    const probe = new Pool({ connectionString: overridden.toString() });
+    try {
+      expect((await probe.query('SELECT current_user AS role')).rows[0]?.role).toBe('echo_migrator');
+    } finally {
+      await probe.end();
+    }
+    expect(() => createDatabase({
+      gateway: overridden.toString(),
+      worker: urls.worker,
+      delivery: urls.delivery,
+      scheduler: urls.scheduler,
+    })).toThrowError(expect.objectContaining({ code: 'DB_ROLE_MISMATCH' }));
+  });
+
+  test('accepts a correct-role URL with a query password', async () => {
+    const gatewayUrl = new URL(urls.gateway);
+    gatewayUrl.password = '';
+    gatewayUrl.searchParams.set('password', testPassword);
+    const withQueryPassword = createDatabase({
+      gateway: gatewayUrl.toString(),
+      worker: urls.worker,
+      delivery: urls.delivery,
+      scheduler: urls.scheduler,
+    });
+    try {
+      const rows = await withQueryPassword.systemTransaction('gateway', (tx) =>
+        tx.query<{ role: string }>('SELECT current_user AS role'));
+      expect(rows).toEqual([{ role: 'echo_gateway' }]);
+    } finally {
+      await withQueryPassword.close();
+    }
+  });
+
   test('tenant transaction sets local user context and bounded timeouts, then clears it on reuse', async () => {
     const inside = await database.tenantTransaction('worker', userId, async (tx) => {
       const rows = await tx.query<{ role: string; user_id: string; statement_timeout: string; lock_timeout: string }>(
@@ -100,7 +137,7 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     expect('pool' in database).toBe(false);
   });
 
-  test('gateway transaction enforces the 150 ms database deadline', async () => {
+  test('gateway transaction enforces a 150 ms statement timeout', async () => {
     const rows = await database.systemTransaction('gateway', (tx) =>
       tx.query<{ statement_timeout: string }>("SHOW statement_timeout"));
     expect(rows[0]).toEqual({ statement_timeout: '150ms' });
@@ -138,5 +175,37 @@ describe('PostgreSQL roles and transaction boundaries', () => {
       'SELECT count(*)::int AS count FROM public.transaction_probe',
     ));
     expect(after).toEqual([{ count: 0 }]);
+  });
+
+  test('discards a still-queryable client when rollback fails', async () => {
+    const originalConnect = Pool.prototype.connect;
+    let failedRollback = false;
+    const connect = vi.spyOn(Pool.prototype, 'connect').mockImplementation(async function (this: Pool) {
+      const client = await originalConnect.call(this);
+      if (!failedRollback) {
+        const originalQuery = client.query.bind(client);
+        client.query = ((...args: Parameters<typeof client.query>) => {
+          if (args[0] === 'ROLLBACK') {
+            failedRollback = true;
+            return Promise.reject(new Error('injected rollback failure'));
+          }
+          return originalQuery(...args);
+        }) as typeof client.query;
+      }
+      return client;
+    });
+    try {
+      let failedPid: number | undefined;
+      await expect(database.systemTransaction('worker', async (tx) => {
+        failedPid = (await tx.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'))[0]?.pid;
+        throw new Error('callback failure');
+      })).rejects.toThrow('callback failure');
+      expect(failedRollback).toBe(true);
+      const rows = await database.systemTransaction('worker', (tx) =>
+        tx.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'));
+      expect(rows[0]?.pid).not.toBe(failedPid);
+    } finally {
+      connect.mockRestore();
+    }
   });
 });
