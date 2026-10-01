@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const signedInt64 = z.union([
   z.string().refine((value) => {
+    if (value.length > (value.startsWith('-') ? 20 : 19)) return false;
     const match = /^(?:0|[1-9]\d*|-[1-9]\d*)$/.exec(value);
     if (match?.[0] !== value) return false;
     const number = BigInt(value);

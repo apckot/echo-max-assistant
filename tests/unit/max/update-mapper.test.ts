@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { mapMaxUpdate } from '../../../src/infrastructure/max/update-mapper.js';
 
@@ -78,6 +78,18 @@ describe('MAX update mapper', () => {
     expect(mapMaxUpdate({ update_type: 'bot_started', timestamp: 1, user: user('-9223372036854775808'), chat_id: '9223372036854775807' })).toMatchObject({ status: 'normalized', providerUserId: '-9223372036854775808', providerChatId: '9223372036854775807' });
     for (const id of [9007199254740992, '01', '-0', ' 1', '12\n', 'secret-not-a-number', '9223372036854775808']) {
       expect(() => mapMaxUpdate({ update_type: 'bot_started', timestamp: 1, user: user(id), chat_id: 1 })).toThrowError('invalid_max_update');
+    }
+  });
+
+  it('short-circuits oversized signed int64 strings before BigInt conversion', () => {
+    const bigint = vi.spyOn(globalThis, 'BigInt');
+    try {
+      for (const id of ['9'.repeat(20), '9'.repeat(21), `-${'9'.repeat(20)}`]) {
+        expect(() => mapMaxUpdate({ update_type: 'bot_started', timestamp: 1, user: user(id), chat_id: 1 })).toThrowError('invalid_max_update');
+      }
+      expect(bigint).not.toHaveBeenCalled();
+    } finally {
+      bigint.mockRestore();
     }
   });
 
