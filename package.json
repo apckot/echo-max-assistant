@@ -16,7 +16,7 @@
     "test:unit": "vitest run tests/unit",
     "test:functional": "vitest run --passWithNoTests tests/functional",
     "build": "tsc -p tsconfig.json",
-    "verify": "npm run typecheck && npm test && npm run build"
+    "verify": "npm run typecheck && npm run lint:architecture && npm test && npm run build"
   },
   "devDependencies": {
     "@types/node": "22.20.4",
