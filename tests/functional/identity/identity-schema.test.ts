@@ -16,7 +16,7 @@ const conversationA = '55555555-5555-4555-8555-555555555555';
 describe('identity schema', () => {
   let postgres: Awaited<ReturnType<typeof startPostgres>>;
   let migrator: Pool;
-  const applicationPools: Pool[] = [];
+  const applicationPools = new Map<string, Pool>();
 
   beforeAll(async () => {
     postgres = await startPostgres();
@@ -36,7 +36,7 @@ describe('identity schema', () => {
     migrator = new Pool({ connectionString: roleUrl('migrator') });
     await runMigrations(migrator, migrations);
     for (const role of ['gateway', 'worker', 'delivery', 'scheduler']) {
-      applicationPools.push(new Pool({ connectionString: roleUrl(role) }));
+      applicationPools.set(role, new Pool({ connectionString: roleUrl(role) }));
     }
   }, 120_000);
 
@@ -45,7 +45,7 @@ describe('identity schema', () => {
   });
 
   afterAll(async () => {
-    await Promise.all(applicationPools.map((pool) => pool.end()));
+    await Promise.all([...applicationPools.values()].map((pool) => pool.end()));
     await migrator?.end();
     await postgres?.stop();
   });
@@ -168,8 +168,8 @@ describe('identity schema', () => {
         [`public.${table}`],
       );
       expect(rls.rows).toEqual([{ rowsecurity: true, forcerowsecurity: true }]);
-      for (const [index, pool] of applicationPools.entries()) {
-        if (index === 1) {
+      for (const [role, pool] of applicationPools) {
+        if (role === 'worker') {
           expect((await pool.query(`SELECT * FROM public.${table}`)).rows).toEqual([]);
         } else {
           await expect(pool.query(`SELECT * FROM public.${table}`)).rejects.toMatchObject({ code: '42501' });
