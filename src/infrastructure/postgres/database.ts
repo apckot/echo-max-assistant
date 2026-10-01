@@ -1,8 +1,10 @@
 import { Pool, type PoolClient, type QueryResultRow } from 'pg';
+import type { UserId } from '../../shared/types/identity.js';
+
+export type { UserId } from '../../shared/types/identity.js';
 
 export type SystemRole = 'gateway' | 'worker' | 'delivery' | 'scheduler';
 export type TenantRole = SystemRole;
-export type UserId = string & { readonly __userId: unique symbol };
 export type DbErrorCode = 'DB_INVALID_USER_ID' | 'DB_TIMEOUT' | 'DB_CONFLICT' |
   'DB_UNAVAILABLE' | 'DB_FAILURE' | 'DB_CLOSED' | 'DB_ROLE_MISMATCH';
 
