@@ -7,7 +7,10 @@ The coordinator adds a row only after independent review.
 | 1 | accepted | 6842b9ce9b68bb6a8d5e6c400daa2c5c905c472b | Independent review approved after npm pin and scratch tracking fixes | Node 22.23.3: `npm run typecheck && npm test && npm run build` exit 0; 1/1 tests; metadata check and repeated unit/typecheck exit 0 | Next: runtime config; architecture guard deferred to iteration 3 |
 | 2 | accepted | 1631dc99ac7dee70202e356dc85a5ce239f2932b | Independent review and URL validation fix re-review approved | Node22 `npm run verify`: typecheck, 19/19 tests, build all exit 0; focused config 18/18 | Next: architecture guard |
 | 3 | accepted | 14b4072abbe11518df76f7a2461b0688d0161f5e | Independent spec and quality review approved; valid TS7 paths probe rejects forbidden target | Node22 `npm run verify`: typecheck, architecture OK, 27/27 tests, build exit 0 | Next: migration runner |
+| 4 | accepted | b679dee3c0189a83a95dfd6e0d080da8f94d7aa1 | Independent review and transaction-boundary fix re-review approved | Node22 functional PostgreSQL17 4/4, typecheck/guard/build exit 0; full gate 31/31 | Next: DB roles and transaction API |
 
 Iteration 1 fixes: `9e4cb912d42100784c3955769e335072c3cf1691` (pin npm 11.16.0), `f9b39bd0fe3f790d974230790f428edbc1137723` (keep report local). Both independently re-reviewed. No open findings.
 
 Iteration 2 fix: `a32afbdb4800463d39d34525d1e41c5520b5069e` (malformed URLs return sanitized ZodError). No open findings.
+
+Iteration 4 fix: `2342eafb867f103ae558703da8ebe517ad27777a` (server-enforced transaction safety and container cleanup). No open findings.
