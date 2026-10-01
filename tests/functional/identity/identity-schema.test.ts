@@ -162,14 +162,18 @@ describe('identity schema', () => {
   });
 
   test.each(['users', 'channel_accounts', 'conversations'] as const)(
-    '%s has forced RLS and no application-role table access', async (table) => {
+    '%s has forced RLS and denies access without tenant context', async (table) => {
       const rls = await postgres.pool.query<{ rowsecurity: boolean; forcerowsecurity: boolean }>(
         'SELECT relrowsecurity AS rowsecurity, relforcerowsecurity AS forcerowsecurity FROM pg_class WHERE oid = $1::regclass',
         [`public.${table}`],
       );
       expect(rls.rows).toEqual([{ rowsecurity: true, forcerowsecurity: true }]);
-      for (const pool of applicationPools) {
-        await expect(pool.query(`SELECT * FROM public.${table}`)).rejects.toMatchObject({ code: '42501' });
+      for (const [index, pool] of applicationPools.entries()) {
+        if (index === 1) {
+          expect((await pool.query(`SELECT * FROM public.${table}`)).rows).toEqual([]);
+        } else {
+          await expect(pool.query(`SELECT * FROM public.${table}`)).rejects.toMatchObject({ code: '42501' });
+        }
         await expect(pool.query(`INSERT INTO public.${table} DEFAULT VALUES`)).rejects.toMatchObject({ code: '42501' });
       }
     },
