@@ -58,7 +58,7 @@ npm exec --yes --package=node@22.23.3 --package=npm@11.16.0 -- sh -c 'npm ci && 
 - Gateway's 150 ms setting currently limits each SQL statement. Enforce and test the total gateway transaction deadline in iteration 15.
 - `UserId` is currently declared in the database adapter. Before iteration 7 introduces domain consumers, put neutral internal identity types in shared types so application/domain never import infrastructure.
 - DBA bootstrap is one-time for a fresh dedicated PostgreSQL cluster/database; it is not an operation to run against a shared existing cluster.
-- Origin is `https://github.com/apckot/echo-max-assistant.git`; the supplied SSH URL failed public-key authentication, while HTTPS cloned the empty remote successfully. All commits remain local on `codex/stage-1-foundation`; no push or production action was performed.
+- Origin is `https://github.com/apckot/echo-max-assistant.git`; the supplied SSH URL failed public-key authentication, while HTTPS cloned the empty remote successfully. At the original checkpoint all commits were local on `codex/stage-1-foundation`; no push or production action had been performed.
 - Source `echo-secretary` remains at `bffc352` with its original unrelated untracked files unchanged.
 
 ### Next five iterations — not started
@@ -70,3 +70,14 @@ npm exec --yes --package=node@22.23.3 --package=npm@11.16.0 -- sh -c 'npm ci && 
 | 8 | Safe concurrent MAX identity resolve function; identity-resolution tests |
 | 9 | FORCE RLS isolation for two users and restricted gateway; RLS tests |
 | 10 | Pure MAX mapper, four update types and stable dedupe keys; contract checkpoint |
+
+## Pre-iteration 6 correction — local secret protection
+
+User requested this isolated fix and explicitly authorized pushing `codex/stage-1-foundation` after independent review and verification. Iteration 6 remains not started.
+
+- `.gitignore` now contains `.env`, `.env.*`, and `!.env.example`.
+- `tests/unit/gitignore.test.mjs` checks actual `git check-ignore --no-index` behavior for root/nested env files and the template exceptions, without opening or creating secret files. `git ls-files --error-unmatch .env.example` proves the template is still tracked.
+- TDD: test failed on `.env` before the rules, then passed after the change.
+- Coordinator verification on Node 22.23.3/npm 11.16.0: `npm run verify` exited 0 (typecheck, architecture guard, 41/41 tests in 6 files, build); `npm run test:functional` exited 0 (13/13 tests in 2 files).
+- Pre-commit history scan: Gitleaks 8.30.1, default rules, no baseline or custom exclusions, `--log-opts=HEAD --ignore-gitleaks-allow --redact=100`, exit 0 and zero findings. The non-shallow history at `c15a4f5548171c495ff71130f0f57265d46d48dc` contains 15 commits; Gitleaks processed 14 addition-bearing patches (the remaining commit only deletes a scratch report).
+- Scanner image: `ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f`, run locally with `--network none` and a read-only repository mount. The final commit is scanned again before push; the post-commit scan and remote SHA verification are reported separately so this record does not claim an as-yet nonexistent commit hash.
