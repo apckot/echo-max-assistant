@@ -32,6 +32,16 @@ function fixture(options: { fence?: boolean; fail?: boolean } = {}) {
 }
 
 describe('MAX webhook', () => {
+  it('rejects an empty or whitespace-only configured secret during app construction', () => {
+    for (const invalidSecret of ['', ' \t\n']) {
+      expect(() => createMaxWebhookApp({
+        secret: invalidSecret,
+        restoreFence: () => false,
+        intake: async () => ({ status: 'created' }),
+      })).toThrowError('max_webhook_secret_required');
+    }
+  });
+
   it('rejects missing and invalid secrets before intake', async () => {
     const { app, events, post } = fixture();
     try {

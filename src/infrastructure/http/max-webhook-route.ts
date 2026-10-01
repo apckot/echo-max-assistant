@@ -24,6 +24,8 @@ function parseMaxJson(body: string): unknown {
 }
 
 export function createMaxWebhookApp(dependencies: MaxWebhookDependencies) {
+  if (!dependencies.secret.trim()) throw new Error('max_webhook_secret_required');
+
   const rawHashes = new WeakMap<object, string>();
   const app = Fastify({
     loggerInstance: dependencies.logger ?? pino(),
