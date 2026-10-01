@@ -1,0 +1,62 @@
+v22.23.3
+11.16.0
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 236 packages, and audited 237 packages in 5s
+
+42 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
+npm warn allow-scripts   cpu-features@0.0.10 (install: node buildcheck.js > buildcheck.gypi && node-gyp rebuild)
+npm warn allow-scripts   fsevents@2.3.3 (install: (install scripts present))
+npm warn allow-scripts   protobufjs@7.6.6 (postinstall: node scripts/postinstall)
+npm warn allow-scripts   ssh2@1.17.0 (install: node install.js)
+npm warn allow-scripts
+npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
+
+> echo-max-assistant@0.1.0 verify
+> npm run typecheck && npm run lint:architecture && npm test && npm run build
+
+
+> echo-max-assistant@0.1.0 typecheck
+> tsc --noEmit
+
+
+> echo-max-assistant@0.1.0 lint:architecture
+> node scripts/check-architecture.mjs
+
+Architecture boundaries: OK
+
+> echo-max-assistant@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /private/var/folders/yh/dnx27555211bldzc7hgzltqh0000gn/T/echo-max-checkpoint-5-final-yv5zfmc9/checkout
+
+
+ Test Files  5 passed (5)
+      Tests  40 passed (40)
+   Start at  18:15:50
+   Duration  4.47s (transform 185ms, setup 0ms, import 2.72s, tests 7.29s, environment 0ms)
+
+
+> echo-max-assistant@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> echo-max-assistant@0.1.0 test:functional
+> vitest run --passWithNoTests tests/functional
+
+
+ RUN  v4.1.11 /private/var/folders/yh/dnx27555211bldzc7hgzltqh0000gn/T/echo-max-checkpoint-5-final-yv5zfmc9/checkout
+
+
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+   Start at  18:15:55
+   Duration  3.98s (transform 75ms, setup 0ms, import 687ms, tests 6.89s, environment 0ms)
+
+
+EXIT_CODE=0
