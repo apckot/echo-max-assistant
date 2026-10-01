@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { ZodError } from 'zod';
 import { parseRuntimeConfig } from '../../src/shared/config/config.js';
 
 const validEnv = {
@@ -48,6 +49,23 @@ describe('runtime configuration', () => {
     await expect(parse({ ...validEnv, DATABASE_URL_WORKER: 'https://db.example' })).rejects.toThrow();
     await expect(parse({ ...validEnv, MAX_WEBHOOK_URL: 'http://example.org/hook' })).rejects.toThrow();
     await expect(parse({ ...validEnv, MAX_WEBHOOK_SECRET: '   ' })).rejects.toThrow();
+  });
+
+  test.each([
+    ['DATABASE_URL_WORKER', 'postgres://user:synthetic-password@'],
+    ['MAX_WEBHOOK_URL', 'https://user:synthetic-password@'],
+  ])('returns a sanitized ZodError for malformed %s', (key, value) => {
+    let thrown: unknown;
+    try {
+      parseRuntimeConfig({ ...validEnv, [key]: value });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(ZodError);
+    const details = JSON.stringify(thrown);
+    expect(details).not.toContain('synthetic-password');
+    expect((thrown as Error).message).not.toContain('synthetic-password');
   });
 
   test('parses explicit numeric settings and rejects invalid ranges', async () => {

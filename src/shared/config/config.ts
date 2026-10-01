@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-const postgresUrl = z.url().refine(
-  (value) => ['postgres:', 'postgresql:'].includes(new URL(value).protocol),
-  'Must be a PostgreSQL URL',
-);
+const postgresUrl = z.url({ protocol: /^(postgres|postgresql)$/ });
 const secret = z.string().trim().min(1);
 const positiveInteger = (defaultValue: number, maximum: number) =>
   z.coerce.number<number>().int().positive().max(maximum).default(defaultValue);
@@ -17,7 +14,7 @@ const runtimeConfigSchema = z.object({
   DATABASE_URL_MIGRATIONS: postgresUrl,
   MAX_BOT_TOKEN: secret,
   MAX_WEBHOOK_SECRET: secret,
-  MAX_WEBHOOK_URL: z.url().refine((value) => new URL(value).protocol === 'https:', 'Must be HTTPS'),
+  MAX_WEBHOOK_URL: z.url({ protocol: /^https$/ }),
   RESTORE_FENCE: z.enum(['on', 'off']).default('on'),
   FOUNDATION_ECHO_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   GATEWAY_DB_POOL_SIZE: positiveInteger(10, 100),
