@@ -24,7 +24,7 @@ const runtimeConfigSchema = z.object({
   WEBHOOK_BODY_LIMIT_BYTES: positiveInteger(1024 * 1024, 1024 * 1024),
   WORK_LEASE_MS: positiveInteger(60_000, 300_000),
   WORK_LEASE_RENEW_MS: positiveInteger(20_000, 300_000),
-  HANDLER_TIMEOUT_MS: positiveInteger(5_000, 300_000),
+  HANDLER_TIMEOUT_MS: positiveInteger(5_000, 5_000),
   MAX_VOICE_BYTES: positiveInteger(25 * 1024 * 1024, 25 * 1024 * 1024),
   MAX_VOICE_DURATION_MS: positiveInteger(20 * 60_000, 20 * 60_000),
 }).superRefine((config, context) => {

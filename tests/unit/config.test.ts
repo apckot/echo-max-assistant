@@ -83,6 +83,12 @@ describe('runtime configuration', () => {
     await expect(parse({ ...validEnv, WORK_LEASE_MS: '10000', WORK_LEASE_RENEW_MS: '9000', HANDLER_TIMEOUT_MS: '9500' })).rejects.toThrow();
   });
 
+  test('caps handlers at five seconds even with enlarged leases', async () => {
+    await expect(parse({ ...validEnv, WORK_LEASE_MS: 300000, WORK_LEASE_RENEW_MS: 20000,
+      HANDLER_TIMEOUT_MS: 5001 })).rejects.toThrow();
+    expect((await parse({ ...validEnv, HANDLER_TIMEOUT_MS: 1 })).HANDLER_TIMEOUT_MS).toBe(1);
+  });
+
   test('requires explicit production opt-in for foundation echo', async () => {
     await expect(parse({ ...validEnv, NODE_ENV: 'production' })).rejects.toThrow();
     const config = await parse({ ...validEnv, NODE_ENV: 'production', FOUNDATION_ECHO_ENABLED: 'true' });
