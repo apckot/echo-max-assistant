@@ -1,6 +1,6 @@
 # Stage 1 progress
 
-Current checkpoint: **iterations1–10 accepted locally; STOP for user acceptance before11**.
+Current status: **checkpoint 15 complete on 2026-10-03: iterations 11–15 implemented, independently reviewed and verified in a clean clone. STOP: iteration 16 requires user acceptance. Publication evidence is reported separately below.**
 
 The coordinator adds a row only after independent review.
 
@@ -16,6 +16,12 @@ The coordinator adds a row only after independent review.
 | 8 | accepted | 33654ee92049f1b61ae9a055dfa8ae22ba2aa57f | Independent spec/security/quality approved, no findings | Pinned verify72/72 + functional44/44, typecheck/guard/build exit0; concurrency and signed64 boundaries | Next: runtime tenant RLS |
 | 9 | accepted | 0aaa5c7ea337d54e63e42ed927efae141cef20bc | Independent spec/security approved; minor test lookup fixed and rereviewed | Final pinned verify79/79 + functional51/51, typecheck/guard/build exit0 | Next: MAX mapper checkpoint |
 | 10 | accepted | 48b21711743b3ae9ef7a833952390a9e5c4d38f8 | Independent task and whole-block reviews approved, no findings | Pinned verify100/100 + functional51/51, mapper21/21, typecheck/guard/build exit0 | Checkpoint10: STOP for user acceptance |
+| 11 | accepted | 2491d449a3d2d62ac16efdc5c91d447257f1da49 | Empty-secret issue fixed in 7278c1cdc4f70df72254e9ca5f3c6dbb2fc67d72; independent rereview PASS | Pinned verify109/109 + functional51/51; pre-BigInt guard and lossless HTTP covered | Next: inbound model |
+| 12 | accepted | 8a5a186e1aba3fc20f11e05a6db3c00cb599b3d4 | Byte-limit mismatch fixed in c93129ce5a7273338beef8c954d13e35c6230498; independent rereview PASS | Pinned verify140/140 + functional75/75; DB/domain exact128KiB boundary | Next: atomic intake |
+| 13 | accepted | faf9e6aa65424a3b33348b2395048c195206797a | Atomicity/ACL review passed; test concurrency fixed in 0b4cdc0b9e16b525f345af009a872057bc08971d and rereviewed | Default verify156/156 + functional91/91; production150ms unchanged | Next: conversation wake |
+| 14 | accepted | a41efcf4bdd0a762852ab54d2b75c3029c1887a3 | Independent spec/quality review approved, no findings | Pinned verify160/160 + functional95/95; atomic work/NOTIFY, rollback and lease preservation | Next: durable ingress checkpoint |
+| 15a | accepted substep | 3d560bf896b0a0e965b2cb2cca6fa653ef804e2c | Independent deadline/concurrency review approved; uncertain COMMIT probe passed | Pinned verify166/166 + functional101/101; total150ms and pool lifecycle | Next: 15b guarded HTTP ingress |
+| 15 | accepted | 4ba92dac66c1ef66d295b172ee1f2a0a8d53fd07 | Key Unicode/NUL finding fixed in 398a63976e44cdfaa30d3e4bfca6e300daf8d1fc; fresh scoped rereview PASS | Final verify199/199 + functional102/102; guarded durable HTTP, restart/lost responses | Checkpoint15: STOP for user acceptance |
 
 Iteration 1 fixes: `9e4cb912d42100784c3955769e335072c3cf1691` (pin npm 11.16.0), `f9b39bd0fe3f790d974230790f428edbc1137723` (keep report local). Both independently re-reviewed. No open findings.
 
@@ -162,3 +168,80 @@ npm exec --yes --package=node@22.23.3 --package=npm@11.16.0 -- sh -c 'npm ci && 
 |15|Gateway composition and durable ingress/restart checkpoint with total transaction deadline|
 
 Publication evidence: the final documentation commit will be scanned over the full reachable branch history with pinned Gitleaks before push. The final commit SHA, scanner result, push result and independently read remote SHA are reported in the coordinator's final message; this document does not claim publication before it happens.
+
+## Block 11–15 authorization
+
+User accepted checkpoint 10 and authorized sequential iterations 11–15, each with a separate atomic commit, TDD, checks and independent review. Additional iteration11 requirement: bound signed-int64 string length before BigInt and test an excessively long ID. After 15: clean-clone gate, full-history Gitleaks, push and remote SHA verification; stop for user acceptance.
+
+Historical pause on 2026-10-01: iteration 12 was preserved uncommitted. User resumed on 2026-10-03; iterations 12–15 subsequently completed. Original resume note: `.superpowers/sdd/2026-10-01-max-assistant-stage-1-foundation/PAUSED-RESUME.md`.
+
+
+## Checkpoint 15 — 2026-10-03
+
+**STOP. Iteration 16 has not started and requires user acceptance.** The user authorized 11–15 and the final clean-clone checks, history scan and push. Each iteration has a fresh implementer, TDD evidence, independent review and an atomic commit. Iteration 15 was split into 15a and 15b to keep the changes reviewable; both received full verification and independent review. The accepted implementation and fix hashes appear in the table above.
+
+### Working result
+
+- `createGateway(environment, logger?)` validates configuration and explicitly composes Fastify with a gateway-only PostgreSQL pool. The caller starts it with `app.listen(...)`; `app.close()` closes HTTP connections and its database resources.
+- Authenticated `POST /webhooks/max` preserves numeric signed-int64 ID tokens, bounds string IDs before BigInt, enforces the configured body limit (maximum 1 MiB), and keeps secrets, payloads and external identifiers out of logs. Invalid secrets return 401; permanently invalid input returns 400.
+- Supported text, callback, lifecycle and reserved voice descriptors enter the neutral intake model. Raw webhook bodies are not retained; SHA256 is stored. Tenant ownership, full-key dedupe, lifecycle transitions, event/sequence allocation and conversation wake are atomic.
+- Duplicate events return 200 after commit without another event, sequence or wake. A replayed old start cannot undo a newer stop. One technical work row exists per conversation; new inbound preserves an active lease and transactional NOTIFY disappears on rollback.
+- Config and database restore fences reject ingress with 503. The narrow database guard serializes the hard-limit decision, defaults to 100000 unapplied events, and measures pending events against `next_apply_sequence`. Duplicates remain valid at capacity. Gateway has no unrestricted tenant/system-state read access.
+- A fixed total 150 ms gateway transaction deadline includes pool acquisition, cumulative statements, awaited callbacks and COMMIT acknowledgement. Expiry closes transaction access and discards the connection; late callback work cannot commit. A COMMIT already submitted can have an uncertain outcome: HTTP returns 503 and durable retry resolves it without duplicates.
+- Real PostgreSQL and loopback HTTP tests cover process-component recreation against the same database, lost response after commit, delayed COMMIT acknowledgement, lock/deadline failure, pool recovery, idle backend termination, bounded shutdown, fence transitions, capacity concurrency, malformed IDs and privacy-safe responses/logs.
+
+### Independent verification
+
+Verified code commit: `398a63976e44cdfaa30d3e4bfca6e300daf8d1fc`.
+Verified/reviewed tree: `9a43bb263210ec588fded073b2a9a76d6ac9f255`.
+The checkpoint documentation commit changes only `docs/progress/`; it does not change verified code.
+
+A new local clone used no reused `node_modules` or build output. Runtime: Node 22.23.3, npm 11.16.0, PostgreSQL 17 through disposable Testcontainers.
+
+| Check | Result |
+| --- | --- |
+| `npm ci` | Exit 0; 284 packages installed, 285 audited, 0 reported vulnerabilities |
+| `npm run typecheck` | Exit 0 |
+| `npm run lint:architecture` | Exit 0; Architecture boundaries: OK |
+| `npm test` (inside verify) | Exit 0; 199/199 tests in 17 files, including 27 durable HTTP/PostgreSQL cases |
+| `npm run build` | Exit 0 |
+| `npm run test:functional` | Exit 0; 102/102 tests in 9 files |
+| Fresh clone `git status --porcelain` | Empty |
+
+[Full clean-clone output](checkpoint-15-verification.log). [Independent whole-block review and scoped fix rereview](checkpoint-15-review.md).
+
+Review findings were resolved in separate commits: 11 empty secret; 12 PostgreSQL JSONB byte-count mismatch; 13 test-container concurrency; 15 malformed key encoding. The final fix rejects NUL/unpaired surrogates before hashing or text binding, preserves valid U+FFFD and astral characters, and classifies SQLSTATE 22021 as a closed permanent-input error. Fresh scoped rereview reports all findings addressed, no new breakage, no out-of-scope findings.
+
+### Reproduce
+
+Docker must be running. The checkout below selects the exact verified code commit:
+
+```sh
+CHECKPOINT_DIR=$(mktemp -d)
+git clone --branch codex/stage-1-foundation git@github.com:apckot/echo-max-assistant.git "$CHECKPOINT_DIR/checkout"
+cd "$CHECKPOINT_DIR/checkout"
+git checkout --detach 398a63976e44cdfaa30d3e4bfca6e300daf8d1fc
+npm exec --yes --package=node@22.23.3 --package=npm@11.16.0 -- sh -c 'npm ci && npm run verify && npm run test:functional'
+```
+
+### Decisions and limits
+
+- The full canonical provider key is preserved with a generated SHA256-backed unique index because a PostgreSQL text B-tree cannot hold every accepted long key. Intake compares the full key and owner before duplicate acknowledgement. Cost of a hypothetical digest collision: the distinct event is rejected; it is never falsely acknowledged as an existing event.
+- Iteration 15 was split into deadline/pool lifecycle and guarded HTTP ingress to honor the requested change-size signal. Cost: an additional atomic implementation commit, review and verification gate. Architecture and authorized scope did not change.
+- No open review blocker remains. Admission uses a serialized SQL count; target burst throughput and count cost at large retained histories remain for the planned load acceptance. No p95/p99/SLO claim is made here.
+- Initial iteration 13 functional validation encountered DB_TIMEOUT during excessive parallel container startup; isolated and two-worker runs identified harness contention. `vitest.config.ts` now caps test workers at 2. Production 150 ms and test state assertions were not relaxed; all final default and clean-clone commands pass.
+- Existing dependency warnings remain: transitive `glob@10.5.0` deprecation and four packages with install scripts not covered by npm allowScripts. npm audit reports 0 vulnerabilities. No unrelated dependency change or script approval was made.
+- Worker processing, outbox/delivery, metrics/readiness, subscription reconciliation, restore orchestration, deletion, load tests and production MAX canary are later work. Voice is a reserved descriptor; no download, STT or AI occurs. No production credentials, webhook registration or deployment were used.
+- Source `echo-secretary` remains at `4d5a516709dec8ed35681cc3159411d68fc1c9e3`; its existing unrelated untracked files were left unchanged.
+
+### Next five iterations — wait for user OK
+
+| Iteration | Planned result |
+| --- | --- |
+|16|Bounded queue claim with SKIP LOCKED, owner, lease and generation|
+|17|Prevent expired workers from committing after a new generation|
+|18|Preserve conversation order; preparing head waits, terminal head advances|
+|19|Pure deterministic foundation handler creates typed receipts and drafts|
+|20|Worker crash/retry/dead recovery and event-to-receipt checkpoint|
+
+Publication procedure: scan the final documentation HEAD and all reachable history with pinned Gitleaks 8.30.1, without baseline or exclusions; then the authorized `git push -u origin codex/stage-1-foundation`, followed by independent `git ls-remote` comparison. Because these run after this documentation commit, the final SHA, scan result and remote SHA are recorded in the coordinator's final response and local `checkpoint-15-history-final.log` / `checkpoint-15-publication.log`. No publication result is claimed in advance here.

@@ -1,0 +1,66 @@
+SHA=398a63976e44cdfaa30d3e4bfca6e300daf8d1fc
+CHECKOUT=/var/folders/yh/dnx27555211bldzc7hgzltqh0000gn/T/echo-max-checkpoint15-cjwgh4c7/checkout
+ARGV=['npm', 'exec', '--yes', '--package=node@22.23.3', '--package=npm@11.16.0', '--', 'sh', '-c', 'node --version && npm --version && npm ci && npm run verify && npm run test:functional']
+v22.23.3
+11.16.0
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 284 packages, and audited 285 packages in 6s
+
+61 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
+npm warn allow-scripts   cpu-features@0.0.10 (install: node buildcheck.js > buildcheck.gypi && node-gyp rebuild)
+npm warn allow-scripts   fsevents@2.3.3 (install: (install scripts present))
+npm warn allow-scripts   protobufjs@7.6.6 (postinstall: node scripts/postinstall)
+npm warn allow-scripts   ssh2@1.17.0 (install: node install.js)
+npm warn allow-scripts
+npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
+
+> echo-max-assistant@0.1.0 verify
+> npm run typecheck && npm run lint:architecture && npm test && npm run build
+
+
+> echo-max-assistant@0.1.0 typecheck
+> tsc --noEmit
+
+
+> echo-max-assistant@0.1.0 lint:architecture
+> node scripts/check-architecture.mjs
+
+Architecture boundaries: OK
+
+> echo-max-assistant@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.11 /private/var/folders/yh/dnx27555211bldzc7hgzltqh0000gn/T/echo-max-checkpoint15-cjwgh4c7/checkout
+
+
+ Test Files  17 passed (17)
+      Tests  199 passed (199)
+   Start at  15:48:28
+   Duration  21.40s (transform 246ms, setup 0ms, import 5.16s, tests 34.82s, environment 1ms)
+
+
+> echo-max-assistant@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> echo-max-assistant@0.1.0 test:functional
+> vitest run --passWithNoTests tests/functional
+
+
+ RUN  v4.1.11 /private/var/folders/yh/dnx27555211bldzc7hgzltqh0000gn/T/echo-max-checkpoint15-cjwgh4c7/checkout
+
+
+ Test Files  9 passed (9)
+      Tests  102 passed (102)
+   Start at  15:48:51
+   Duration  17.26s (transform 188ms, setup 0ms, import 3.41s, tests 27.36s, environment 1ms)
+
+
+EXIT_CODE=0
+STATUS=''
