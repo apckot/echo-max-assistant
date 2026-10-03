@@ -1,21 +1,21 @@
-import { IntakeService } from '../../modules/intake/application/intake-service.js';
+import { IntakeService, InvalidInboundEventError } from '../../modules/intake/application/intake-service.js';
 import type { IntakeInput, IntakeResult, IntakeStore } from '../../modules/intake/application/ports.js';
 import type { InboundEventId, InboundPayload } from '../../modules/intake/domain/inbound-event.js';
 import type { NormalizedInbound } from '../max/update-mapper.js';
-import type { Database } from './database.js';
+import { DatabaseError, type Database } from './database.js';
 
 type GatewayDatabase = Pick<Database, 'systemTransaction'>;
 type MaxIdentity = { externalUserId: string; externalConversationId: string };
 
 export class PostgresIntakeStore implements IntakeStore {
-  constructor(private readonly database: GatewayDatabase, private readonly identity: MaxIdentity) {}
+  constructor(private readonly database: GatewayDatabase, private readonly identity: MaxIdentity, private readonly hardLimit = 100_000) {}
 
   async persist(input: IntakeInput): Promise<IntakeResult> {
     return this.database.systemTransaction('gateway', async (tx) => {
       const [row] = await tx.query<{ inbound_event_id: string; status: 'created' | 'duplicate' }>(
-        'SELECT * FROM public.accept_max_inbound($1,$2,$3,$4,$5,$6)',
+        'SELECT * FROM public.accept_max_inbound($1,$2,$3,$4,$5,$6,$7)',
         [this.identity.externalUserId, this.identity.externalConversationId,
-          input.providerEventKey, input.occurredAt, JSON.stringify(input.payload), input.rawSha256],
+          input.providerEventKey, input.occurredAt, JSON.stringify(input.payload), input.rawSha256, this.hardLimit],
       );
       if (!row) throw new Error('inbound_intake_no_result');
       return { inboundEventId: row.inbound_event_id as InboundEventId, status: row.status };
@@ -23,13 +23,13 @@ export class PostgresIntakeStore implements IntakeStore {
   }
 }
 
-export async function acceptMaxInbound(database: GatewayDatabase, event: NormalizedInbound, rawSha256: string): Promise<IntakeResult> {
+export async function acceptMaxInbound(database: GatewayDatabase, event: NormalizedInbound, rawSha256: string, hardLimit = 100_000): Promise<IntakeResult> {
   // MAX uses integer epoch milliseconds, not seconds or ISO timestamp strings.
-  if (!/^(0|[1-9][0-9]*|-[1-9][0-9]*)$/.test(event.occurredAt)) throw new Error('invalid_inbound_event');
+  if (!/^(0|[1-9][0-9]*|-[1-9][0-9]*)$/.test(event.occurredAt)) throw new InvalidInboundEventError();
   const milliseconds = Number(event.occurredAt);
   // PostgreSQL additionally checks its timestamp range when binding the function
   // argument, before the resolver or any persistent operation can execute.
-  if (!Number.isSafeInteger(milliseconds)) throw new Error('invalid_inbound_event');
+  if (!Number.isSafeInteger(milliseconds)) throw new InvalidInboundEventError();
   const reply = 'replyToMessageId' in event ? { replyToMessageId: event.replyToMessageId } : {};
   let payload: InboundPayload;
   switch (event.kind) {
@@ -40,5 +40,8 @@ export async function acceptMaxInbound(database: GatewayDatabase, event: Normali
   }
   return new IntakeService(new PostgresIntakeStore(database, {
     externalUserId: event.providerUserId, externalConversationId: event.providerChatId,
-  })).accept({ providerEventKey: event.providerEventKey, occurredAt: new Date(milliseconds), payload, rawSha256 });
+  }, hardLimit)).accept({ providerEventKey: event.providerEventKey, occurredAt: new Date(milliseconds), payload, rawSha256 }).catch((error: unknown) => {
+    if (error instanceof DatabaseError && error.code === 'DB_INVALID_INPUT') throw new InvalidInboundEventError();
+    throw error;
+  });
 }

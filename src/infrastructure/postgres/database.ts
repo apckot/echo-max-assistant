@@ -6,7 +6,7 @@ export type { UserId } from '../../shared/types/identity.js';
 export type SystemRole = 'gateway' | 'worker' | 'delivery' | 'scheduler';
 export type TenantRole = SystemRole;
 export type DbErrorCode = 'DB_INVALID_USER_ID' | 'DB_TIMEOUT' | 'DB_CONFLICT' |
-  'DB_UNAVAILABLE' | 'DB_FAILURE' | 'DB_CLOSED' | 'DB_ROLE_MISMATCH';
+  'DB_UNAVAILABLE' | 'DB_INVALID_INPUT' | 'DB_FAILURE' | 'DB_CLOSED' | 'DB_ROLE_MISMATCH';
 
 export class DatabaseError extends Error {
   constructor(readonly code: DbErrorCode, message: string) {
@@ -32,6 +32,9 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function databaseError(error: unknown): DatabaseError {
   if (error instanceof DatabaseError) return error;
   const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+  if (code === '22007' || code === '22008' || code === '22023' || code === '22P05' || code === '22P02') {
+    return new DatabaseError('DB_INVALID_INPUT', 'Database input invalid');
+  }
   if (code === '57014' || code === '55P03') return new DatabaseError('DB_TIMEOUT', 'Database operation timed out');
   if (code === '40001' || code === '40P01' || code === '23505') {
     return new DatabaseError('DB_CONFLICT', 'Database operation conflicted');
@@ -60,6 +63,8 @@ export function createDatabase(urls: DatabaseUrls): Database {
     connectionString: urls[role], max: urls.poolSize ?? 10,
     ...(role === 'gateway' ? { connectionTimeoutMillis: 150 } : {}),
   })])) as Record<SystemRole, Pool>;
+  // pg removes failed idle clients before emitting; contain the event without raw diagnostics.
+  for (const role of configuredRoles) pools[role].on('error', () => {});
   let closed = false;
 
   async function transaction<T>(role: SystemRole, userId: UserId | undefined, fn: (tx: DbTx) => Promise<T>): Promise<T> {

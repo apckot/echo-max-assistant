@@ -146,7 +146,7 @@ describe('atomic inbound intake', () => {
       await expect(acceptMaxInbound(unavailable, { ...base, occurredAt }, sha)).rejects.toThrow('invalid_inbound_event');
     }
     await expect(acceptMaxInbound(unavailable, { ...base, text: 'a'.repeat(16_001) }, sha)).rejects.toThrow('invalid_inbound_event');
-    await expect(acceptMaxInbound(database, { ...base, occurredAt: '-8640000000000000' }, sha)).rejects.toMatchObject({ code: 'DB_FAILURE' });
+    await expect(acceptMaxInbound(database, { ...base, occurredAt: '-8640000000000000' }, sha)).rejects.toThrow('invalid_inbound_event');
     expect(await snapshot()).toEqual({ users: 0, accounts: 0, conversations: 0, events: 0, next: null });
   });
 

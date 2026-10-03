@@ -1,10 +1,12 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import Fastify, { LogController } from 'fastify';
 import pino, { type Logger } from 'pino';
+import { InvalidInboundEventError } from '../../modules/intake/application/intake-service.js';
 import { InvalidMaxUpdateError, mapMaxUpdate, type NormalizedInbound } from '../max/update-mapper.js';
 
 export type MaxWebhookDependencies = {
   secret: string;
+  bodyLimit?: number;
   restoreFence: () => boolean | Promise<boolean>;
   intake: (event: NormalizedInbound, rawSha256: string) => Promise<{ status: 'created' | 'duplicate' }>;
   logger?: Logger;
@@ -31,11 +33,12 @@ export function createMaxWebhookApp(dependencies: MaxWebhookDependencies) {
     loggerInstance: dependencies.logger ?? pino(),
     logController: new LogController({ disableRequestLogging: true }),
     requestIdHeader: false,
+    forceCloseConnections: true,
     genReqId: () => randomUUID(),
-    bodyLimit: BODY_LIMIT,
+    bodyLimit: dependencies.bodyLimit ?? BODY_LIMIT,
   });
 
-  app.addContentTypeParser('application/json', { parseAs: 'buffer', bodyLimit: BODY_LIMIT }, (request, body, done) => {
+  app.addContentTypeParser('application/json', { parseAs: 'buffer', bodyLimit: dependencies.bodyLimit ?? BODY_LIMIT }, (request, body, done) => {
     try {
       const raw = body as Buffer;
       const parsed = parseMaxJson(new TextDecoder('utf-8', { fatal: true }).decode(raw));
@@ -47,7 +50,7 @@ export function createMaxWebhookApp(dependencies: MaxWebhookDependencies) {
 
   app.setErrorHandler((error, request, reply) => {
     const errorStatus = typeof error === 'object' && error !== null && 'statusCode' in error ? error.statusCode : undefined;
-    const status = error instanceof InvalidMaxUpdateError || errorStatus === 400 || errorStatus === 413 || errorStatus === 415 ? 400 : 503;
+    const status = error instanceof InvalidMaxUpdateError || error instanceof InvalidInboundEventError || errorStatus === 400 || errorStatus === 413 || errorStatus === 415 ? 400 : 503;
     app.log.info({ code: status === 400 ? 'max_webhook_invalid_body' : 'max_webhook_failure', correlationId: request.id });
     reply.code(status).send({ code: status === 400 ? 'invalid_body' : 'temporarily_unavailable' });
   });
