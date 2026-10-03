@@ -46,14 +46,20 @@ export class PostgresConversationQueue implements ConversationQueue {
       typeof lease.leaseGeneration !== 'bigint' || lease.leaseGeneration < 0n ||
       lease.leaseGeneration > maxGeneration ||
       !validLeaseMs(leaseMs)) throw new RangeError('Invalid conversation lease');
-    const rows = await this.database.systemTransaction('worker', (tx) => tx.query<{ lease_until: Date }>(`
-      UPDATE public.conversation_work SET
+    const rows = await this.database.systemTransaction('worker', async (tx) => {
+      const token = [lease.conversationId, lease.userId, lease.ownerId, lease.leaseGeneration.toString()];
+      const locked = await tx.query(`SELECT 1 FROM public.conversation_work
+        WHERE conversation_id = $1::uuid AND user_id = $2::uuid
+          AND state = 'leased' AND lease_owner = $3::uuid AND lease_generation = $4::bigint
+        FOR UPDATE`, token);
+      if (locked.length === 0) return [];
+      return tx.query<{ lease_until: Date }>(`UPDATE public.conversation_work SET
         lease_until = GREATEST(lease_until, clock_timestamp() + $5::integer * interval '1 millisecond')
-      WHERE conversation_id = $1::uuid AND user_id = $2::uuid
-        AND state = 'leased' AND lease_owner = $3::uuid AND lease_generation = $4::bigint
-        AND lease_until > clock_timestamp()
-      RETURNING lease_until`,
-    [lease.conversationId, lease.userId, lease.ownerId, lease.leaseGeneration.toString(), leaseMs]));
+        WHERE conversation_id = $1::uuid AND user_id = $2::uuid
+          AND state = 'leased' AND lease_owner = $3::uuid AND lease_generation = $4::bigint
+          AND lease_until > clock_timestamp()
+        RETURNING lease_until`, [...token, leaseMs]);
+    });
     return rows[0]?.lease_until ?? null;
   }
 }

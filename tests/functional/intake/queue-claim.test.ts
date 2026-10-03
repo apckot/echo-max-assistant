@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { setTimeout } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
@@ -131,6 +132,46 @@ describe('conversation queue claim and renewal', () => {
       WHERE conversation_id = $1`, [work.conversation_id]);
     expect(await queue.renew(claim!)).toBeNull();
     expect((await row(work.conversation_id)).lease_until.getTime()).toBeLessThan(Date.now());
+  });
+
+  test('does not renew a lease that expires while waiting for an unchanged row lock', async () => {
+    const work = await wake('renew-after-lock');
+    const [claim] = await queue.claim({ ownerId: ownerA, limit: 1 });
+    await postgres.pool.query(`UPDATE public.conversation_work
+      SET lease_until = clock_timestamp() + interval '650 milliseconds'
+      WHERE conversation_id = $1`, [work.conversation_id]);
+    const originalExpiry = (await row(work.conversation_id)).lease_until as Date;
+    const blocker = await postgres.pool.connect();
+    let renewal: Promise<Date | null> | undefined;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query('SELECT 1 FROM public.conversation_work WHERE conversation_id = $1 FOR UPDATE',
+        [work.conversation_id]);
+      renewal = queue.renew(claim!);
+      let waiting = false;
+      for (let attempt = 0; attempt < 50 && !waiting; attempt += 1) {
+        const result = await postgres.pool.query<{ waiting: boolean }>(
+          'SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE $1::integer = ANY(pg_blocking_pids(pid))) AS waiting',
+          [blocker.processID]);
+        waiting = result.rows[0]!.waiting;
+        if (!waiting) await setTimeout(10);
+      }
+      expect(waiting).toBe(true);
+      const beforeExpiry = await postgres.pool.query<{ live: boolean }>(
+        'SELECT clock_timestamp() < lease_until AS live FROM public.conversation_work WHERE conversation_id = $1',
+        [work.conversation_id]);
+      expect(beforeExpiry.rows[0]!.live).toBe(true);
+      await postgres.pool.query(`SELECT pg_sleep(GREATEST(0, EXTRACT(EPOCH FROM (
+        (SELECT lease_until FROM public.conversation_work WHERE conversation_id = $1) - clock_timestamp()
+      )) + 0.03))`, [work.conversation_id]);
+      await blocker.query('COMMIT');
+      expect(await renewal).toBeNull();
+      expect((await row(work.conversation_id)).lease_until).toEqual(originalExpiry);
+    } finally {
+      await blocker.query('ROLLBACK');
+      blocker.release();
+      await renewal?.catch(() => undefined);
+    }
   });
 
   test('a rolled back claim leaves the row ready', async () => {
