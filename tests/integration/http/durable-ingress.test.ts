@@ -107,6 +107,38 @@ describe('guarded durable HTTP ingress', () => {
     expect(response.json()).toEqual({ code: 'invalid_body' });
     expect(await snapshot()).toEqual(empty);
   });
+  test.each(['message mid', 'reply mid', 'callback id', 'callback original mid', 'callback payload'] as const)(
+    'rejects malformed %s without effects or aliasing a valid Unicode key', async (field) => {
+      const makeBody = (key: string, suffix = '') => {
+        const value = JSON.parse(field.startsWith('callback') ? callback : text()) as {
+          message: { body: { mid: string }; link?: { type: string; message: { mid: string } } };
+          callback?: { callback_id: string; payload: string };
+        };
+        if (field === 'message mid') value.message.body.mid = key;
+        if (field === 'reply mid') {
+          value.message.body.mid = `reply-${suffix}`;
+          value.message.link = { type: 'reply', message: { mid: key } };
+        }
+        if (field === 'callback id') value.callback!.callback_id = key;
+        if (field === 'callback original mid') value.message.body.mid = key;
+        if (field === 'callback payload') value.callback!.payload = key;
+        return JSON.stringify(value);
+      };
+      const app = gateway();
+      for (const invalid of ['key\u0000', 'key\ud800', 'key\udc00']) {
+        const response = await post(app, makeBody(invalid));
+        expect(response.statusCode).toBe(400);
+        expect(response.json()).toEqual({ code: 'invalid_body' });
+        expect(await snapshot()).toEqual(empty);
+      }
+      for (const [key, suffix] of [['key\ufffd', 'replacement'], ['key\ud83d\ude80', 'astral']] as const) {
+        expect((await post(app, makeBody(key, suffix))).statusCode).toBe(200);
+      }
+      expect(await snapshot()).toEqual({ users: 1, events: 2, work: 1, next: '3' });
+      expect((await postgres.pool.query('SELECT provider_event_key FROM public.inbound_events')).rows)
+        .toHaveLength(2);
+    },
+  );
   test('config fence and database fence refuse before identity/event/work writes', async () => {
     expect((await post(gateway({ RESTORE_FENCE: 'on' }))).statusCode).toBe(503);
     await postgres.pool.query('UPDATE public.system_state SET restore_fence = true');

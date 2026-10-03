@@ -147,6 +147,11 @@ describe('PostgreSQL roles and transaction boundaries', () => {
       .rejects.toMatchObject({ code: 'DB_TIMEOUT' });
   });
 
+  test('classifies PostgreSQL invalid UTF-8 text input as typed invalid input', async () => {
+    await expect(database.systemTransaction('worker', (tx) => tx.query('SELECT $1::text', ['key\u0000'])))
+      .rejects.toMatchObject({ code: 'DB_INVALID_INPUT', message: 'Database input invalid' });
+  });
+
   test('gateway deadline covers cumulative statements and rolls back prior effects', async () => {
     const started = performance.now();
     await expect(database.systemTransaction('gateway', async (tx) => {

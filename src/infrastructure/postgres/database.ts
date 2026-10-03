@@ -32,7 +32,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function databaseError(error: unknown): DatabaseError {
   if (error instanceof DatabaseError) return error;
   const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
-  if (code === '22007' || code === '22008' || code === '22023' || code === '22P05' || code === '22P02') {
+  if (code === '22007' || code === '22008' || code === '22021' || code === '22023' || code === '22P05' || code === '22P02') {
     return new DatabaseError('DB_INVALID_INPUT', 'Database input invalid');
   }
   if (code === '57014' || code === '55P03') return new DatabaseError('DB_TIMEOUT', 'Database operation timed out');

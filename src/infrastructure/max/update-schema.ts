@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+const invalidKeyCodeUnit = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+const validKeyText = (value: string): boolean => !invalidKeyCodeUnit.test(value);
+const providerKey = z.string().min(1).refine(validKeyText);
+
 const signedInt64 = z.union([
   z.string().refine((value) => {
     if (value.length > (value.startsWith('-') ? 20 : 19)) return false;
@@ -17,7 +21,7 @@ const user = z.object({
 });
 
 const messageBody = z.object({
-  mid: z.string().min(1),
+  mid: providerKey,
   text: z.string().nullable().optional(),
   attachments: z.array(z.unknown()).nullable().optional(),
 });
@@ -26,7 +30,7 @@ const message = z.object({
   sender: user.optional(),
   recipient: z.object({ chat_id: signedInt64.nullable(), chat_type: z.string() }),
   body: messageBody.nullable(),
-  link: z.object({ type: z.string(), message: z.object({ mid: z.string().min(1) }) }).nullable().optional(),
+  link: z.object({ type: z.string(), message: z.object({ mid: providerKey }) }).nullable().optional(),
 });
 
 const envelope = z.object({ update_type: z.string() });
@@ -40,7 +44,7 @@ export const maxUpdateSchemas = {
   message_callback: z.object({
     update_type: z.literal('message_callback'),
     ...timed,
-    callback: z.object({ callback_id: z.string().min(1), timestamp: signedInt64, payload: z.string().optional(), user }),
+    callback: z.object({ callback_id: providerKey, timestamp: signedInt64, payload: z.string().refine(validKeyText).optional(), user }),
     message: message.nullable(),
   }),
 };

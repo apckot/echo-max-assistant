@@ -97,6 +97,20 @@ describe('MAX update mapper', () => {
     expect(() => mapMaxUpdate({ update_type: 'message_created', timestamp: 1, message: { body: { mid: 'secret' } } })).toThrowError('invalid_max_update');
   });
 
+  it.each([
+    ['message mid', (key: string) => update({ message: message({ body: body(key) }) })],
+    ['reply mid', (key: string) => update({ message: message({ link: { type: 'reply', message: { mid: key } } }) })],
+    ['callback id', (key: string) => ({ update_type: 'message_callback', timestamp: 1, callback: { callback_id: key, user: user('12'), timestamp: 2 }, message: message() })],
+    ['callback original mid', (key: string) => ({ update_type: 'message_callback', timestamp: 1, callback: { callback_id: 'cb', user: user('12'), timestamp: 2 }, message: message({ body: body(key) }) })],
+    ['callback payload', (key: string) => ({ update_type: 'message_callback', timestamp: 1, callback: { callback_id: 'cb', user: user('12'), timestamp: 2, payload: key }, message: message() })],
+  ])('rejects malformed Unicode and NUL in %s before encoding', (_field, makeUpdate) => {
+    for (const invalid of ['bad\ud800', 'bad\udc00', 'bad\u0000']) {
+      expect(() => mapMaxUpdate(makeUpdate(invalid))).toThrowError('invalid_max_update');
+    }
+    expect(mapMaxUpdate(makeUpdate('good\ufffd'))).toMatchObject({ status: 'normalized' });
+    expect(mapMaxUpdate(makeUpdate('good\ud83d\ude80'))).toMatchObject({ status: 'normalized' });
+  });
+
   it('uses length-prefixed UTF-8 fields without delimiter collisions', () => {
     const a = mapMaxUpdate({ update_type: 'bot_started', timestamp: 4, user: user('1'), chat_id: '23' });
     const b = mapMaxUpdate({ update_type: 'bot_started', timestamp: 4, user: user('12'), chat_id: '3' });
