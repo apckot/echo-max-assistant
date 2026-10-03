@@ -29,14 +29,15 @@ export class PostgresFencedConversation {
 
       const { value, disposition } = await callback(tx);
       const availableAt = disposition.kind === 'sleep' ? 'infinity'
-        : disposition.kind === 'ready' || disposition.kind === 'retry' ? disposition.availableAt ?? null : null;
+        : disposition.kind === 'ready' || disposition.kind === 'retry' || disposition.kind === 'defer'
+          ? disposition.availableAt ?? null : null;
       // Last business mutation: verify the live token BEFORE releasing it. Locks
       // remain held through COMMIT; no callback or heartbeat follows this guard.
       const finalized = await tx.query(`UPDATE public.conversation_work SET
         state = CASE WHEN $5 = 'keep' THEN 'leased' WHEN $5 = 'retry' THEN 'retry' ELSE 'ready' END,
         available_at = CASE WHEN $5 = 'keep' THEN available_at ELSE COALESCE($6::timestamptz, clock_timestamp()) END,
-        attempt_count = CASE WHEN $5 = 'keep' THEN attempt_count ELSE $7::integer END,
-        last_error_code = CASE WHEN $5 = 'keep' THEN last_error_code ELSE $8::text END,
+        attempt_count = CASE WHEN $5 IN ('keep', 'defer') THEN attempt_count ELSE $7::integer END,
+        last_error_code = CASE WHEN $5 IN ('keep', 'defer') THEN last_error_code ELSE $8::text END,
         lease_owner = CASE WHEN $5 = 'keep' THEN lease_owner ELSE NULL END,
         lease_until = CASE WHEN $5 = 'keep' THEN lease_until ELSE NULL END
         WHERE conversation_id = $1::uuid AND user_id = $2::uuid

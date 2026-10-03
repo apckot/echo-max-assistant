@@ -2,6 +2,7 @@
 export type WorkDisposition =
   | { readonly kind: 'keep' }
   | { readonly kind: 'ready'; readonly availableAt?: Date }
+  | { readonly kind: 'defer'; readonly availableAt: Date }
   | { readonly kind: 'sleep' }
   | { readonly kind: 'retry'; readonly availableAt: Date;
       readonly attemptCount: number; readonly lastErrorCode: string };
