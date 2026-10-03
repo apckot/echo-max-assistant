@@ -1,6 +1,6 @@
 # Stage 1 progress
 
-Current status: **checkpoint 15 complete on 2026-10-03: iterations 11–15 implemented, independently reviewed and verified in a clean clone. STOP: iteration 16 requires user acceptance. Publication evidence is reported separately below.**
+Current status: **checkpoint20 implementation complete; per-task and whole-block reviews approved; clean-clone verification passed. STOP: no21+ without user acceptance. Final scan and publication follow this documentation commit.**
 
 The coordinator adds a row only after independent review.
 
@@ -22,6 +22,14 @@ The coordinator adds a row only after independent review.
 | 14 | accepted | a41efcf4bdd0a762852ab54d2b75c3029c1887a3 | Independent spec/quality review approved, no findings | Pinned verify160/160 + functional95/95; atomic work/NOTIFY, rollback and lease preservation | Next: durable ingress checkpoint |
 | 15a | accepted substep | 3d560bf896b0a0e965b2cb2cca6fa653ef804e2c | Independent deadline/concurrency review approved; uncertain COMMIT probe passed | Pinned verify166/166 + functional101/101; total150ms and pool lifecycle | Next: 15b guarded HTTP ingress |
 | 15 | accepted | 4ba92dac66c1ef66d295b172ee1f2a0a8d53fd07 | Key Unicode/NUL finding fixed in 398a63976e44cdfaa30d3e4bfca6e300daf8d1fc; fresh scoped rereview PASS | Final verify199/199 + functional102/102; guarded durable HTTP, restart/lost responses | Checkpoint15: STOP for user acceptance |
+| 16 | accepted | b2160f8ff1f7fdcaa0cc3948a1dcebd8aef6d495 | Renewal lock-expiry race fixed in3b17b6e90879e5f80b9df17abc5336f66d1e9833; fresh rereview clean | Default verify207/207 +functional110/110; typecheck/guard/build pass; environmental timeout failures reproduced on checkpoint15 and resolved after other test load cleared | Next: fence stale workers |
+| 17 | accepted | 3c55afe329b40b5d95d0837773f3db0e466f616e | Independent spec/quality review clean | Verify226/226 +functional129/129; token, expiry, tenant rollback and lock-order evidence | Next: conversation ordering |
+| 18 | accepted | 0496cc20d9d32ae96b0e9d09f84854d71cb2a0c3 | Independent spec/quality review clean | Verify236/236 +functional139/139; ordered head, preparing, terminal advance, sleep/wake, no ABA | Next: deterministic handler |
+| 19 | accepted | 36fe9c09e746982cc8548ffd68ae27cf6a0bd662 | Independent spec/quality review clean | Verify243/243 +functional139/139; pure deterministic result and privacy tests | Next:20A durable result |
+| 20A | accepted substep | 22dde5058b3b0b60df4873f3625b41ed9023e339 | Independent schema/atomicity/deadline review clean | Verify264/264 +functional150/150; complete durable receipt, rollback and handler deadline | Next:20B retries/recovery |
+| 20B | accepted substep | a54e450a201d58bdcc70b16bfe286bbaddeabda8 | Independent recovery/ordering review clean | Verify277/277 +functional162/162; five failures, preserved backoff, stale recovery and crash/ack-loss tests | Next:20C runtime/restart |
+| 20C1 | accepted substep | 85bc6442e9b23439c49a58eaa7c683ac7d8e119a | Independent review clean; test barrier cleanup fixed in adfeaca3f762f21f222203290f296696ce26e2cf and independently rereviewed | Final fix verify284/284 +functional169/169; bounded worker operations, acquisition and COMMIT uncertainty | Next:20C2 runtime/restart |
+| 20 | accepted implementation | 5caeec709a27238f9d47092327ce8367562e7d02 | Independent runtime/fence/restart review approved, no findings | Verify293/293 +functional173/173; typecheck/architecture/build pass | Checkpoint20: STOP for user acceptance |
 
 Iteration 1 fixes: `9e4cb912d42100784c3955769e335072c3cf1691` (pin npm 11.16.0), `f9b39bd0fe3f790d974230790f428edbc1137723` (keep report local). Both independently re-reviewed. No open findings.
 
@@ -245,3 +253,81 @@ npm exec --yes --package=node@22.23.3 --package=npm@11.16.0 -- sh -c 'npm ci && 
 |20|Worker crash/retry/dead recovery and event-to-receipt checkpoint|
 
 Publication procedure: scan the final documentation HEAD and all reachable history with pinned Gitleaks 8.30.1, without baseline or exclusions; then the authorized `git push -u origin codex/stage-1-foundation`, followed by independent `git ls-remote` comparison. Because these run after this documentation commit, the final SHA, scan result and remote SHA are recorded in the coordinator's final response and local `checkpoint-15-history-final.log` / `checkpoint-15-publication.log`. No publication result is claimed in advance here.
+
+
+## Checkpoint 20 — 2026-10-03
+
+**STOP. Iterations 21 and later have not started and require user acceptance.** Checkpoint15 was accepted and the user authorized16–20, including clean-clone checks, full-history Gitleaks and push. Each iteration/substep has its own implementation commit, tests and independent review; the two corrections have separate fix commits and fresh scoped rereviews. Commit hashes and per-step verification appear in the table above.
+
+### Working result
+
+- `ConversationQueue.claim` uses bounded `FOR UPDATE SKIP LOCKED` batches, internal IDs, owner UUID and increasing generation. Defaults are60s lease and20s renewal. Renewal obtains the work-row lock before checking expiry against a fresh database clock; it cannot revive a lease that expired while waiting.
+- Fenced tenant processing locks conversation then work, checks owner/generation/expiry, and repeats the lease guard before committing business changes and releasing the lease. Locks remain held through COMMIT. Old workers, wrong tenants and stale recovery attempts cannot change the next worker's effects. Expiry is checked at finalization, not at a fictional exact COMMIT wall-clock instant.
+- Only `next_apply_sequence` is actionable. A preparing head delays the conversation without spending retries; terminal heads advance safely. Missing allocated heads fail closed. Idle work sleeps in its existing row, retaining generation to avoid delete/recreate token reuse.
+- `FoundationInboundHandler` is pure and deterministic: fixed text acknowledgement, voice capability-unavailable result, stale-button response and no lifecycle message. It makes no external call and does not copy private input text into responses.
+- Processing atomically persists the complete typed result and ordered neutral drafts in an immutable tenant-protected receipt, marks the event and advances the pointer/work state. Receipt uniqueness and identity checks make restart and uncertain COMMIT recovery idempotent. There is no delivery/outbox implementation at this checkpoint.
+- Only a proven pure-handler failure charges the same current event, through a fresh fenced recovery transaction after rollback. Exponential backoff with jitter survives later inbound wakeups. On the fifth failure, one terminal error result is stored and the next event is unblocked. Preparation failure terminates directly; database errors, expired leases and uncertain commits do not spend handler attempts.
+- `createWorker(environment)` validates config, creates worker-only resources and starts bounded periodic scanning. It limits claims to free concurrency slots and retains a slot until processing and any outstanding renewal settle. `stop()` is idempotent, stops admission and timers, drains operations and actually closes the pool. Immediate stop suppresses the queued initial claim.
+- Every production worker transaction uses the protected restore guard before other locks. The guard holds a system-state share lock through COMMIT, fails closed on a missing singleton or enabled fence, and exposes no unrestricted state-table access. Fence activation waits for already-admitted transactions; transactions admitted afterward reject.
+
+### Verification and review
+
+Verified code commit: `5caeec709a27238f9d47092327ce8367562e7d02`.
+Verified/reviewed final implementation tree: `2cee29b0aee935a3abc2e0b66b6e97691b9784d6`.
+The final checkpoint documentation commit changes only `docs/progress/`.
+
+Final working-checkout gate: `npm run verify` passed293/293 tests in25 files, including typecheck, architecture guard and build; separate functional suite passed173/173 in14 files. Runtime: pinned Node22.23.3/npm11.16.0 and disposable PostgreSQL17 containers.
+
+A new local clone used no reused `node_modules` or build output. `npm ci` installed284 packages and audited285 with0 reported vulnerabilities. Clean-clone verification:
+
+| Check | Result |
+| --- | --- |
+| Typecheck | Exit0 |
+| Architecture guard | Exit0; boundaries OK |
+| Tests inside verify | 293/293 in25 files |
+| Build | Exit0 |
+| Separate functional suite | 173/173 in14 files |
+| Clone `git status --porcelain` | Empty |
+
+[Full clean-clone output](checkpoint-20-verification.log). [Independent reviews](checkpoint-20-review.md). The final whole-block reviewer approved16–20 with no Critical, Important or Minor findings. All nine scope/evidence exclusions received explicit controller dispositions in the review archive; none is an unresolved finding in the authorized block.
+
+Existing dependency warnings remain: transitive `glob@10.5.0` deprecation and four packages with install scripts not covered by npm allowScripts. No dependency or script-approval changes were introduced by this block. Local secret-ignore checks pass for `.env`, `.env.local` and `.env.production`; `.env.example` remains tracked and unignored.
+
+The iteration16 review found a renewal lock/expiry race; the separate fix locks first and tests expiry afterward. During20C2 validation, early fixture failure exposed two20C1 test barriers that could skip cleanup and leak a global pool spy. A separate one-file fix races readiness against transaction settlement, puts cleanup in `finally`, and adds two deterministic early-failure regressions. Scoped rereviews report both corrections addressed and no new breakage. The RED harness reproduction is described in the implementer report; no separate RED transcript was retained. Its focused GREEN23/23 and controller full gate284/169 are recorded.
+
+Initial16 timeout failures under competing Docker test load reproduced on the already-accepted15 control. The unchanged candidate passed after contention cleared. The later20C1 fixture issue was diagnosed separately. No production deadline or global test timeout was increased to hide either problem.
+
+### Reproduce
+
+Docker must be running. A fresh checkout of the exact verified code:
+
+```sh
+CHECKPOINT_DIR=$(mktemp -d)
+git clone --branch codex/stage-1-foundation git@github.com:apckot/echo-max-assistant.git "$CHECKPOINT_DIR/checkout"
+cd "$CHECKPOINT_DIR/checkout"
+git checkout --detach 5caeec709a27238f9d47092327ce8367562e7d02
+npm exec --yes --package=node@22.23.3 --package=npm@11.16.0 -- sh -c 'npm ci && npm run verify && npm run test:functional'
+git check-ignore .env .env.local .env.production
+if git check-ignore .env.example; then exit 1; fi
+git ls-files --error-unmatch .env.example
+```
+
+### Decisions and limits
+
+- Ruling: persist full typed results and ordered drafts in receipts during20; actual outbox/delivery starts21. This follows the staged20 event-to-receipt/21 outbox boundary. Cost:21 must atomically materialize both preexisting receipt drafts and new results using stable event/type/ordinal dedupe, without rerunning handlers. No completed delivery guarantee is claimed here.
+- Ruling: split20 into20A durable result/deadline,20B retries/recovery and20C runtime to keep changes reviewable. Cost: two additional implementation commits/reviews/full gates. Ruling: split20C again into20C1 bounded database operations and20C2 runtime because existing worker acquisition/callback/COMMIT waits could not support truthful bounded shutdown. Cost: one additional implementation commit/review/full gate. Architecture and authorized scope remain unchanged.
+- Handler timeout is configurable up to5s and strictly below renewal, which is strictly below lease duration. Production worker transaction/acquisition budget T equals the renewal interval. Operation drain is bounded by2T with a responsive event loop; conservative resource-drain allowance is3T (60s at defaults), plus local teardown/scheduling. This is not a real-time OS SLA. Caller-supplied unbounded test/custom ports do not inherit production guarantees.
+- Expiry invalidates transaction access and discards its connection. PostgreSQL can finish an already-running statement before detecting disconnect, bounded by the existing5s statement timeout; pool closure does not imply instantaneous backend rollback. An already-processed COMMIT can remain uncertain and is resolved through durable idempotency. Real PostgreSQL restart tests verify precommit abandonment, eventual backend cleanup, unchanged attempts and receipt identity across naturally reclaimed leases.
+- Metrics/readiness26, reconciliation27, restore procedure32, process/SIGTERM packaging33, load acceptance34 and real MAX canary35 remain future work. There is no throughput/SLO claim, production deployment, webhook registration, live MAX send, voice download, STT or AI integration in this block. Source `echo-secretary` was used read-only by this work.
+
+### Next five iterations — wait for acceptance
+
+| Iteration | Planned result |
+| --- | --- |
+|21|Transactional outbox, including materialization of durable checkpoint20 drafts|
+|22|MAX client certainty: sent, not_sent, uncertain|
+|23|Delivery attempts; retries only for proven not_sent|
+|24|Cancellation/stop and delivery fencing|
+|25|Delivery runtime; signed webhook to one MAX reply checkpoint|
+
+Publication procedure: pinned Gitleaks8.30.1 scans the final documentation HEAD and all reachable current-branch history without baseline or exclusions. Authorized push is followed by independent `git ls-remote`, clean-status and ahead/behind checks. Final scan/push/remote evidence is reported after execution; this document does not preclaim those results.
