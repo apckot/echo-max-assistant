@@ -25,7 +25,7 @@ export interface Database {
   close(): Promise<void>;
 }
 
-type DatabaseUrls = Record<SystemRole, string> & { poolSize?: number };
+type DatabaseUrls = Partial<Record<SystemRole, string>> & { poolSize?: number };
 const roles: readonly SystemRole[] = ['gateway', 'worker', 'delivery', 'scheduler'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -43,9 +43,11 @@ function databaseError(error: unknown): DatabaseError {
 }
 
 export function createDatabase(urls: DatabaseUrls): Database {
-  for (const role of roles) {
+  const configuredRoles = roles.filter((role) => urls[role] !== undefined);
+  if (!configuredRoles.length) throw new DatabaseError('DB_ROLE_MISMATCH', 'Database role configuration invalid');
+  for (const role of configuredRoles) {
     try {
-      const url = new URL(urls[role]);
+      const url = new URL(urls[role]!);
       if (!['postgres:', 'postgresql:'].includes(url.protocol) ||
         decodeURIComponent(url.username) !== `echo_${role}` || url.searchParams.has('user')) {
         throw new Error('role mismatch');
@@ -54,60 +56,100 @@ export function createDatabase(urls: DatabaseUrls): Database {
       throw new DatabaseError('DB_ROLE_MISMATCH', 'Database role configuration invalid');
     }
   }
-  const pools = Object.fromEntries(roles.map((role) => [role, new Pool({
+  const pools = Object.fromEntries(configuredRoles.map((role) => [role, new Pool({
     connectionString: urls[role], max: urls.poolSize ?? 10,
+    ...(role === 'gateway' ? { connectionTimeoutMillis: 150 } : {}),
   })])) as Record<SystemRole, Pool>;
   let closed = false;
 
   async function transaction<T>(role: SystemRole, userId: UserId | undefined, fn: (tx: DbTx) => Promise<T>): Promise<T> {
     if (closed) throw new DatabaseError('DB_CLOSED', 'Database is closed');
-    if (!roles.includes(role)) throw new DatabaseError('DB_FAILURE', 'Database operation failed');
+    if (!configuredRoles.includes(role)) throw new DatabaseError('DB_FAILURE', 'Database operation failed');
     if (userId !== undefined && (!uuid.test(userId) || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(userId))) {
       throw new DatabaseError('DB_INVALID_USER_ID', 'Internal user ID required');
     }
-    let client: PoolClient;
-    try {
-      client = await pools[role].connect();
-    } catch (error) {
-      throw databaseError(error);
-    }
+    const deadline = role === 'gateway' ? performance.now() + 150 : Infinity;
+    let client: PoolClient | undefined;
+    let released = false;
+    let expired = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new DatabaseError('DB_TIMEOUT', 'Database operation timed out');
+    let rejectDeadline: (error: DatabaseError) => void;
+    const deadlineReached = new Promise<never>((_resolve, reject) => { rejectDeadline = reject; });
+    const release = (discard: boolean) => {
+      if (client && !released) {
+        released = true;
+        client.release(discard);
+      }
+    };
+    const expire = () => {
+      expired = true;
+      active = false;
+      // Destroy the session instead of waiting for SQL or the application callback.
+      // PostgreSQL rolls back an open transaction when its connection closes.
+      release(true);
+      rejectDeadline(timeout);
+    };
+    const checkDeadline = () => {
+      if (expired || performance.now() >= deadline) {
+        if (!expired) expire();
+        throw timeout;
+      }
+    };
     let active = true;
     let begun = false;
     let discardClient = false;
+    const run = async () => {
+      try {
+        client = await pools[role].connect().catch((error: unknown) => { throw databaseError(error); });
+        // A pool acquisition can finish after the caller's deadline. Never use it.
+        checkDeadline();
+        await client.query('BEGIN');
+        begun = true;
+        if (userId !== undefined) {
+          await client.query("SELECT set_config('app.user_id', $1, true)", [userId]);
+        }
+        await client.query(role === 'gateway'
+          ? "SET LOCAL statement_timeout = '150ms'" : "SET LOCAL statement_timeout = '5s'");
+        await client.query(role === 'gateway'
+          ? "SET LOCAL lock_timeout = '100ms'" : "SET LOCAL lock_timeout = '1s'");
+        const tx: DbTx = {
+          async query<T extends QueryResultRow = QueryResultRow>(sql: string, params?: readonly unknown[]): Promise<T[]> {
+            if (!active) throw new DatabaseError('DB_CLOSED', 'Transaction is closed');
+            try {
+              checkDeadline();
+              const result = await client!.query<T>(sql, params ? [...params] : []);
+              return result.rows;
+            } catch (error) {
+              throw databaseError(error);
+            }
+          },
+        };
+        checkDeadline();
+        const result = await fn(tx);
+        checkDeadline();
+        active = false;
+        // COMMIT acknowledgement can be lost; callers must retry idempotently.
+        await client.query('COMMIT');
+        checkDeadline();
+        return result;
+      } catch (error) {
+        active = false;
+        if (begun && !expired) {
+          try { await client!.query('ROLLBACK'); } catch { discardClient = true; }
+        }
+        if (expired) throw timeout;
+        if (error instanceof DatabaseError || !(error instanceof Error) || !('code' in error)) throw error;
+        throw databaseError(error);
+      } finally {
+        release(discardClient || expired);
+      }
+    };
+    if (role === 'gateway') timer = setTimeout(expire, Math.max(0, deadline - performance.now()));
     try {
-      await client.query('BEGIN');
-      begun = true;
-      if (userId !== undefined) {
-        await client.query("SELECT set_config('app.user_id', $1, true)", [userId]);
-      }
-      await client.query(role === 'gateway'
-        ? "SET LOCAL statement_timeout = '150ms'" : "SET LOCAL statement_timeout = '5s'");
-      await client.query(role === 'gateway'
-        ? "SET LOCAL lock_timeout = '100ms'" : "SET LOCAL lock_timeout = '1s'");
-      const tx: DbTx = {
-        async query<T extends QueryResultRow = QueryResultRow>(sql: string, params?: readonly unknown[]): Promise<T[]> {
-          if (!active) throw new DatabaseError('DB_CLOSED', 'Transaction is closed');
-          try {
-            const result = await client.query<T>(sql, params ? [...params] : []);
-            return result.rows;
-          } catch (error) {
-            throw databaseError(error);
-          }
-        },
-      };
-      const result = await fn(tx);
-      active = false;
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      active = false;
-      if (begun) {
-        try { await client.query('ROLLBACK'); } catch { discardClient = true; }
-      }
-      if (error instanceof DatabaseError || !(error instanceof Error) || !('code' in error)) throw error;
-      throw databaseError(error);
+      return await Promise.race([run(), deadlineReached]);
     } finally {
-      client.release(discardClient);
+      clearTimeout(timer);
     }
   }
 
@@ -119,7 +161,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
     },
     async close() {
       closed = true;
-      await Promise.all(roles.map((role) => pools[role].end()));
+      await Promise.all(configuredRoles.map((role) => pools[role].end()));
     },
   };
 }

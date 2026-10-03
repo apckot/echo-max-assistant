@@ -36,6 +36,8 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     await postgres.pool.query(`ALTER DATABASE "${databaseName.replaceAll('"', '""')}" OWNER TO echo_migrator`);
     migrator = new Pool({ connectionString: urls.migrator });
     await runMigrations(migrator, migrationDirectory);
+    await migrator.query('CREATE TABLE public.deadline_probe (id int)');
+    await migrator.query('GRANT INSERT ON public.deadline_probe TO echo_gateway');
     database = createDatabase({
       gateway: urls.gateway,
       worker: urls.worker,
@@ -143,6 +145,119 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     expect(rows[0]).toEqual({ statement_timeout: '150ms' });
     await expect(database.systemTransaction('gateway', (tx) => tx.query('SELECT pg_sleep(0.2)')))
       .rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+  });
+
+  test('gateway deadline covers cumulative statements and rolls back prior effects', async () => {
+    const started = performance.now();
+    await expect(database.systemTransaction('gateway', async (tx) => {
+      await tx.query('INSERT INTO public.deadline_probe VALUES (1)');
+      await tx.query('SELECT pg_sleep(0.09)');
+      await tx.query('SELECT pg_sleep(0.09)');
+    })).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+    expect(performance.now() - started).toBeLessThan(500);
+    expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
+    expect(await database.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy')))
+      .toEqual([{ healthy: 1 }]);
+  });
+
+  test('suspended callback expires, releases the only connection, and cannot write or commit later', async () => {
+    let resume!: () => void;
+    let entered!: () => void;
+    const suspended = new Promise<void>((resolve) => { resume = resolve; });
+    const ready = new Promise<void>((resolve) => { entered = resolve; });
+    let lateQuery: Promise<unknown> | undefined;
+    const pending = database.systemTransaction('gateway', async (tx) => {
+      await tx.query('INSERT INTO public.deadline_probe VALUES (2)');
+      entered();
+      await suspended;
+      lateQuery = tx.query('INSERT INTO public.deadline_probe VALUES (3)');
+      await lateQuery;
+    });
+    const rejected = expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+    await ready;
+    // Release after a fixed delay so the pre-deadline implementation fails cleanly too.
+    const release = setTimeout(resume, 250);
+    await rejected;
+    expect(await database.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy')))
+      .toEqual([{ healthy: 1 }]);
+    clearTimeout(release);
+    resume();
+    await new Promise((resolve) => setImmediate(resolve));
+    await expect(lateQuery).rejects.toMatchObject({ code: 'DB_CLOSED' });
+    expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
+  });
+
+  test('queued pool acquisition consumes the same gateway deadline and never starts expired work', async () => {
+    const originalConnect = Pool.prototype.connect;
+    let releaseConnection!: () => void;
+    let acquired!: () => void;
+    const held = new Promise<void>((resolve) => { releaseConnection = resolve; });
+    const ready = new Promise<void>((resolve) => { acquired = resolve; });
+    // Hold the real, checked-out client before handing it to the transaction.
+    const connect = vi.spyOn(Pool.prototype, 'connect').mockImplementationOnce(async function (this: Pool) {
+      const client = await originalConnect.call(this);
+      acquired();
+      await held;
+      return client;
+    });
+    let callbackRan = false;
+    const first = database.systemTransaction('gateway', async () => { callbackRan = true; });
+    const firstRejected = expect(first).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+    await ready;
+    const second = database.systemTransaction('gateway', async () => { callbackRan = true; });
+    const secondRejected = expect(second).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+    const release = setTimeout(releaseConnection, 250);
+    try {
+      await Promise.all([firstRejected, secondRejected]);
+      expect(callbackRan).toBe(false);
+    } finally {
+      clearTimeout(release);
+      releaseConnection();
+      connect.mockRestore();
+      await Promise.allSettled([first, second]);
+    }
+    expect(await database.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy')))
+      .toEqual([{ healthy: 1 }]);
+  });
+
+  test('gateway-only database needs no other role credentials and closes after expiring suspended work', async () => {
+    const gatewayOnly = createDatabase({ gateway: urls.gateway, poolSize: 1 });
+    let resume!: () => void;
+    let entered!: () => void;
+    const suspended = new Promise<void>((resolve) => { resume = resolve; });
+    const ready = new Promise<void>((resolve) => { entered = resolve; });
+    const pending = gatewayOnly.systemTransaction('gateway', async (tx) => {
+      await tx.query('INSERT INTO public.deadline_probe VALUES (4)');
+      entered();
+      await suspended;
+    });
+    const rejected = expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+    await ready;
+    const started = performance.now();
+    try {
+      await gatewayOnly.close();
+      expect(performance.now() - started).toBeLessThan(500);
+      await rejected;
+      await expect(gatewayOnly.systemTransaction('gateway', (tx) => tx.query('SELECT 1')))
+        .rejects.toMatchObject({ code: 'DB_CLOSED' });
+    } finally { resume(); }
+    expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
+  });
+
+  test('elapsed gateway deadline prevents commit even when a callback blocks timer delivery', async () => {
+    await expect(database.systemTransaction('gateway', async (tx) => {
+      await tx.query('INSERT INTO public.deadline_probe VALUES (5)');
+      const until = performance.now() + 170;
+      while (performance.now() < until) { /* Deliberately block the event loop. */ }
+    })).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+    expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
+  });
+
+  test('non-gateway callbacks retain their existing transaction lifetime', async () => {
+    expect(await database.systemTransaction('worker', async (tx) => {
+      await tx.query('SELECT pg_sleep(0.18)');
+      return tx.query('SELECT 1 AS healthy');
+    })).toEqual([{ healthy: 1 }]);
   });
 
   test('rejects missing or malformed internal user ids before invoking tenant work', async () => {
