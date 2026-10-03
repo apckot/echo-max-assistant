@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { runMigrations } from '../../../src/infrastructure/postgres/migrations.js';
 import { startPostgres } from '../../support/postgres.js';
+import { validateInboundPayload } from '../../../src/modules/intake/domain/inbound-event.js';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const migrationDirectory = fileURLToPath(new URL('../../../migrations', import.meta.url));
@@ -159,5 +160,26 @@ describe('inbound event schema', () => {
     expect(stored.rows[0].provider_event_key).toBe(providerEventKey);
     await expect(insert(row({ provider_event_key: providerEventKey, sequence: 21 })))
       .rejects.toMatchObject({ code: '23505' });
+  });
+
+  test.each([
+    ['button', { kind: 'button', callbackPayload: 'a'.repeat(131_031) },
+      { kind: 'button', callbackPayload: 'a'.repeat(131_032) }],
+    ['button', { kind: 'button', callbackPayload: '😀\n\\"' + 'a'.repeat(130_996), replyToMessageId: 'r' },
+      { kind: 'button', callbackPayload: '😀\n\\"' + 'a'.repeat(130_997), replyToMessageId: 'r' }],
+    ['voice', { kind: 'voice', media: { url: 'https://x/😀\n', token: 'a'.repeat(130_979) }, replyToMessageId: 'r' },
+      { kind: 'voice', media: { url: 'https://x/😀\n', token: 'a'.repeat(130_980) }, replyToMessageId: 'r' }],
+  ] as const)('matches domain and PostgreSQL at 128 KiB for case %#', async (kind, atLimit, overLimit) => {
+    expect(validateInboundPayload(atLimit)).toBe(true);
+    expect(validateInboundPayload(overLimit)).toBe(false);
+    const sizes = await postgres.pool.query(
+      'SELECT octet_length($1::jsonb::text) AS at_limit, octet_length($2::jsonb::text) AS over_limit',
+      [JSON.stringify(atLimit), JSON.stringify(overLimit)],
+    );
+    expect(sizes.rows[0]).toEqual({ at_limit: 131_072, over_limit: 131_073 });
+    const sequence = kind === 'voice' ? 52 : atLimit.replyToMessageId ? 51 : 50;
+    await insert(row({ provider_event_key: `boundary-${sequence}`, sequence, kind, payload: atLimit }));
+    await expect(insert(row({ provider_event_key: `over-boundary-${sequence}`, sequence: sequence + 10, kind, payload: overLimit })))
+      .rejects.toMatchObject({ code: '23514' });
   });
 });

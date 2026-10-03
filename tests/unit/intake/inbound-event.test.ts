@@ -29,4 +29,21 @@ describe('inbound payload', () => {
   test('rejects normalized payloads over 128 KiB', () => {
     expect(validateInboundPayload({ kind: 'button', callbackPayload: 'a'.repeat(129 * 1024) })).toBe(false);
   });
+
+  test('uses persisted JSONB bytes at the button boundary', () => {
+    expect(validateInboundPayload({ kind: 'button', callbackPayload: 'a'.repeat(131_031) })).toBe(true);
+    expect(validateInboundPayload({ kind: 'button', callbackPayload: 'a'.repeat(131_032) })).toBe(false);
+  });
+
+  test('counts escaped Unicode and optional fields at the persisted boundary', () => {
+    const callbackPayload = '😀\n\\"' + 'a'.repeat(130_996);
+    expect(validateInboundPayload({ kind: 'button', callbackPayload, replyToMessageId: 'r' })).toBe(true);
+    expect(validateInboundPayload({ kind: 'button', callbackPayload: callbackPayload + 'a', replyToMessageId: 'r' })).toBe(false);
+  });
+
+  test('counts nested voice media at the persisted boundary', () => {
+    const token = 'a'.repeat(130_979);
+    expect(validateInboundPayload({ kind: 'voice', media: { url: 'https://x/😀\n', token }, replyToMessageId: 'r' })).toBe(true);
+    expect(validateInboundPayload({ kind: 'voice', media: { url: 'https://x/😀\n', token: token + 'a' }, replyToMessageId: 'r' })).toBe(false);
+  });
 });

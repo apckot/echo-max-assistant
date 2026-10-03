@@ -62,6 +62,10 @@ export function validateInboundPayload(value: unknown): value is InboundPayload 
         (payload.lifecycleType === 'started' || payload.lifecycleType === 'stopped');
       break;
   }
+  // jsonb::text adds one space after each comma and colon. Every supported
+  // object has two required keys; voice also has a two-key media object.
+  const jsonbSeparatorBytes = (payload.kind === 'voice' ? 6 : 3) +
+    (payload.replyToMessageId === undefined ? 0 : 2);
   return valid && (payload.replyToMessageId === undefined || nonempty(payload.replyToMessageId)) &&
-    Buffer.byteLength(JSON.stringify(value), 'utf8') <= 128 * 1024;
+    Buffer.byteLength(JSON.stringify(value), 'utf8') + jsonbSeparatorBytes <= 128 * 1024;
 }
