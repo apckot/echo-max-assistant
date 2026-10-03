@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { ProcessInbound, HandlerDeadlineError, type AtomicProcessingPort } from '../../../src/modules/intake/application/process-inbound.js';
+import { ProcessInbound, HandlerDeadlineError, retryDelayMs, type AtomicProcessingPort } from '../../../src/modules/intake/application/process-inbound.js';
 import type { ConversationLease } from '../../../src/modules/intake/application/conversation-queue.js';
 const lease = {} as ConversationLease;
 const atomic: AtomicProcessingPort = { run: async (_lease, handle) => ({ kind: 'actionable',
@@ -35,4 +35,10 @@ test('honors a configured shorter deadline', async () => {
   await vi.advanceTimersByTimeAsync(20);
   expect(finished).toBe(true);
   expect(await outcome).toBeInstanceOf(HandlerDeadlineError);
+});
+
+test('retry delay doubles with bounded jitter and never exceeds five minutes', () => {
+  expect([1, 2, 3, 4].map((n) => retryDelayMs(n, () => 0))).toEqual([1000, 2000, 4000, 8000]);
+  expect([1, 2, 3, 4].map((n) => retryDelayMs(n, () => 1))).toEqual([2000, 4000, 8000, 16000]);
+  expect(retryDelayMs(30, () => 1)).toBe(300000);
 });

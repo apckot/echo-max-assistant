@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { createDatabase, type Database } from '../../../src/infrastructure/postgres/database.js';
 import { runMigrations } from '../../../src/infrastructure/postgres/migrations.js';
 import { PostgresConversationQueue } from '../../../src/infrastructure/postgres/postgres-conversation-queue.js';
-import { ProcessInbound, HandlerDeadlineError, PreparationFailedError, ReceiptMismatchError } from '../../../src/modules/intake/application/process-inbound.js';
+import { ProcessInbound, ReceiptMismatchError } from '../../../src/modules/intake/application/process-inbound.js';
 import { FoundationInboundHandler } from '../../../src/modules/intake/application/inbound-handler.js';
 import { PostgresAtomicProcessing } from '../../../src/infrastructure/postgres/postgres-atomic-processing.js';
 import { PostgresOrderedHead } from '../../../src/infrastructure/postgres/postgres-ordered-head.js';
@@ -60,7 +60,7 @@ describe('durable processing results', () => {
     new PostgresAtomicProcessing(new PostgresOrderedHead(new PostgresFencedConversation(db)));
   const state = async () => ({
     receipts: (await postgres.pool.query('SELECT * FROM public.processing_receipts')).rows,
-    events: (await postgres.pool.query('SELECT processing_status, failure_code, processed_at FROM public.inbound_events')).rows,
+    events: (await postgres.pool.query('SELECT processing_status, failure_code, processed_at FROM public.inbound_events ORDER BY sequence')).rows,
     pointers: (await postgres.pool.query('SELECT next_apply_sequence FROM public.conversations')).rows,
     work: (await postgres.pool.query('SELECT state, lease_owner, lease_generation, available_at::text FROM public.conversation_work')).rows,
   });
@@ -145,16 +145,17 @@ describe('durable processing results', () => {
     expect((await state()).receipts[0].result).toEqual(result);
   });
 
-  test('handler timeout releases transaction locks, propagates error and cannot save a late result', async () => {
-    const lease = await initial(); const before = await state();
+  test('handler timeout records one retry, releases locks and cannot save a late result', async () => {
+    const lease = await initial();
     let settle!: (value: typeof result) => void;
-    await expect(new ProcessInbound(atomic(), { handle: () => new Promise((resolve) => { settle = resolve; }) }).run(lease))
-      .rejects.toBeInstanceOf(HandlerDeadlineError);
-    expect(await state()).toEqual(before);
+    expect(await new ProcessInbound(atomic(), { handle: () => new Promise((resolve) => { settle = resolve; }) }, 20).run(lease))
+      .toMatchObject({ kind: 'retry', attemptCount: 1, availableAt: expect.any(Date) });
+    const saved = await state();
+    expect(saved.receipts).toEqual([]); expect(saved.work[0].state).toBe('retry');
+    expect((await event(lease.conversationId)).attempt_count).toBe(1);
     settle(result); await new Promise((resolve) => setImmediate(resolve));
-    expect(await state()).toEqual(before);
-    await new ProcessInbound(atomic(), { handle: async () => result }).run(lease);
-  }, 10_000);
+    expect(await state()).toEqual(saved);
+  });
 
   test('success exposes only the next head and preserves lease generation across ready work', async () => {
     const lease = await initial(); const chat = String(serial);
@@ -185,11 +186,130 @@ describe('durable processing results', () => {
     expect(await state()).toEqual(before);
   });
 
-  test('preparation failure stays recoverable for 20B without invoking pure handler', async () => {
+  test('preparation failure finalizes one error receipt without handler or retry charge', async () => {
     const lease = await initial(); await postgres.pool.query("UPDATE public.inbound_events SET preparation_status = 'failed'");
-    const before = await state();
-    await expect(new ProcessInbound(atomic(), { handle: async () => { throw new Error('must not handle'); } }).run(lease))
-      .rejects.toBeInstanceOf(PreparationFailedError);
-    expect(await state()).toEqual(before);
+    expect(await new ProcessInbound(atomic(), { handle: async () => { throw new Error('must not handle'); } }).run(lease))
+      .toMatchObject({ kind: 'actionable', value: { messages: [{ kind: 'text', text: expect.any(String) }] } });
+    const saved = await state();
+    expect(saved.events[0]).toMatchObject({ processing_status: 'failed', failure_code: 'invalid_payload' });
+    expect(saved.receipts).toHaveLength(1); expect(saved.pointers[0].next_apply_sequence).toBe('2');
+    expect((await event(lease.conversationId)).attempt_count).toBe(0);
+  });
+
+  const fail = { handle: async () => { throw Object.assign(new Error('private handler text'), { code: '08006' }); } };
+  const due = async () => { await postgres.pool.query("UPDATE public.conversation_work SET available_at = clock_timestamp()");
+    return (await queue.claim({ ownerId, limit: 1 }))[0]!; };
+  const addNext = async () => { const chat = String(serial);
+    await gateway.query('SELECT * FROM public.accept_max_inbound($1,$2,$3,$4,$5,$6)',
+      [chat, chat, `message:${chat}:two`, '2026-10-01T00:00:00Z',
+        JSON.stringify({ kind: 'text', text: 'next private' }), 'a'.repeat(64)]); };
+  const attempts = async () => (await postgres.pool.query(
+    'SELECT attempt_count, processing_status FROM public.inbound_events ORDER BY sequence')).rows;
+
+  test('five failures are per head; unrelated inbound preserves backoff; terminal receipt unblocks next', async () => {
+    let lease = await initial();
+    for (let count = 1; count <= 5; count++) {
+      const outcome = await new ProcessInbound(atomic(), fail).run(lease);
+      expect((await attempts())[0]).toEqual({ attempt_count: count, processing_status: count === 5 ? 'failed' : 'accepted' });
+      const saved = await state();
+      if (count < 5) {
+        expect(outcome).toMatchObject({ kind: 'retry', attemptCount: count, availableAt: expect.any(Date) });
+        expect(saved.receipts).toHaveLength(0); expect(saved.pointers[0].next_apply_sequence).toBe('1');
+        const work = (await postgres.pool.query('SELECT * FROM public.conversation_work')).rows[0];
+        expect(work).toMatchObject({ state: 'retry', attempt_count: count, last_error_code: 'processing_error' });
+        if (count === 1) { await addNext();
+          expect((await postgres.pool.query('SELECT * FROM public.conversation_work')).rows[0]).toEqual(work); }
+        expect(await queue.claim({ ownerId, limit: 1 })).toEqual([]);
+        lease = await due();
+      } else {
+        expect(outcome).toMatchObject({ kind: 'actionable' });
+        expect(saved.receipts).toHaveLength(1);
+        expect(saved.receipts[0].result.messages).toEqual([
+          { version: 1, kind: 'text', text: 'Не удалось обработать сообщение. Попробуйте отправить его ещё раз.' }]);
+        expect(saved.events[0]).toMatchObject({ failure_code: 'retry_exhausted', processed_at: expect.any(Date) });
+        expect(saved.pointers[0].next_apply_sequence).toBe('2');
+        expect(saved.work[0].state).toBe('ready');
+      }
+    }
+    const next = (await queue.claim({ ownerId, limit: 1 }))[0]!;
+    expect(await new ProcessInbound(atomic(), fail).run(next)).toMatchObject({ kind: 'retry', attemptCount: 1 });
+    expect(await attempts()).toEqual([{ attempt_count: 5, processing_status: 'failed' }, { attempt_count: 1, processing_status: 'accepted' }]);
+    await new ProcessInbound(atomic(), new FoundationInboundHandler()).run(await due());
+    expect((await state()).receipts).toHaveLength(2);
+    await addNext(); // duplicate is inert; a genuinely new inbound wakes sleeping ready work below.
+    const chat = String(serial);
+    await gateway.query('SELECT * FROM public.accept_max_inbound($1,$2,$3,$4,$5,$6)',
+      [chat, chat, `message:${chat}:three`, '2026-10-01T00:00:00Z', JSON.stringify({ kind: 'text', text: 'three' }), 'a'.repeat(64)]);
+    expect(await queue.claim({ ownerId, limit: 1 })).toHaveLength(1);
+  });
+
+  test('wake preserves an existing retry row verbatim', async () => {
+    await initial();
+    await postgres.pool.query(`UPDATE public.conversation_work SET state = 'retry', lease_owner = NULL,
+      lease_until = NULL, available_at = clock_timestamp() + interval '5 minutes', attempt_count = 3,
+      last_error_code = 'processing_error'`);
+    const before = (await postgres.pool.query('SELECT * FROM public.conversation_work')).rows;
+    await addNext(); expect((await postgres.pool.query('SELECT * FROM public.conversation_work')).rows).toEqual(before);
+  });
+
+  test('preparing deferrals and database lock contention never charge the head', async () => {
+    let lease = await initial(); await postgres.pool.query("UPDATE public.inbound_events SET preparation_status = 'preparing'");
+    expect(await new ProcessInbound(atomic(), fail).run(lease)).toEqual({ kind: 'preparing' });
+    expect((await attempts())[0].attempt_count).toBe(0); lease = await due();
+    const blocker = await postgres.pool.connect();
+    try { await blocker.query('BEGIN'); await blocker.query('SELECT 1 FROM public.conversations FOR UPDATE');
+      await expect(new ProcessInbound(atomic(), fail).run(lease)).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+      expect((await attempts())[0].attempt_count).toBe(0);
+    } finally { await blocker.query('ROLLBACK'); blocker.release(); }
+  });
+
+  test.each(['before commit', 'after commit'])('crash %s can be reclaimed without budget charge or duplicate receipt', async (phase) => {
+    const lease = await initial(); await addNext();
+    const broken = atomic({ tenantTransaction: async (role, userId, fn) => {
+      const value = await database.tenantTransaction(role, userId, async (tx) => {
+        const value = await fn(tx); if (phase === 'before commit') throw new Error('crash'); return value;
+      });
+      throw new Error(`ack lost ${String(value)}`);
+    } });
+    await expect(new ProcessInbound(broken, new FoundationInboundHandler()).run(lease)).rejects.toThrow();
+    expect((await attempts()).every((row) => row.attempt_count === 0)).toBe(true);
+    expect((await state()).receipts).toHaveLength(phase === 'before commit' ? 0 : 1);
+    await postgres.pool.query("UPDATE public.conversation_work SET lease_until = clock_timestamp() - interval '1 second' WHERE state = 'leased'");
+    const fresh = (await queue.claim({ ownerId, limit: 1 }))[0]!;
+    await new ProcessInbound(atomic(), new FoundationInboundHandler()).run(fresh);
+    const saved = await state(); expect(saved.receipts).toHaveLength(phase === 'before commit' ? 1 : 2);
+    expect(new Set(saved.receipts.map((row) => row.inbound_event_id)).size).toBe(saved.receipts.length);
+  });
+
+  test.each([0, 4])('recovery commit ack loss at prior count %i never charges twice or duplicates terminal receipt', async (count) => {
+    const lease = await initial(); await addNext();
+    await postgres.pool.query('UPDATE public.inbound_events SET attempt_count = $1 WHERE sequence = 1', [count]);
+    let calls = 0;
+    const uncertain = atomic({ tenantTransaction: async (role, userId, fn) => {
+      calls++; const value = await database.tenantTransaction(role, userId, fn);
+      if (calls === 2) throw new Error('recovery ack lost'); return value;
+    } });
+    await expect(new ProcessInbound(uncertain, fail).run(lease)).rejects.toThrow('recovery ack lost');
+    const saved = await state(); expect((await attempts())[0].attempt_count).toBe(count + 1);
+    expect(saved.receipts).toHaveLength(count === 4 ? 1 : 0);
+    await expect(new ProcessInbound(atomic(), fail).run(lease)).rejects.toMatchObject({ name: 'ConversationLeaseLostError' });
+    expect(await state()).toEqual(saved); expect((await attempts())[1].attempt_count).toBe(0);
+  });
+
+  test.each(['token', 'head', 'identity', 'terminal', 'preparation'])('stale %s after pure failure cannot record against successor', async (change) => {
+    const lease = await initial(); await addNext(); let failed = false; let calls = 0; let before: Awaited<ReturnType<typeof state>>;
+    const raced = atomic({ tenantTransaction: async (role, userId, fn) => {
+      calls++; try { return await database.tenantTransaction(role, userId, fn); }
+      catch (error) { if (!failed) { failed = true;
+        if (change === 'token') await postgres.pool.query('UPDATE public.conversation_work SET lease_generation = lease_generation + 1');
+        else if (change === 'head') await postgres.pool.query('UPDATE public.conversations SET next_apply_sequence = 2');
+        else if (change === 'identity') await postgres.pool.query('UPDATE public.inbound_events SET id = gen_random_uuid() WHERE sequence = 1');
+        else if (change === 'preparation') await postgres.pool.query("UPDATE public.inbound_events SET preparation_status = 'preparing' WHERE sequence = 1");
+        else await postgres.pool.query("UPDATE public.inbound_events SET processing_status = 'failed' WHERE sequence = 1");
+        before = await state();
+      } throw error; }
+    } });
+    await expect(new ProcessInbound(raced, fail).run(lease)).rejects.toThrow();
+    expect(calls).toBe(2); expect(await state()).toEqual(before!); expect((await attempts()).every((row) => row.attempt_count === 0)).toBe(true);
   });
 });

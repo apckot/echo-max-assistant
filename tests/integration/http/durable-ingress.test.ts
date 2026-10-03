@@ -150,7 +150,7 @@ describe('guarded durable HTTP ingress', () => {
     try {
       expect((await post(gateway())).statusCode).toBe(503);
       expect(await snapshot()).toEqual(empty);
-    } finally { await postgres.pool.query('INSERT INTO public.system_state (id, schema_version) VALUES (1, 10)'); }
+    } finally { await postgres.pool.query('INSERT INTO public.system_state (id, schema_version) VALUES (1, 11)'); }
   });
   test('concurrent new events cannot cross hard limit, while durable duplicate stays successful', async () => {
     const app = gateway({ QUEUE_HARD_LIMIT: 1, GATEWAY_DB_POOL_SIZE: 2 });

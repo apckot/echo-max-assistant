@@ -1,5 +1,6 @@
 import type { ConversationLease } from '../../modules/intake/application/conversation-queue.js';
 import { MissingAllocatedHeadError, type ActionableHead, type OrderedHeadResult } from '../../modules/intake/application/ordered-head.js';
+import { StaleProcessingHeadError } from '../../modules/intake/application/process-inbound.js';
 import type { WorkDisposition } from '../../modules/intake/application/work-disposition.js';
 import type { InboundEvent, InboundPayload, PreparationStatus, ProcessingStatus, InboundFailureCode } from '../../modules/intake/domain/inbound-event.js';
 import type { DbTx } from './database.js';
@@ -29,7 +30,8 @@ export class PostgresOrderedHead {
   constructor(private readonly fenced: PostgresFencedConversation) {}
 
   async run<T>(lease: ConversationLease,
-    onActionable: (head: ActionableHead, tx: DbTx) => Promise<{ value: T; disposition: WorkDisposition }>): Promise<OrderedHeadResult<T>> {
+    onActionable: (head: ActionableHead, tx: DbTx) => Promise<{ value: T; disposition: WorkDisposition }>,
+    expected?: { readonly id: string; readonly sequence: bigint }): Promise<OrderedHeadResult<T>> {
     return this.fenced.run<OrderedHeadResult<T>>(lease, async (tx) => {
       const ids = [lease.conversationId, lease.userId];
       // FencedConversation already holds conversation then work locks. The head
@@ -43,6 +45,10 @@ export class PostgresOrderedHead {
       const [row] = await tx.query<EventRow>(`SELECT * FROM public.inbound_events
         WHERE conversation_id = $1::uuid AND user_id = $2::uuid AND sequence = $3::bigint FOR UPDATE`,
       [...ids, next.toString()]);
+      // Recovery must reject a changed/missing head before ANY disposition or advancement.
+      if (expected && (row?.id !== expected.id || next !== expected.sequence ||
+        row.preparation_status !== 'ready' || !['accepted', 'processing'].includes(row.processing_status)))
+        throw new StaleProcessingHeadError();
       if (!row) {
         if (next !== allocated) throw new MissingAllocatedHeadError();
         return { value: { kind: 'drained' } as const, disposition: { kind: 'sleep' } as const };
