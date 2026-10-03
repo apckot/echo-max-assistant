@@ -25,7 +25,10 @@ export interface Database {
   close(): Promise<void>;
 }
 
-type DatabaseUrls = Partial<Record<SystemRole, string>> & { poolSize?: number };
+type DatabaseUrls = Partial<Record<SystemRole, string>> & {
+  poolSize?: number;
+  workerTransactionTimeoutMs?: number;
+};
 const roles: readonly SystemRole[] = ['gateway', 'worker', 'delivery', 'scheduler'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -46,6 +49,11 @@ function databaseError(error: unknown): DatabaseError {
 }
 
 export function createDatabase(urls: DatabaseUrls): Database {
+  if (urls.workerTransactionTimeoutMs !== undefined &&
+    (!Number.isInteger(urls.workerTransactionTimeoutMs) || urls.workerTransactionTimeoutMs < 1 ||
+      urls.workerTransactionTimeoutMs > 300_000)) {
+    throw new DatabaseError('DB_INVALID_INPUT', 'Worker transaction deadline invalid');
+  }
   const configuredRoles = roles.filter((role) => urls[role] !== undefined);
   if (!configuredRoles.length) throw new DatabaseError('DB_ROLE_MISMATCH', 'Database role configuration invalid');
   for (const role of configuredRoles) {
@@ -62,6 +70,8 @@ export function createDatabase(urls: DatabaseUrls): Database {
   const pools = Object.fromEntries(configuredRoles.map((role) => [role, new Pool({
     connectionString: urls[role], max: urls.poolSize ?? 10,
     ...(role === 'gateway' ? { connectionTimeoutMillis: 150 } : {}),
+    ...(role === 'worker' && urls.workerTransactionTimeoutMs !== undefined
+      ? { connectionTimeoutMillis: urls.workerTransactionTimeoutMs } : {}),
   })])) as Record<SystemRole, Pool>;
   // pg removes failed idle clients before emitting; contain the event without raw diagnostics.
   for (const role of configuredRoles) pools[role].on('error', () => {});
@@ -73,7 +83,8 @@ export function createDatabase(urls: DatabaseUrls): Database {
     if (userId !== undefined && (!uuid.test(userId) || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(userId))) {
       throw new DatabaseError('DB_INVALID_USER_ID', 'Internal user ID required');
     }
-    const deadline = role === 'gateway' ? performance.now() + 150 : Infinity;
+    const timeoutMs = role === 'gateway' ? 150 : role === 'worker' ? urls.workerTransactionTimeoutMs : undefined;
+    const deadline = timeoutMs === undefined ? Infinity : performance.now() + timeoutMs;
     let client: PoolClient | undefined;
     let released = false;
     let expired = false;
@@ -150,7 +161,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
         release(discardClient || expired);
       }
     };
-    if (role === 'gateway') timer = setTimeout(expire, Math.max(0, deadline - performance.now()));
+    if (timeoutMs !== undefined) timer = setTimeout(expire, Math.max(0, deadline - performance.now()));
     try {
       return await Promise.race([run(), deadlineReached]);
     } finally {
