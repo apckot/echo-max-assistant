@@ -1,6 +1,6 @@
 # Stage 1 progress
 
-Current status: **checkpoint20 implementation complete; per-task and whole-block reviews approved; clean-clone verification passed. STOP: no21+ without user acceptance. Final scan and publication follow this documentation commit.**
+Current status: **checkpoint20 has NOT been accepted: independent default verification exposed PostgreSQL test contention. A separate scheduling fix and renewed verification are recorded in [the gate repair report](checkpoint-20-gate-fix.md). STOP: no21+ without user acceptance.**
 
 The coordinator adds a row only after independent review.
 
@@ -331,3 +331,10 @@ git ls-files --error-unmatch .env.example
 |25|Delivery runtime; signed webhook to one MAX reply checkpoint|
 
 Publication procedure: pinned Gitleaks8.30.1 scans the final documentation HEAD and all reachable current-branch history without baseline or exclusions. Authorized push is followed by independent `git ls-remote`, clean-status and ahead/behind checks. Final scan/push/remote evidence is reported after execution; this document does not preclaim those results.
+
+
+## Checkpoint 20 default-gate correction
+
+The earlier checkpoint20 green runs did not establish a reproducible default gate. The user's independent clean clone at `1d9da40dc89d4ba2edac09bbf7eef093517b563b` failed twice (287/293 and291/293) with varying PostgreSQL `DB_TIMEOUT`/503 errors. Isolated failing files, separate functional173/173 and full tests with `--maxWorkers=1` passed. This supersedes the earlier completion claim; checkpoint20 remains pending acceptance.
+
+The separate fix serializes test files using the normal Vitest configuration, preserving discovery, all assertions, production150ms and concurrency within each test. See [the repair evidence and independent review](checkpoint-20-gate-fix.md). Clean-clone, final-HEAD Gitleaks and push are performed after the fix commit, so their exact SHA/results are recorded in the final coordinator response and retained local logs. Iteration21 has not started.
