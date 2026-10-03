@@ -287,48 +287,88 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     expect((await migrator.query('SELECT * FROM public.deadline_probe WHERE id = 6')).rows).toEqual([]);
   });
 
-  test('worker close waits only to the callback deadline and late work cannot write or commit', async () => {
+  async function checkWorkerClose(failBeforeReady: boolean) {
     const bounded = createDatabase({ worker: urls.worker, poolSize: 1, workerTransactionTimeoutMs: 100 });
     let resume!: () => void;
     let entered!: () => void;
+    let rejectReady!: (error: Error) => void;
     const held = new Promise<void>((resolve) => { resume = resolve; });
-    const ready = new Promise<void>((resolve) => { entered = resolve; });
+    const ready = new Promise<void>((resolve, reject) => { entered = resolve; rejectReady = reject; });
     let lateQuery: Promise<unknown> | undefined;
     const pending = bounded.tenantTransaction('worker', userId, async (tx) => {
+      if (failBeforeReady) {
+        const error = new Error('injected callback failure');
+        rejectReady(error);
+        throw error;
+      }
       await tx.query('INSERT INTO public.deadline_probe VALUES (7)');
       entered();
       await held;
       lateQuery = tx.query('INSERT INTO public.deadline_probe VALUES (8)');
       await lateQuery;
     });
-    const rejected = expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    await ready;
-    const fallback = setTimeout(resume, 250);
+    const readyOrFailed = Promise.race([
+      ready,
+      pending.then(
+        () => { throw new Error('worker callback completed before readiness'); },
+        (error: unknown) => { throw error; },
+      ),
+    ]);
+    let fallback: ReturnType<typeof setTimeout> | undefined;
+    let closing: Promise<void> | undefined;
     try {
-      const started = performance.now();
-      await Promise.all([bounded.close(), rejected]);
-      expect(performance.now() - started).toBeLessThan(500);
+      if (failBeforeReady) {
+        await expect(readyOrFailed).rejects.toThrow('injected callback failure');
+        await expect(pending).rejects.toThrow('injected callback failure');
+      } else {
+        await readyOrFailed;
+        fallback = setTimeout(resume, 250);
+        const started = performance.now();
+        closing = bounded.close();
+        await Promise.all([closing, expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' })]);
+        expect(performance.now() - started).toBeLessThan(500);
+        resume();
+        await new Promise((resolve) => setImmediate(resolve));
+        await expect(lateQuery).rejects.toMatchObject({ code: 'DB_CLOSED' });
+      }
+    } finally {
+      clearTimeout(fallback);
       resume();
-      await new Promise((resolve) => setImmediate(resolve));
-      await expect(lateQuery).rejects.toMatchObject({ code: 'DB_CLOSED' });
-      await expect(bounded.systemTransaction('worker', (tx) => tx.query('SELECT 1')))
-        .rejects.toMatchObject({ code: 'DB_CLOSED' });
-    } finally { clearTimeout(fallback); resume(); }
+      await Promise.allSettled([pending]);
+      await (closing ?? bounded.close());
+    }
+    await expect(bounded.systemTransaction('worker', (tx) => tx.query('SELECT 1')))
+      .rejects.toMatchObject({ code: 'DB_CLOSED' });
     expect((await migrator.query('SELECT * FROM public.deadline_probe WHERE id IN (7, 8)')).rows).toEqual([]);
+  }
+
+  test('worker close waits only to the callback deadline and late work cannot write or commit', async () => {
+    await checkWorkerClose(false);
   });
 
-  test('worker queued acquisition expires and neither queued nor late-acquired work can begin', async () => {
+  test('worker callback fixture cleans up when work fails before readiness', async () => {
+    await checkWorkerClose(true);
+  });
+
+  async function checkWorkerQueuedAcquisition(failBeforeReady: boolean) {
     const bounded = createDatabase({ worker: urls.worker, poolSize: 1, workerTransactionTimeoutMs: 100 });
     const originalConnect = Pool.prototype.connect;
     let releaseConnection!: () => void;
     let acquired!: () => void;
+    let rejectReady!: (error: Error) => void;
     const held = new Promise<void>((resolve) => { releaseConnection = resolve; });
-    const ready = new Promise<void>((resolve) => { acquired = resolve; });
-    let queuedAcquisitionSettled = false;
+    const ready = new Promise<void>((resolve, reject) => { acquired = resolve; rejectReady = reject; });
+    let settleQueuedAcquisition!: () => void;
+    const queuedAcquisitionSettled = new Promise<void>((resolve) => { settleQueuedAcquisition = resolve; });
     let calls = 0;
     let began = false;
     const connect = vi.spyOn(Pool.prototype, 'connect').mockImplementation(async function (this: Pool) {
       if (++calls === 1) {
+        if (failBeforeReady) {
+          const error = new Error('injected acquisition failure');
+          rejectReady(error);
+          throw error;
+        }
         const client = await originalConnect.call(this);
         const query = client.query.bind(client);
         client.query = ((...args: Parameters<typeof client.query>) => {
@@ -338,26 +378,53 @@ describe('PostgreSQL roles and transaction boundaries', () => {
         acquired(); await held; return client;
       }
       try { return await originalConnect.call(this); }
-      finally { queuedAcquisitionSettled = true; }
+      finally { settleQueuedAcquisition(); }
     });
     let callbackRan = false;
-    const first = bounded.systemTransaction('worker', async () => { callbackRan = true; });
-    const firstRejected = expect(first).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    await ready;
-    const second = bounded.systemTransaction('worker', async () => { callbackRan = true; });
-    const secondRejected = expect(second).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    const fallback = setTimeout(releaseConnection, 250);
+    let first: Promise<void> | undefined;
+    let second: Promise<void> | undefined;
+    let fallback: ReturnType<typeof setTimeout> | undefined;
     try {
-      await Promise.all([firstRejected, secondRejected]);
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      expect(queuedAcquisitionSettled).toBe(true);
+      first = bounded.systemTransaction('worker', async () => { callbackRan = true; });
+      const readyOrFailed = Promise.race([
+        ready,
+        first.then(
+          () => { throw new Error('first transaction completed before acquisition'); },
+          (error: unknown) => { throw error; },
+        ),
+      ]);
+      if (failBeforeReady) {
+        await expect(readyOrFailed).rejects.toThrow('injected acquisition failure');
+        await expect(first).rejects.toMatchObject({ code: 'DB_FAILURE' });
+      } else {
+        await readyOrFailed;
+        second = bounded.systemTransaction('worker', async () => { callbackRan = true; });
+        fallback = setTimeout(releaseConnection, 250);
+        await Promise.all([
+          expect(first).rejects.toMatchObject({ code: 'DB_TIMEOUT' }),
+          expect(second).rejects.toMatchObject({ code: 'DB_TIMEOUT' }),
+        ]);
+        await queuedAcquisitionSettled;
+      }
       expect(callbackRan).toBe(false);
     } finally {
       clearTimeout(fallback); releaseConnection(); connect.mockRestore();
+      await Promise.allSettled([first, second].filter((pending): pending is Promise<void> => pending !== undefined));
       await bounded.close();
     }
     expect(callbackRan).toBe(false);
     expect(began).toBe(false);
+    expect(Pool.prototype.connect).toBe(originalConnect);
+    await expect(bounded.systemTransaction('worker', (tx) => tx.query('SELECT 1')))
+      .rejects.toMatchObject({ code: 'DB_CLOSED' });
+  }
+
+  test('worker queued acquisition expires and neither queued nor late-acquired work can begin', async () => {
+    await checkWorkerQueuedAcquisition(false);
+  });
+
+  test('worker acquisition fixture cleans up when the first connect fails before readiness', async () => {
+    await checkWorkerQueuedAcquisition(true);
   });
 
   test('worker delayed COMMIT acknowledgement remains uncertain and discards the timed-out session', async () => {
