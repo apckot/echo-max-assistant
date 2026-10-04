@@ -96,7 +96,7 @@ describe('durable processing results', () => {
     const before = await state();
     await expect(database.tenantTransaction('worker', lease.userId,
       (tx) => new PostgresOutbox(tx).save(source, [malformed])))
-      .rejects.toThrow('Invalid outbound payload');
+      .rejects.toThrow(/^Invalid outbound payload$/);
     expect(await state()).toEqual(before);
   });
 

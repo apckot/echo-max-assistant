@@ -1,5 +1,5 @@
 import { OutboxMismatchError, type OutboxPort, type OutboxSource } from '../../modules/delivery/application/outbox.js';
-import type { OutboundMessageDraft } from '../../modules/delivery/domain/outbound-message.js';
+import { OutboundMessageDraftSchema, type OutboundMessageDraft } from '../../modules/delivery/domain/outbound-message.js';
 import type { DbTx } from './database.js';
 
 // This adapter is bound to the processing transaction; it never opens its own transaction.
@@ -8,13 +8,10 @@ export class PostgresOutbox implements OutboxPort {
 
   async save(source: OutboxSource, messages: readonly OutboundMessageDraft[]): Promise<void> {
     for (const [index, payload] of messages.entries()) {
-      if (!payload || typeof payload !== 'object' || Array.isArray(payload) ||
-        Object.keys(payload).sort().join(',') !== 'kind,text,version' ||
-        payload.version !== 1 || payload.kind !== 'text' || typeof payload.text !== 'string') {
-        throw new Error('Invalid outbound payload');
-      }
+      const parsed = OutboundMessageDraftSchema.safeParse(payload);
+      if (!parsed.success) throw new Error('Invalid outbound payload');
       const dedupe = `response:${source.id}:${index}:v1`;
-      const values = [source.userId, source.conversationId, source.id, index, JSON.stringify(payload), dedupe];
+      const values = [source.userId, source.conversationId, source.id, index, JSON.stringify(parsed.data), dedupe];
       await this.tx.query(`INSERT INTO public.outbound_messages
         (user_id, conversation_id, source_inbound_event_id, provider, message_index, payload, dedupe_key)
         VALUES ($1::uuid,$2::uuid,$3::uuid,'max',$4,$5::jsonb,$6)
