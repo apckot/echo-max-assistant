@@ -26,11 +26,29 @@ function retryAfter(value: string | null): number | 'unschedulable' | undefined 
     const millis = Number(trimmed) * 1000;
     return Number.isSafeInteger(millis) && Date.now() + millis <= 8640000000000000 ? millis : 'unschedulable';
   }
-  // Accept HTTP-date shapes only; Date.parse also accepts malformed numeric seconds.
-  if (!/^(?:[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT|[A-Za-z]+, \d{2}-[A-Za-z]{3}-\d{2} \d{2}:\d{2}:\d{2} GMT|[A-Za-z]{3} [A-Za-z]{3} [ \d]\d \d{2}:\d{2}:\d{2} \d{4})$/.test(trimmed)) return undefined;
-  const date = Date.parse(trimmed);
+  // Gate the three HTTP-date forms before parsing; numeric tokens are not dates.
+  const imf = /^[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(trimmed);
+  const asctime = /^[A-Za-z]{3} [A-Za-z]{3} [ \d]\d \d{2}:\d{2}:\d{2} \d{4}$/.test(trimmed);
+  const rfc850 = /^[A-Za-z]+, (\d{2})-([A-Za-z]{3})-(\d{2}) (\d{2}:\d{2}:\d{2}) GMT$/.exec(trimmed);
+  if (!imf && !asctime && !rfc850) return undefined;
+  const now = Date.now();
+  let date: number;
+  if (rfc850) {
+    const clock = new Date(now);
+    const currentYear = clock.getUTCFullYear();
+    let year = Math.floor(currentYear / 100) * 100 + Number(rfc850[3]);
+    if (year < currentYear) year += 100;
+    const parseYear = (fullYear: number): number => Date.parse(`${rfc850[1]} ${rfc850[2]} ${fullYear} ${rfc850[4]} GMT`);
+    date = parseYear(year);
+    // RFC 9110 uses a rolling 50-year cutoff, not Date.parse's fixed year pivot.
+    clock.setUTCFullYear(currentYear + 50);
+    if (date > clock.getTime()) date = parseYear(year - 100);
+  } else {
+    // The zone-less asctime form is still UTC in HTTP.
+    date = Date.parse(asctime ? `${trimmed} GMT` : trimmed);
+  }
   if (!Number.isFinite(date)) return undefined;
-  const delay = Math.max(0, date - Date.now());
+  const delay = Math.max(0, date - now);
   return Number.isSafeInteger(delay) ? delay : undefined;
 }
 
