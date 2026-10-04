@@ -8,6 +8,9 @@ import { PostgresConversationQueue } from '../../../src/infrastructure/postgres/
 import { ProcessInbound, ReceiptMismatchError } from '../../../src/modules/intake/application/process-inbound.js';
 import { FoundationInboundHandler } from '../../../src/modules/intake/application/inbound-handler.js';
 import { PostgresAtomicProcessing } from '../../../src/infrastructure/postgres/postgres-atomic-processing.js';
+import { PostgresOutbox } from '../../../src/infrastructure/postgres/postgres-outbox.js';
+import { OutboxMismatchError } from '../../../src/modules/delivery/application/outbox.js';
+import type { OutboundMessageDraft } from '../../../src/modules/delivery/domain/outbound-message.js';
 import { PostgresOrderedHead } from '../../../src/infrastructure/postgres/postgres-ordered-head.js';
 import { PostgresFencedConversation } from '../../../src/infrastructure/postgres/postgres-fenced-conversation.js';
 import { startPostgres } from '../../support/postgres.js';
@@ -31,12 +34,12 @@ describe('durable processing results', () => {
       const value = new URL(postgres.pool.options.connectionString!);
       value.username = `echo_${role}`; value.password = 'isolated-test-password'; return value.toString();
     };
-    for (const role of ['migrator', 'gateway', 'worker'])
+    for (const role of ['migrator', 'gateway', 'worker', 'delivery'])
       await postgres.pool.query(`ALTER ROLE echo_${role} PASSWORD 'isolated-test-password'`);
     migrator = new Pool({ connectionString: url('migrator') });
     gateway = new Pool({ connectionString: url('gateway') });
     await runMigrations(migrator, `${root}migrations`);
-    database = createDatabase({ worker: url('worker') });
+    database = createDatabase({ worker: url('worker'), delivery: url('delivery') });
     queue = new PostgresConversationQueue(database);
   }, 120_000);
   beforeEach(async () => { await postgres.pool.query('TRUNCATE public.users CASCADE'); });
@@ -63,6 +66,95 @@ describe('durable processing results', () => {
     events: (await postgres.pool.query('SELECT processing_status, failure_code, processed_at FROM public.inbound_events ORDER BY sequence')).rows,
     pointers: (await postgres.pool.query('SELECT next_apply_sequence FROM public.conversations')).rows,
     work: (await postgres.pool.query('SELECT state, lease_owner, lease_generation, available_at::text FROM public.conversation_work')).rows,
+    outbound: (await postgres.pool.query('SELECT * FROM public.outbound_messages ORDER BY source_inbound_event_id, message_index')).rows,
+    delivery: (await postgres.pool.query('SELECT * FROM public.delivery_work ORDER BY outbound_message_id')).rows,
+  });
+
+  test('processing commits each ordered draft with one private delivery work item', async () => {
+    const lease = await initial();
+    const source = await event(lease.conversationId);
+    await new ProcessInbound(atomic(), { handle: async () => result }).run(lease);
+    expect((await postgres.pool.query(`SELECT user_id, conversation_id, source_inbound_event_id,
+      provider, message_index, payload, dedupe_key, status FROM public.outbound_messages ORDER BY message_index`)).rows)
+      .toEqual([0, 1].map((index) => ({ user_id: lease.userId, conversation_id: lease.conversationId,
+        source_inbound_event_id: source.id, provider: 'max', message_index: index,
+        payload: result.messages[index], dedupe_key: `response:${source.id}:${index}:v1`, status: 'pending' })));
+    const work = (await postgres.pool.query('SELECT * FROM public.delivery_work ORDER BY outbound_message_id')).rows;
+    expect(work).toHaveLength(2);
+    expect(work.map((row) => row.user_id)).toEqual([lease.userId, lease.userId]);
+    expect(work.map((row) => row.state)).toEqual(['ready', 'ready']);
+    const committed = await state();
+    await database.tenantTransaction('worker', lease.userId,
+      (tx) => new PostgresOutbox(tx).save({ id: source.id, userId: lease.userId,
+        conversationId: lease.conversationId }, result.messages));
+    expect(await state()).toEqual(committed);
+  });
+
+  test('adapter rejects a malformed versioned draft before writing either table', async () => {
+    const lease = await initial(); const source = await event(lease.conversationId);
+    const malformed = { version: 1, kind: 'text', text: 'private', externalId: 'leak' } as unknown as OutboundMessageDraft;
+    const before = await state();
+    await expect(database.tenantTransaction('worker', lease.userId,
+      (tx) => new PostgresOutbox(tx).save(source, [malformed])))
+      .rejects.toThrow('Invalid outbound payload');
+    expect(await state()).toEqual(before);
+  });
+
+  test('outbox source and payload conflicts fail closed without advancing the head', async () => {
+    const lease = await initial(); const source = await event(lease.conversationId);
+    await database.tenantTransaction('worker', lease.userId, async (tx) => {
+      await tx.query(insert, [lease.userId, lease.conversationId, source.id, JSON.stringify(result)]);
+      await tx.query(`INSERT INTO public.outbound_messages
+        (user_id, conversation_id, source_inbound_event_id, message_index, payload, dedupe_key)
+        VALUES ($1,$2,$3,0,$4,$5)`, [lease.userId, lease.conversationId, source.id,
+        JSON.stringify({ version: 1, kind: 'text', text: 'wrong' }), `response:${source.id}:0:v1`]);
+    });
+    const before = await state();
+    await expect(new ProcessInbound(atomic(), { handle: async () => result }).run(lease))
+      .rejects.toBeInstanceOf(OutboxMismatchError);
+    expect(await state()).toEqual(before);
+  });
+
+  test('failure after delivery work INSERT rolls back receipt, outbound, work and sequence', async () => {
+    const lease = await initial(); const before = await state();
+    const broken = atomic({ tenantTransaction: (role, userId, fn) => database.tenantTransaction(role, userId,
+      (tx) => fn({ query: async (sql, values) => {
+        const rows = await tx.query(sql, values);
+        if (sql.startsWith('INSERT INTO public.delivery_work')) throw new Error('after outbox insert');
+        return rows as never;
+      } })) });
+    await expect(new ProcessInbound(broken, { handle: async () => result }).run(lease))
+      .rejects.toThrow('after outbox insert');
+    expect(await state()).toEqual(before);
+    await new ProcessInbound(atomic(), { handle: async () => result }).run(lease);
+    expect((await state()).outbound).toHaveLength(2);
+    expect((await state()).delivery).toHaveLength(2);
+  });
+
+  test('tenant reads are scoped while the system delivery queue carries no message or address', async () => {
+    const a = await initial(); const b = await initial();
+    const source = await event(a.conversationId);
+    await new ProcessInbound(atomic(), new FoundationInboundHandler()).run(a);
+    expect(await database.tenantTransaction('worker', b.userId,
+      (tx) => tx.query('SELECT * FROM public.outbound_messages'))).toEqual([]);
+    expect(await database.systemTransaction('delivery',
+      (tx) => tx.query('SELECT * FROM public.outbound_messages'))).toEqual([]);
+    expect(await database.tenantTransaction('delivery', a.userId,
+      (tx) => tx.query('SELECT user_id FROM public.outbound_messages'))).toEqual([{ user_id: a.userId }]);
+    expect(await database.tenantTransaction('delivery', b.userId,
+      (tx) => tx.query('SELECT * FROM public.outbound_messages'))).toEqual([]);
+    const columns = (await postgres.pool.query(`SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'delivery_work'`)).rows.map((row) => row.column_name);
+    expect(columns).toEqual(expect.arrayContaining(['outbound_message_id', 'user_id', 'lease_generation']));
+    expect(columns).not.toContain('payload'); expect(columns).not.toContain('text');
+    expect(columns).not.toContain('external_message_id'); expect(columns).not.toContain('address');
+    expect((await database.systemTransaction('delivery',
+      (tx) => tx.query('SELECT user_id FROM public.delivery_work')))).toEqual([{ user_id: a.userId }]);
+    await expect(database.tenantTransaction('worker', a.userId, (tx) => tx.query(`INSERT INTO public.outbound_messages
+      (user_id, conversation_id, source_inbound_event_id, message_index, payload, dedupe_key, status)
+      VALUES ($1,$2,$3,99,$4,$5,'sent')`, [a.userId, a.conversationId, source.id,
+      JSON.stringify({ version: 1, kind: 'text', text: 'forged' }), `response:${source.id}:99:v1`])))
+      .rejects.toMatchObject({ code: 'DB_FAILURE' });
   });
 
   test('receipt table enforces tenant access, immutable grants, ownership, uniqueness and closed result shape', async () => {
@@ -108,6 +200,8 @@ describe('durable processing results', () => {
       .toEqual({ kind: 'actionable', value: expected });
     const saved = await state();
     expect(saved.receipts).toHaveLength(1); expect(saved.receipts[0].result).toEqual(expected);
+    expect(saved.outbound).toHaveLength(text === undefined ? 0 : 1);
+    expect(saved.delivery).toHaveLength(text === undefined ? 0 : 1);
     expect(saved.events[0]).toEqual({ processing_status: status, failure_code: failure, processed_at: expect.any(Date) });
     expect(saved.pointers).toEqual([{ next_apply_sequence: '2' }]);
     expect(saved.work[0]).toMatchObject({ state: 'ready', lease_owner: null, lease_generation: '1', available_at: 'infinity' });
@@ -193,6 +287,7 @@ describe('durable processing results', () => {
     const saved = await state();
     expect(saved.events[0]).toMatchObject({ processing_status: 'failed', failure_code: 'invalid_payload' });
     expect(saved.receipts).toHaveLength(1); expect(saved.pointers[0].next_apply_sequence).toBe('2');
+    expect(saved.outbound).toHaveLength(1); expect(saved.delivery).toHaveLength(1);
     expect((await event(lease.conversationId)).attempt_count).toBe(0);
   });
 
@@ -224,6 +319,7 @@ describe('durable processing results', () => {
       } else {
         expect(outcome).toMatchObject({ kind: 'actionable' });
         expect(saved.receipts).toHaveLength(1);
+        expect(saved.outbound).toHaveLength(1); expect(saved.delivery).toHaveLength(1);
         expect(saved.receipts[0].result.messages).toEqual([
           { version: 1, kind: 'text', text: 'Не удалось обработать сообщение. Попробуйте отправить его ещё раз.' }]);
         expect(saved.events[0]).toMatchObject({ failure_code: 'retry_exhausted', processed_at: expect.any(Date) });
@@ -274,10 +370,14 @@ describe('durable processing results', () => {
     await expect(new ProcessInbound(broken, new FoundationInboundHandler()).run(lease)).rejects.toThrow();
     expect((await attempts()).every((row) => row.attempt_count === 0)).toBe(true);
     expect((await state()).receipts).toHaveLength(phase === 'before commit' ? 0 : 1);
+    expect((await state()).outbound).toHaveLength(phase === 'before commit' ? 0 : 1);
+    expect((await state()).delivery).toHaveLength(phase === 'before commit' ? 0 : 1);
     await postgres.pool.query("UPDATE public.conversation_work SET lease_until = clock_timestamp() - interval '1 second' WHERE state = 'leased'");
     const fresh = (await queue.claim({ ownerId, limit: 1 }))[0]!;
     await new ProcessInbound(atomic(), new FoundationInboundHandler()).run(fresh);
     const saved = await state(); expect(saved.receipts).toHaveLength(phase === 'before commit' ? 1 : 2);
+    expect(saved.outbound).toHaveLength(saved.receipts.length);
+    expect(saved.delivery).toHaveLength(saved.receipts.length);
     expect(new Set(saved.receipts.map((row) => row.inbound_event_id)).size).toBe(saved.receipts.length);
   });
 

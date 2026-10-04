@@ -1,15 +1,10 @@
 import type { InboundPayload } from '../domain/inbound-event.js';
+import type { OutboundMessageDraft } from '../../delivery/domain/outbound-message.js';
 
 export interface HandleInboundInput {
   readonly sequence: bigint;
   readonly payload: InboundPayload;
 }
-
-export type OutboundMessageDraft = {
-  readonly version: 1;
-  readonly kind: 'text';
-  readonly text: string;
-};
 
 export interface HandleInboundResult {
   readonly receiptType: 'foundation_echo';

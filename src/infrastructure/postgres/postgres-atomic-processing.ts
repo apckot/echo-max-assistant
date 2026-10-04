@@ -5,6 +5,7 @@ import { MissingAllocatedHeadError } from '../../modules/intake/application/orde
 import type { InboundEvent, InboundFailureCode } from '../../modules/intake/domain/inbound-event.js';
 import type { DbTx } from './database.js';
 import type { PostgresOrderedHead } from './postgres-ordered-head.js';
+import { PostgresOutbox } from './postgres-outbox.js';
 
 // Created only around the pure callback; never retain raw error messages/codes.
 class PureHandlerFailure extends Error {
@@ -66,6 +67,7 @@ export class PostgresAtomicProcessing implements AtomicProcessingPort {
         AND receipt_type = $4 AND receipt_version = $5 AND result = $6::jsonb
         AND public.valid_processing_result(result)`, params);
     if (receipts.length !== 1) throw new ReceiptMismatchError();
+    await new PostgresOutbox(tx).save(event, receipts[0]!.result.messages);
     await tx.query(`UPDATE public.inbound_events SET processing_status = $5,
       failure_code = $4, processed_at = clock_timestamp(), updated_at = clock_timestamp()
       WHERE user_id = $1::uuid AND conversation_id = $2::uuid AND id = $3::uuid`,
