@@ -72,4 +72,21 @@ describe('immutable tenant delivery attempt journal', () => {
     await expect(fixture.pools.migrator.query('DELETE FROM public.delivery_attempts')).rejects.toMatchObject({ code: '55000' });
     await expect(fixture.pools.migrator.query('UPDATE public.delivery_attempts SET attempt_number = 2')).rejects.toMatchObject({ code: '55000' });
   });
+
+  test('permits delivery-role completion only with the original token and database timestamp', async () => {
+    const work = await fixture.seed();
+    const run = (sql: string, params: readonly unknown[]) => fixture.database.tenantTransaction(
+      'delivery', work.user_id as UserId, (tx) => tx.query(sql, params));
+    const columns = 'outbound_message_id,user_id,attempt_number,phase,lease_owner,lease_generation';
+    await run(`INSERT INTO public.delivery_attempts (${columns}) VALUES ($1,$2,1,'started',$3,4)`, [work.id, work.user_id, ownerA]);
+    const complete = `INSERT INTO public.delivery_attempts (${columns},certainty,code)
+      VALUES ($1,$2,1,'completed',$3,$4,'uncertain','attempt_abandoned')`;
+    await expect(run(complete, [work.id, work.user_id, ownerA, 5])).rejects.toThrow();
+    await expect(run(complete, [work.id, work.user_id, ownerB, 4])).rejects.toThrow();
+    await expect(run(`INSERT INTO public.delivery_attempts (${columns},recorded_at)
+      VALUES ($1,$2,2,'started',$3,4,clock_timestamp())`, [work.id, work.user_id, ownerA])).rejects.toThrow();
+    await run(complete, [work.id, work.user_id, ownerA, 4]);
+    expect(await run('SELECT phase,lease_owner,lease_generation,recorded_at FROM public.delivery_attempts ORDER BY phase', []))
+      .toEqual(['completed', 'started'].map((phase) => ({ phase, lease_owner: ownerA, lease_generation: '4', recorded_at: expect.any(Date) })));
+  });
 });
