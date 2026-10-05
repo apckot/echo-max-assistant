@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { PostgresDeliveryQueue } from '../../../src/infrastructure/postgres/postgres-delivery-queue.js';
 import { deliveryFixture, ownerA, ownerB } from '../../support/delivery-fixture.js';
 
@@ -12,8 +12,9 @@ describe('technical delivery queue claims', () => {
   beforeEach(async () => { await fixture.postgres.pool.query('TRUNCATE public.users CASCADE'); });
   afterAll(async () => { await fixture?.close(); });
   const row = async (id: string) => (await fixture.postgres.pool.query('SELECT * FROM public.delivery_work WHERE outbound_message_id = $1', [id])).rows[0];
+  const databaseNow = async () => (await fixture.postgres.pool.query<{ now: Date }>('SELECT clock_timestamp() AS now')).rows[0]!.now.getTime();
 
-  test('claims only a bounded due batch, retaining terminal rows and only internal metadata', async () => {
+  test.each([-300_000, 300_000])('claims only a bounded due batch, retaining terminal rows and only internal metadata with host clock offset %i ms', async (hostClockOffset) => {
     const due = await fixture.seed();
     const next = await fixture.seed();
     const future = await fixture.seed();
@@ -23,14 +24,21 @@ describe('technical delivery queue claims', () => {
       const terminal = await fixture.seed();
       await fixture.postgres.pool.query('UPDATE public.delivery_work SET state = $2, lease_generation = 4 WHERE outbound_message_id = $1', [terminal.id, state]);
     }
-    const [claim] = await queue.claim({ ownerId: ownerA, limit: 1 });
-    expect(claim).toEqual({ outboundMessageId: due.id, userId: due.user_id, ownerId: ownerA,
-      leaseGeneration: 1n, leaseUntil: expect.any(Date), attemptCount: 0 });
-    expect(claim!.leaseUntil.getTime()).toBeGreaterThan(Date.now() + 50_000);
-    expect((await queue.claim({ ownerId: ownerA, limit: 5 })).map((lease) => lease.outboundMessageId)).toEqual([next.id]);
-    expect(await queue.claim({ ownerId: ownerB, limit: 5 })).toEqual([]);
-    expect((await fixture.postgres.pool.query("SELECT state, lease_generation FROM public.delivery_work WHERE state IN ('sent','uncertain','dead','cancelled') ORDER BY state")).rows)
-      .toEqual(['cancelled', 'dead', 'sent', 'uncertain'].map((state) => ({ state, lease_generation: '4' })));
+    const hostNow = Date.now;
+    const hostClock = vi.spyOn(Date, 'now').mockImplementation(() => hostNow() + hostClockOffset);
+    try {
+      const beforeClaim = await databaseNow();
+      const [claim] = await queue.claim({ ownerId: ownerA, limit: 1 });
+      const afterClaim = await databaseNow();
+      expect(claim).toEqual({ outboundMessageId: due.id, userId: due.user_id, ownerId: ownerA,
+        leaseGeneration: 1n, leaseUntil: expect.any(Date), attemptCount: 0 });
+      expect(claim!.leaseUntil.getTime()).toBeGreaterThanOrEqual(beforeClaim + 60_000);
+      expect(claim!.leaseUntil.getTime()).toBeLessThanOrEqual(afterClaim + 60_000);
+      expect((await queue.claim({ ownerId: ownerA, limit: 5 })).map((lease) => lease.outboundMessageId)).toEqual([next.id]);
+      expect(await queue.claim({ ownerId: ownerB, limit: 5 })).toEqual([]);
+      expect((await fixture.postgres.pool.query("SELECT state, lease_generation FROM public.delivery_work WHERE state IN ('sent','uncertain','dead','cancelled') ORDER BY state")).rows)
+        .toEqual(['cancelled', 'dead', 'sent', 'uncertain'].map((state) => ({ state, lease_generation: '4' })));
+    } finally { hostClock.mockRestore(); }
   });
 
   test('concurrent claims do not overlap and skip an independently locked row', async () => {
@@ -69,7 +77,7 @@ describe('technical delivery queue claims', () => {
     expect(await queue.renew({ ...lease!, userId: ownerB })).toBeNull();
     await fixture.postgres.pool.query("UPDATE public.delivery_work SET lease_until = now() - interval '1 hour' WHERE outbound_message_id = $1", [lease!.outboundMessageId]);
     expect(await queue.renew(lease!)).toBeNull();
-    expect((await row(lease!.outboundMessageId)).lease_until.getTime()).toBeLessThan(Date.now());
+    expect((await row(lease!.outboundMessageId)).lease_until.getTime()).toBeLessThan(await databaseNow());
   });
 
   test('checks expiry after waiting for the work lock, without reviving the lease', async () => {
