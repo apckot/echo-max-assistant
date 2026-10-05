@@ -2,6 +2,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { createDelivery, startDeliveryLoop } from '../../../src/runtime/delivery.js';
 import type { DeliveryLease } from '../../../src/modules/delivery/application/delivery-queue.js';
 import { parseRuntimeConfig } from '../../../src/shared/config/config.js';
+import { PostgresDeliveryQueue } from '../../../src/infrastructure/postgres/postgres-delivery-queue.js';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -138,6 +139,29 @@ const environment = {
       `postgres://echo_${role}:synthetic-password@localhost/echo`])),
   MAX_BOT_TOKEN: 'synthetic-token', MAX_WEBHOOK_SECRET: 'secret', MAX_WEBHOOK_URL: 'https://example.org/hook',
 };
+
+test.each([[undefined, 0], ['on', 0], ['off', 4]] as const)(
+  'delivery environment fence %s controls claims across initial and repeated polls', async (fence, claims) => {
+    vi.useFakeTimers();
+    const claim = vi.spyOn(PostgresDeliveryQueue.prototype, 'claim').mockResolvedValue([]);
+    let runtime: ReturnType<typeof createDelivery> | undefined;
+    try {
+      runtime = createDelivery({ ...environment, RESTORE_FENCE: fence });
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(300);
+      expect(claim).toHaveBeenCalledTimes(claims);
+    } finally {
+      try {
+        await runtime?.stop();
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        claim.mockRestore();
+        vi.useRealTimers();
+      }
+    }
+  },
+);
+
 test('delivery validates its timing locally without rejecting fast worker configuration', async () => {
   const fast = { ...environment, WORK_LEASE_MS: 1200, WORK_LEASE_RENEW_MS: 300, HANDLER_TIMEOUT_MS: 20 };
   expect(() => parseRuntimeConfig(fast)).not.toThrow();

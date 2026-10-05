@@ -193,11 +193,6 @@ test('public stop/start cancels an old pending reply and admits a fresh event', 
 test('a blocked tenant permits another tenant to progress; replies stay ordered and API stop drains actual certainty', async () => {
   const app = gateway(); await app.ready(); worker();
   await accepted(app, text('301', 'first-ordered')); await processed(1);
-  // Both default and explicit environment fences disable claims on real pending work.
-  for (const fence of [undefined, 'on']) {
-    const disabled = delivery(2000, { RESTORE_FENCE: fence }); await disabled.stop();
-    expect((await rows('delivery_work'))[0].lease_generation).toBe('0');
-  }
   hold = true; const sending = delivery(2000);
   try {
     await until(async () => calls.length === 1);
@@ -212,6 +207,9 @@ test('a blocked tenant permits another tenant to progress; replies stay ordered 
     const began = performance.now(); const stopped = sending.stop();
     confirm(calls[2]!); await stopped;
     expect(performance.now() - began).toBeLessThan(6500);
+    expect(calls.map((call) => [call.url.searchParams.get('user_id'), call.text])).toEqual([
+      ['301', 'Получено сообщение №1.'], ['302', 'Получено сообщение №1.'], ['301', 'Получено сообщение №2.'],
+    ]);
     expect((await rows('delivery_work')).map((row) => row.state)).toEqual(['sent', 'sent', 'sent']);
     expect((await rows('delivery_attempts')).filter((row) => row.phase === 'completed')
       .map((row) => row.certainty)).toEqual(['sent', 'sent', 'sent']);
