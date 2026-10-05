@@ -6,6 +6,18 @@ import { createDatabase, type UserId } from '../../../src/infrastructure/postgre
 import { runMigrations } from '../../../src/infrastructure/postgres/migrations.js';
 import { startPostgres } from '../../support/postgres.js';
 
+const realSetTimeout = setTimeout;
+const realClearTimeout = clearTimeout;
+// A frozen deadline clock must not freeze fixture setup failure detection.
+async function fixtureReady<T>(ready: Promise<T>): Promise<T> {
+  let watchdog: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([ready, new Promise<never>((_resolve, reject) => {
+      watchdog = realSetTimeout(() => reject(new Error('fixture readiness timed out')), 2_000);
+    })]);
+  } finally { realClearTimeout(watchdog); }
+}
+const elapsedMs = (started: bigint) => Number(process.hrtime.bigint() - started) / 1e6;
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const migrationDirectory = fileURLToPath(new URL('../../../migrations', import.meta.url));
 const testPassword = 'isolated-test-password';
@@ -153,100 +165,90 @@ describe('PostgreSQL roles and transaction boundaries', () => {
   });
 
   test('gateway deadline covers cumulative statements and rolls back prior effects', async () => {
-    const started = performance.now();
+    const started = process.hrtime.bigint();
     await expect(database.systemTransaction('gateway', async (tx) => {
       await tx.query('INSERT INTO public.deadline_probe VALUES (1)');
       await tx.query('SELECT pg_sleep(0.09)');
       await tx.query('SELECT pg_sleep(0.09)');
     })).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(elapsedMs(started)).toBeLessThan(500);
     expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
-    expect(await database.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy')))
-      .toEqual([{ healthy: 1 }]);
+    // Reuse is a database-state assertion; the real deadline is exercised above.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    try {
+      expect(await fixtureReady(database.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy'))))
+        .toEqual([{ healthy: 1 }]);
+    } finally {
+      await vi.advanceTimersByTimeAsync(150);
+      vi.useRealTimers();
+    }
   });
 
-  test('suspended callback expires, releases the only connection, and cannot write or commit later', async () => {
+  async function checkGatewaySuspended(close: boolean) {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    const bounded = createDatabase({ gateway: urls.gateway, poolSize: 1 });
     let resume!: () => void;
     let entered!: () => void;
-    const suspended = new Promise<void>((resolve) => { resume = resolve; });
+    const held = new Promise<void>((resolve) => { resume = resolve; });
     const ready = new Promise<void>((resolve) => { entered = resolve; });
     let lateQuery: Promise<unknown> | undefined;
-    const pending = database.systemTransaction('gateway', async (tx) => {
+    const pending = bounded.systemTransaction('gateway', async (tx) => {
       await tx.query('INSERT INTO public.deadline_probe VALUES (2)');
       entered();
-      await suspended;
+      await held;
       lateQuery = tx.query('INSERT INTO public.deadline_probe VALUES (3)');
       await lateQuery;
     });
-    const rejected = expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    await ready;
-    // Release after a fixed delay so the pre-deadline implementation fails cleanly too.
-    const release = setTimeout(resume, 250);
-    await rejected;
-    expect(await database.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy')))
-      .toEqual([{ healthy: 1 }]);
-    clearTimeout(release);
-    resume();
-    await new Promise((resolve) => setImmediate(resolve));
-    await expect(lateQuery).rejects.toMatchObject({ code: 'DB_CLOSED' });
+    let settled = false;
+    void pending.then(() => { settled = true; }, () => { settled = true; });
+    let fallback: ReturnType<typeof setTimeout> | undefined;
+    let closing: Promise<void> | undefined;
+    try {
+      await fixtureReady(Promise.race([ready, pending.then(() => {
+        throw new Error('gateway callback completed before readiness');
+      })]));
+      const started = process.hrtime.bigint();
+      if (close) closing = bounded.close();
+      await vi.advanceTimersByTimeAsync(149);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      fallback = realSetTimeout(resume, 250);
+      expect(settled).toBe(true);
+      await expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
+      await closing;
+      expect(elapsedMs(started)).toBeLessThan(500);
+      if (close) {
+        await expect(bounded.systemTransaction('gateway', (tx) => tx.query('SELECT 1')))
+          .rejects.toMatchObject({ code: 'DB_CLOSED' });
+      } else {
+        expect(await fixtureReady(bounded.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy'))))
+          .toEqual([{ healthy: 1 }]);
+      }
+      resume();
+      await new Promise((resolve) => setImmediate(resolve));
+      await expect(lateQuery).rejects.toMatchObject({ code: 'DB_CLOSED' });
+    } finally {
+      realClearTimeout(fallback);
+      try {
+        await vi.advanceTimersByTimeAsync(150);
+        resume();
+        await Promise.allSettled([pending]);
+        await (closing ?? bounded.close());
+      } finally { vi.useRealTimers(); }
+    }
     expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
+  }
+
+  test('suspended callback expires, releases the only connection, and cannot write or commit later', async () => {
+    await checkGatewaySuspended(false);
   });
 
   test('queued pool acquisition consumes the same gateway deadline and never starts expired work', async () => {
-    const originalConnect = Pool.prototype.connect;
-    let releaseConnection!: () => void;
-    let acquired!: () => void;
-    const held = new Promise<void>((resolve) => { releaseConnection = resolve; });
-    const ready = new Promise<void>((resolve) => { acquired = resolve; });
-    // Hold the real, checked-out client before handing it to the transaction.
-    const connect = vi.spyOn(Pool.prototype, 'connect').mockImplementationOnce(async function (this: Pool) {
-      const client = await originalConnect.call(this);
-      acquired();
-      await held;
-      return client;
-    });
-    let callbackRan = false;
-    const first = database.systemTransaction('gateway', async () => { callbackRan = true; });
-    const firstRejected = expect(first).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    await ready;
-    const second = database.systemTransaction('gateway', async () => { callbackRan = true; });
-    const secondRejected = expect(second).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    const release = setTimeout(releaseConnection, 250);
-    try {
-      await Promise.all([firstRejected, secondRejected]);
-      expect(callbackRan).toBe(false);
-    } finally {
-      clearTimeout(release);
-      releaseConnection();
-      connect.mockRestore();
-      await Promise.allSettled([first, second]);
-    }
-    expect(await database.systemTransaction('gateway', (tx) => tx.query('SELECT 1 AS healthy')))
-      .toEqual([{ healthy: 1 }]);
+    await checkQueuedAcquisition('gateway', false);
   });
 
   test('gateway-only database needs no other role credentials and closes after expiring suspended work', async () => {
-    const gatewayOnly = createDatabase({ gateway: urls.gateway, poolSize: 1 });
-    let resume!: () => void;
-    let entered!: () => void;
-    const suspended = new Promise<void>((resolve) => { resume = resolve; });
-    const ready = new Promise<void>((resolve) => { entered = resolve; });
-    const pending = gatewayOnly.systemTransaction('gateway', async (tx) => {
-      await tx.query('INSERT INTO public.deadline_probe VALUES (4)');
-      entered();
-      await suspended;
-    });
-    const rejected = expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
-    await ready;
-    const started = performance.now();
-    try {
-      await gatewayOnly.close();
-      expect(performance.now() - started).toBeLessThan(500);
-      await rejected;
-      await expect(gatewayOnly.systemTransaction('gateway', (tx) => tx.query('SELECT 1')))
-        .rejects.toMatchObject({ code: 'DB_CLOSED' });
-    } finally { resume(); }
-    expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
+    await checkGatewaySuspended(true);
   });
 
   test('elapsed gateway deadline prevents commit even when a callback blocks timer delivery', async () => {
@@ -288,6 +290,8 @@ describe('PostgreSQL roles and transaction boundaries', () => {
   });
 
   async function checkWorkerClose(failBeforeReady: boolean) {
+    // Establish real PostgreSQL readiness before advancing the transaction clock.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
     const bounded = createDatabase({ worker: urls.worker, poolSize: 1, workerTransactionTimeoutMs: 100 });
     let resume!: () => void;
     let entered!: () => void;
@@ -314,28 +318,38 @@ describe('PostgreSQL roles and transaction boundaries', () => {
         (error: unknown) => { throw error; },
       ),
     ]);
+    let settled = false;
+    void pending.then(() => { settled = true; }, () => { settled = true; });
     let fallback: ReturnType<typeof setTimeout> | undefined;
     let closing: Promise<void> | undefined;
     try {
       if (failBeforeReady) {
-        await expect(readyOrFailed).rejects.toThrow('injected callback failure');
+        await expect(fixtureReady(readyOrFailed)).rejects.toThrow('injected callback failure');
         await expect(pending).rejects.toThrow('injected callback failure');
       } else {
-        await readyOrFailed;
-        fallback = setTimeout(resume, 250);
-        const started = performance.now();
+        await fixtureReady(readyOrFailed);
+        const started = process.hrtime.bigint();
         closing = bounded.close();
+        await vi.advanceTimersByTimeAsync(99);
+        expect(settled).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        // Arm only after virtual expiry: host scheduling cannot release work early.
+        fallback = realSetTimeout(resume, 250);
+        expect(settled).toBe(true);
         await Promise.all([closing, expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' })]);
-        expect(performance.now() - started).toBeLessThan(500);
+        expect(elapsedMs(started)).toBeLessThan(500);
         resume();
         await new Promise((resolve) => setImmediate(resolve));
         await expect(lateQuery).rejects.toMatchObject({ code: 'DB_CLOSED' });
       }
     } finally {
-      clearTimeout(fallback);
-      resume();
-      await Promise.allSettled([pending]);
-      await (closing ?? bounded.close());
+      realClearTimeout(fallback);
+      try {
+        await vi.advanceTimersByTimeAsync(100);
+        resume();
+        await Promise.allSettled([pending]);
+        await (closing ?? bounded.close());
+      } finally { vi.useRealTimers(); }
     }
     await expect(bounded.systemTransaction('worker', (tx) => tx.query('SELECT 1')))
       .rejects.toMatchObject({ code: 'DB_CLOSED' });
@@ -350,8 +364,10 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     await checkWorkerClose(true);
   });
 
-  async function checkWorkerQueuedAcquisition(failBeforeReady: boolean) {
-    const bounded = createDatabase({ worker: urls.worker, poolSize: 1, workerTransactionTimeoutMs: 100 });
+  async function checkQueuedAcquisition(role: 'gateway' | 'worker', failBeforeReady: boolean) {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    const timeoutMs = role === 'gateway' ? 150 : 100;
+    const bounded = createDatabase({ [role]: urls[role], poolSize: 1, workerTransactionTimeoutMs: 100 });
     const originalConnect = Pool.prototype.connect;
     let releaseConnection!: () => void;
     let acquired!: () => void;
@@ -385,7 +401,7 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     let second: Promise<void> | undefined;
     let fallback: ReturnType<typeof setTimeout> | undefined;
     try {
-      first = bounded.systemTransaction('worker', async () => { callbackRan = true; });
+      first = bounded.systemTransaction(role, async () => { callbackRan = true; });
       const readyOrFailed = Promise.race([
         ready,
         first.then(
@@ -394,37 +410,56 @@ describe('PostgreSQL roles and transaction boundaries', () => {
         ),
       ]);
       if (failBeforeReady) {
-        await expect(readyOrFailed).rejects.toThrow('injected acquisition failure');
+        await expect(fixtureReady(readyOrFailed)).rejects.toThrow('injected acquisition failure');
         await expect(first).rejects.toMatchObject({ code: 'DB_FAILURE' });
       } else {
-        await readyOrFailed;
-        second = bounded.systemTransaction('worker', async () => { callbackRan = true; });
-        fallback = setTimeout(releaseConnection, 250);
+        await fixtureReady(readyOrFailed);
+        second = bounded.systemTransaction(role, async () => { callbackRan = true; });
+        let settled = 0;
+        for (const pending of [first, second]) {
+          void pending.then(() => { settled++; }, () => { settled++; });
+        }
+        await vi.advanceTimersByTimeAsync(timeoutMs - 1);
+        expect(settled).toBe(0);
+        await vi.advanceTimersByTimeAsync(1);
+        fallback = realSetTimeout(releaseConnection, 250);
+        expect(settled).toBe(2);
         await Promise.all([
           expect(first).rejects.toMatchObject({ code: 'DB_TIMEOUT' }),
           expect(second).rejects.toMatchObject({ code: 'DB_TIMEOUT' }),
         ]);
+        releaseConnection();
         await queuedAcquisitionSettled;
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(began).toBe(false);
       }
       expect(callbackRan).toBe(false);
+      if (!failBeforeReady) {
+        expect(await fixtureReady(bounded.systemTransaction(role, (tx) => tx.query('SELECT 1 AS healthy'))))
+          .toEqual([{ healthy: 1 }]);
+      }
     } finally {
-      clearTimeout(fallback); releaseConnection(); connect.mockRestore();
-      await Promise.allSettled([first, second].filter((pending): pending is Promise<void> => pending !== undefined));
-      await bounded.close();
+      realClearTimeout(fallback);
+      try {
+        await vi.advanceTimersByTimeAsync(timeoutMs);
+        releaseConnection();
+        await Promise.allSettled([first, second].filter((pending): pending is Promise<void> => pending !== undefined));
+        await bounded.close();
+      } finally { connect.mockRestore(); vi.useRealTimers(); }
     }
     expect(callbackRan).toBe(false);
     expect(began).toBe(false);
     expect(Pool.prototype.connect).toBe(originalConnect);
-    await expect(bounded.systemTransaction('worker', (tx) => tx.query('SELECT 1')))
+    await expect(bounded.systemTransaction(role, (tx) => tx.query('SELECT 1')))
       .rejects.toMatchObject({ code: 'DB_CLOSED' });
   }
 
   test('worker queued acquisition expires and neither queued nor late-acquired work can begin', async () => {
-    await checkWorkerQueuedAcquisition(false);
+    await checkQueuedAcquisition('worker', false);
   });
 
   test('worker acquisition fixture cleans up when the first connect fails before readiness', async () => {
-    await checkWorkerQueuedAcquisition(true);
+    await checkQueuedAcquisition('worker', true);
   });
 
   test('worker delayed COMMIT acknowledgement remains uncertain and discards the timed-out session', async () => {
