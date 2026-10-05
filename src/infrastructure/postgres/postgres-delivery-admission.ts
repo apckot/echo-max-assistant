@@ -48,7 +48,16 @@ export class PostgresDeliveryAdmission implements DeliveryAdmission {
         return { value: { status: 'terminal' }, disposition: { state } };
       }
       if (!((status === 'pending' && !last) || (status === 'retry' && last?.certainty === 'not_sent'))) throw invalid();
-      if (context.userStatus !== 'active' || context.accountState !== 'active' || context.conversationState !== 'active') {
+      // The existing fence holds the conversation lock before this read. A
+      // monotonic cutoff cancels old sources even after a legitimate restart.
+      const [cancellation] = await tx.query<{ cutoff: string; cancelled: boolean }>(`
+        SELECT c.delivery_cancelled_through_sequence AS cutoff,
+          i.sequence<=c.delivery_cancelled_through_sequence AS cancelled
+        FROM public.outbound_messages o JOIN public.inbound_events i ON i.id=o.source_inbound_event_id
+        JOIN public.conversations c ON c.id=o.conversation_id AND c.user_id=o.user_id
+        WHERE o.id=$1::uuid AND o.user_id=$2::uuid`, ids);
+      if (!cancellation) throw invalid();
+      if (cancellation.cancelled || context.userStatus !== 'active' || context.accountState !== 'active' || context.conversationState !== 'active') {
         await setStatus('cancelled');
         return { value: { status: 'cancelled' }, disposition: { state: 'cancelled' } };
       }
@@ -64,10 +73,11 @@ export class PostgresDeliveryAdmission implements DeliveryAdmission {
           JOIN public.outbound_messages current ON current.id=$1::uuid
           JOIN public.inbound_events ci ON ci.id=current.source_inbound_event_id
           WHERE p.conversation_id=$3::uuid AND p.user_id=$2::uuid AND p.status IN ('pending','sending','retry')
+            AND (p.status='sending' OR pi.sequence>$4::bigint)
             AND (pi.sequence,p.message_index)<(ci.sequence,current.message_index)
         ) AS blocked, (SELECT date_trunc('milliseconds',max(a.recorded_at))+interval '501 milliseconds'
           FROM public.delivery_attempts a JOIN public.outbound_messages o ON o.id=a.outbound_message_id
-          WHERE o.conversation_id=$3::uuid AND o.user_id=$2::uuid AND a.phase='started') AS next_start`, [...ids, context.conversationId]);
+          WHERE o.conversation_id=$3::uuid AND o.user_id=$2::uuid AND a.phase='started') AS next_start`, [...ids, context.conversationId, cancellation.cutoff]);
       if (!ordering) throw invalid();
       if (ordering.blocked || (ordering.next_start && ordering.next_start > ordering.now)) {
         const availableAt = new Date(Math.max(ordering.now.getTime() + 501, ordering.next_start?.getTime() ?? 0));
