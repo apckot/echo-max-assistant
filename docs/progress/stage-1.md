@@ -1,6 +1,6 @@
 # Stage 1 progress
 
-Current status: **checkpoint20 has NOT been accepted: independent default verification exposed PostgreSQL test contention. A separate scheduling fix and renewed verification are recorded in [the gate repair report](checkpoint-20-gate-fix.md). STOP: no21+ without user acceptance.**
+Current status: **iterations21–25 implemented and independently reviewed; checkpoint25 awaits user acceptance. Final exact-HEAD clean-clone, secret-scan and push evidence is supplied in the coordinator checkpoint response. Stop after25; no26+ without acceptance.**
 
 The coordinator adds a row only after independent review.
 
@@ -30,6 +30,18 @@ The coordinator adds a row only after independent review.
 | 20B | accepted substep | a54e450a201d58bdcc70b16bfe286bbaddeabda8 | Independent recovery/ordering review clean | Verify277/277 +functional162/162; five failures, preserved backoff, stale recovery and crash/ack-loss tests | Next:20C runtime/restart |
 | 20C1 | accepted substep | 85bc6442e9b23439c49a58eaa7c683ac7d8e119a | Independent review clean; test barrier cleanup fixed in adfeaca3f762f21f222203290f296696ce26e2cf and independently rereviewed | Final fix verify284/284 +functional169/169; bounded worker operations, acquisition and COMMIT uncertainty | Next:20C2 runtime/restart |
 | 20 | accepted implementation | 5caeec709a27238f9d47092327ce8367562e7d02 | Independent runtime/fence/restart review approved, no findings | Verify293/293 +functional173/173; typecheck/architecture/build pass | Checkpoint20: STOP for user acceptance |
+| 21 | accepted | 8f4f507ef99b4a2b67c0954e60a677f531307295 | Shared Zod contract finding fixed in dcc2a7d2c86fcaefb4899a6863e4ebed36d02453; fresh scoped rereview approved | Default verify304/304 +functional179/179; typecheck/architecture/build; schema12→13 receipts backfill and atomic rollback | Next: MAX certainty adapter |
+| 22 | accepted | 000ea8e611c83286296a7057e6d8e2a6694c840c | R1–R4 fixed in ea2982955e23d7eb100838ec7573e1bcc5be7819; HTTP-date R5 fixed in f7a0a51d1e1d74dd9004ff3943452164f50970ee; fresh scoped review PASS | Final default verify401/401 +functional179/179; typecheck/architecture/build pass; initial transient PG gate failure and passing baseline/repeat retained in checkpoint evidence | Next: durable delivery worker |
+| 23A | accepted substep | 17d36aabada78614c10f5478e88a886dbd55b4c4 | Independent schema/queue spec and quality PASS; no blockers | Default verify413/413 +functional191/191; typecheck/architecture/build pass | Next: tenant delivery transitions; audited journal erasure remains29 |
+| 23B1 | accepted substep | 172ca0b1f30aceb7cef9e314d786ed7127490090 | Independent scoped spec/quality PASS; no blockers | Resumed default verify427/427 +functional205/205; typecheck/architecture/build pass | DB-clock test fix 397870bba5fc1b67e3ffbb05946a4e9ebd31f8ba independently approved, verify428/428 +functional206/206; next admission/recovery |
+| Gate fixture fix | accepted | 621a1c3bdc690bfa2daa1f4372cc1904b52702da | Two P2 findings closed by fresh scoped review; no new findings | Verify428/428 +functional206/206; deterministic deadline boundaries, real watchdog/cleanup, production150ms unchanged | Historical transient HTTP503 failures retained; next restore and gate23B2 |
+| 23B2 | accepted substep | 7ea860889278452575f6c426e8c350f7633182cf | Independent admission/recovery spec and quality PASS; restored reviewed blobs unchanged | Default verify441/441 +functional219/219; typecheck/architecture/build pass | Next: actual completion and retry scheduling |
+| 23B3 | accepted substep | 01b67ec3ed0dd075361c3e086404c5d13527a1a8 | Independent completion/fencing/time-bound review PASS; no findings | Default verify470/470 +functional248/248; typecheck/architecture/build pass | Next: sender orchestration and retry policy |
+| 23 | accepted | 30a36536dc8e6b3b3852f86dcf01ef02a76bb3f4 | Independent single-send/retry-policy review PASS; no findings | Default verify495/495 +functional257/257; typecheck/architecture/build pass; all23 substeps accepted | Next: durable stop/cancellation races |
+| 24 | accepted | 4e7dc0cd5d36f5330497d3b1c860581f31a7450a | Independent review PASS; no P1/P2 | verify509/509 + functional271/271, typecheck/architecture/build0; focused99/99 | Persistent logical stop cutoff; historical ambiguity fails migration; next25 |
+| 25A | accepted substep | e6d0c654131931ee369679ce55bfe087c0bac5fb | Independent review PASS; no P1/P2 | verify520/520 +functional282/282; typecheck/architecture/build0 | Delivery deadline + restoreguard; initial HTTP503 failure retained; next runtime |
+| 25B | accepted substep | ceda17cc4c8b5708e4dfc1836ac3ed6cee0bc770 | Independent review PASS; no P1/P2 | verify533/533 +functional286/286; typecheck/architecture/build0 | Delivery composition, bounded concurrency, restore guards and graceful drain; next end-to-end checkpoint |
+| 25 | accepted implementation; checkpoint pending | 69573815129b24dd391d2246a2561f6efc2eae2c | Two test-proof P2 fixed in 07564443cd2f6b7f2e962ddb23836ac4ffd18b4a; fresh scoped review both ADDRESSED | verify541/541 +functional291/291; typecheck/architecture/build0; five real-runtime E2E cases | Whole-block review PASS; checkpoint publication evidence recorded separately; STOP before26 |
 
 Iteration 1 fixes: `9e4cb912d42100784c3955769e335072c3cf1691` (pin npm 11.16.0), `f9b39bd0fe3f790d974230790f428edbc1137723` (keep report local). Both independently re-reviewed. No open findings.
 
@@ -338,3 +350,13 @@ Publication procedure: pinned Gitleaks8.30.1 scans the final documentation HEAD 
 The earlier checkpoint20 green runs did not establish a reproducible default gate. The user's independent clean clone at `1d9da40dc89d4ba2edac09bbf7eef093517b563b` failed twice (287/293 and291/293) with varying PostgreSQL `DB_TIMEOUT`/503 errors. Isolated failing files, separate functional173/173 and full tests with `--maxWorkers=1` passed. This supersedes the earlier completion claim; checkpoint20 remains pending acceptance.
 
 The separate fix serializes test files using the normal Vitest configuration, preserving discovery, all assertions, production150ms and concurrency within each test. See [the repair evidence and independent review](checkpoint-20-gate-fix.md). Clean-clone, final-HEAD Gitleaks and push are performed after the fix commit, so their exact SHA/results are recorded in the final coordinator response and retained local logs. Iteration21 has not started.
+
+Historical interruption on October4: closed-lid macOS sleep interrupted gates. Work resumed October5 with unchanged staged source;23B1 full verification then passed. Failed runs remain in the checkpoint evidence.
+
+## Checkpoint 25
+
+See [implementation, commits, validation and decisions](checkpoint-25.md) and [independent whole-block review](checkpoint-25-review.md). Final implementation SHA: `07564443cd2f6b7f2e962ddb23836ac4ffd18b4a`; default verify541/541 and separate functional291/291 passed. Both25C test-proof findings are closed in the separate fix commit. The final documentation commit is verified in a fresh clone before push; exact final SHA and publication results belong to the coordinator's checkpoint response. No iteration26 work has begun.
+
+Checkpoint20's earlier rejection above is a historical record: scheduling fix `5e8a5b708361bc9cd622929d760b543ea002a418` was subsequently accepted by the user before this block.
+
+Next, only after acceptance:26 component health;27 subscription/lost-notify reconciliation;28 technical retention;29 account deletion;30 operations checkpoint.

@@ -1,0 +1,52 @@
+# Independent whole-block checkpoint 25 review
+
+**Verdict: PASS for the authorized implementation block 21–25. No actionable P1/P2 finding remains in the reviewed candidate.** Final checkpoint publication remains conditional on the coordinator's documentation commit, exact-final-HEAD fresh-clone gates, full-history secret scan and remote SHA verification. This review does not preclaim those results or authorize iteration 26.
+
+Reviewed range: accepted checkpoint 20 `5e8a5b708361bc9cd622929d760b543ea002a418` → candidate `07564443cd2f6b7f2e962ddb23836ac4ffd18b4a`; 43 files, 3,795 additions / 139 deletions. HEAD was independently rechecked at that candidate after inspection. The only tracked working change was coordinator-owned `docs/progress/stage-1.md`.
+
+Read the whole-block brief and frozen-diff package, binding stage-1 design and iteration ledger/reference packages, checkpoint-25-document draft, progress ledger, production implementation and relevant existing intake/database boundaries, new/changed tests, final 25C scoped rereview and coordinator verification log. Reviewed integration, security, concurrency and evidence rather than treating prior per-step approvals as sufficient.
+
+## Cross-component conclusions
+
+- **Receipt → outbox atomicity and replay:** the new adapter executes on the existing processing transaction. Source/user/conversation foreign keys, event/index and provider/dedupe uniqueness, immutable receipt equality, exact persisted-payload comparison and technical work conflict handling preserve one ordered draft per source index. Migration 13 materializes preexisting durable receipt drafts without rerunning handlers or moving sequence counters. The shared strict Zod contract rejects provider fields at the adapter boundary. Functional assertions extend rollback and lost-COMMIT cases to receipt, outbound and delivery-work counts, and separately cover schema-12 upgrade.
+- **Claim → admission → send → completion:** technical claim alone grants no send authority. Admission locks tenant identity, conversation, outbound and work in a consistent order, checks live owner/generation/expiry after locks, and repeats the guard at final disposition. Only its acknowledged `admitted` result reaches the sender. Same-generation duplicate admission returns `in_flight`. The MAX call is outside the tenant transaction. Completion binds the exact admitted attempt and writes its fact, outbound state and work disposition atomically. Lost acknowledgement does not cause a second call. Reclaim of `sending` appends `attempt_abandoned/uncertain` using the original journal owner/generation, not the reclaiming token; late completion is fenced.
+- **Retry and ordering:** only retryable proven `not_sent` can produce another call, with a durable six-call maximum (initial plus five retries). Completion independently enforces certainty, budget and full Retry-After minimum. Database time controls leases, due dates and admission pacing; a returned old `leaseUntil` is observational after renewal. Conversation locks serialize admission, source sequence plus draft ordinal enforce order, and the upward-rounded journal boundary enforces at least 500 ms between admissions. Logically cancelled old pending/retry sources do not block fresh work; unresolved `sending` still does.
+- **Stop and historical upgrade:** migration 16 advances a persistent cutoff inside the existing lifecycle conversation update; it adds no unbounded outbox scan to ingress. The cutoff survives start and cancels late materialization from an older source. Actual already-admitted completion is retained. Account-wide sibling updates and stop/admission races are covered. Historical active sibling ambiguity fails migration atomically instead of guessing. The documented unrecorded direct-SQL/direct-resolver history limitation is real; ordinary durable runtime intake records lifecycle events, but the old public resolver alone did not create such history. This is an explicitly limited upgrade contract, not a universal migration-safety claim.
+- **Provider and privacy boundary:** exact canonical signed-int64 recipients stay strings through query construction. The adapter rejects malformed Unicode and excessive text before fetch, uses Authorization only, refuses redirects, bounds actual success-body bytes, and aborts unread non-success bodies without waiting for a drain. Proven preconnection failure is restricted to the pre-response phase; malformed success, partial-body failures, timeout, generic transport failure and generic 5xx remain uncertain. Closed result codes prevent raw provider diagnostics reaching durable work. Tenant outbox/attempt tables use FORCE RLS; delivery gets only required identity/sequence columns, while cross-tenant work contains internal IDs and technical metadata.
+- **Runtime:** production composition wraps claim, renewal, admission and completion in the narrow restore guard before other locks, with the fence row held through each transaction's COMMIT. Default/on environment fencing disables claims. Concurrency and scans are bounded; renewal is non-overlapping and independent of network I/O. Stop suppresses future scans, late-claim launches and queued worker invocations, drains already invoked chains, waits for outstanding renewal, then closes pools. The local timing checks support the documented bounded production I/O assumptions. Caller-supplied unbounded ports have no such guarantee.
+- **End-to-end proof:** the checkpoint starts the actual authenticated gateway, processing and delivery compositions against PostgreSQL and a local HTTP MAX server. Primary flows do not seed outbox records. Tests cover zero effects from invalid shared secrets, exact large numeric recipient preservation, text/callback dedupe across restart, no private input-text copy, consumed-body timeout and uncertain recovery without resend, stop/start cancellation, independent tenant progress and ordered delivery. The final drain assertion checks the entire actual consumed recipient/text call sequence.
+
+## Previously reported 25C proof findings
+
+Both are **ADDRESSED** in separate commit `07564443cd2f6b7f2e962ddb23836ac4ffd18b4a`:
+
+1. The environment-fence test no longer stops before scanning can occur. Actual `createDelivery` composition runs through initial and repeated polls for default/on/off; off requires four claims as a positive control. Cleanup closes the real idle pool and restores the prototype spy/timers.
+2. The drain checkpoint rechecks the exact three-call HTTP sequence after `await stopped`, rejecting an extra call during drain. It retains durable certainty and ownership assertions.
+
+The scoped rereview records executed old-test-survives/new-test-fails mutations for both gaps. This whole-block review inspected the resulting assertions and their runtime context, and independently reran the changed unit composition cases as part of the focused suite. It did not rerun those mutations or PostgreSQL suites.
+
+## Evidence and limits
+
+Independent reviewer command, with pinned Node **22.23.3** / npm **11.16.0**:
+
+```sh
+npm exec --yes --package=node@22.23.3 --package=npm@11.16.0 -- sh -c 'node --version && npm --version && npm test -- tests/unit/delivery tests/unit/max tests/unit/runtime/delivery.test.ts'
+```
+
+Result: exit 0, **157/157 tests in 7 files**, no unhandled errors; reported duration 1.11 s. `git diff --check 5e8a5b7..0756444` also passed. No PostgreSQL slot was used. The supplied final coordinator log separately records ordinary verify **541/541 in 41 files**, functional **291/291 in 24 files**, typecheck/architecture/build and overall exit 0. Those are inspected coordinator evidence, not an independent full-suite execution by this reviewer.
+
+The deadline fixture repairs preserve actual cumulative-SQL deadline tests. Suspended callback/acquisition cases establish real PostgreSQL readiness, use a separate real watchdog, check unsettled immediately before and settled at virtual expiry, and only arm fallback release after expiry. Cleanup covers failed readiness and restores spies/timers. These deterministic boundary proofs do not establish that all host-scheduling flakes are gone. The checkpoint draft correctly preserves earlier HTTP503/default-gate failures, rejects an unproven cold-pool diagnosis, and does not claim a production HTTP fix or retry-until-success evidence. Exact-final-HEAD ordinary clean-clone checks remain necessary.
+
+The following documented rulings are accepted for this block and must survive publication:
+
+- Generic 5xx uncertainty is consistent with the binding requirement to retry only proven nonacceptance. Valid but unschedulable Retry-After is terminal rather than silently shortened.
+- Durable admission defines dispatch authorization. Crash or lost admission ACK can conservatively forgo an actually unsent reply; automatically distinguishing that window from a possible send is unsupported. No provider-wide exactly-once guarantee is claimed.
+- Lease expiry is checked after locks and at finalization, with locks retained through COMMIT; this is not an exact physical-COMMIT wall-clock guarantee. Timing budgets assume a responsive event loop. Pool closure is not instantaneous PostgreSQL backend rollback.
+- Runtime stop drains already invoked work and can include its admitted send. Product `bot_stopped` is a separate cancellation boundary. Lazy physical cancellation must be accounted for by future health/retention work.
+- Ambiguous historical sibling stops and unrecorded old direct state changes require operator reconciliation; no production upgrade was performed.
+- Immutable journal DELETE currently blocks even the migrator. Audited retention/erasure must be designed in the authorized future operations block; account deletion is not complete here.
+- The webhook uses a shared secret, not a cryptographic payload signature. All new sends tested here target local fake MAX.
+
+No current-block blocker was identified in those rulings. Health 26, reconciliation 27, retention 28, account deletion 29, full restored-backup reconciliation/drill 32, process/SIGTERM packaging 33, load acceptance 34 and live MAX canary 35 remain outside this acceptance. The limited restore admission guard is not full restore replay protection. No production deployment, live provider, throughput/SLO, AI/STT, billing or Mini App claim is made.
+
+Only this scratch review report was written. No product/test edits, commits, subagents or publication actions were performed.
