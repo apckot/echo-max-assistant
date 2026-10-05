@@ -49,7 +49,7 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     migrator = new Pool({ connectionString: urls.migrator });
     await runMigrations(migrator, migrationDirectory);
     await migrator.query('CREATE TABLE public.deadline_probe (id int)');
-    await migrator.query('GRANT INSERT ON public.deadline_probe TO echo_gateway, echo_worker');
+    await migrator.query('GRANT INSERT ON public.deadline_probe TO echo_gateway, echo_worker, echo_delivery');
     database = createDatabase({
       gateway: urls.gateway,
       worker: urls.worker,
@@ -260,27 +260,27 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     expect((await migrator.query('SELECT * FROM public.deadline_probe')).rows).toEqual([]);
   });
 
-  test('non-gateway callbacks retain their existing transaction lifetime', async () => {
-    expect(await database.systemTransaction('worker', async (tx) => {
+  test.each(['worker', 'delivery'] as const)('%s callbacks without a deadline retain their existing transaction lifetime', async (role) => {
+    expect(await database.systemTransaction(role, async (tx) => {
       await tx.query('SELECT pg_sleep(0.18)');
       return tx.query('SELECT 1 AS healthy');
     })).toEqual([{ healthy: 1 }]);
   });
 
-  test('rejects invalid worker deadlines before opening a pool', () => {
-    for (const workerTransactionTimeoutMs of [0, -1, 1.5, NaN, Infinity, 300_001]) {
-      expect(() => createDatabase({ worker: urls.worker, workerTransactionTimeoutMs }))
+  test.each(['worker', 'delivery'] as const)('rejects invalid %s deadlines before opening a pool', (role) => {
+    for (const timeoutMs of [0, -1, 1.5, NaN, Infinity, 300_001]) {
+      expect(() => createDatabase({ [role]: urls[role], [`${role}TransactionTimeoutMs`]: timeoutMs }))
         .toThrowError(expect.objectContaining({ code: 'DB_INVALID_INPUT' }));
     }
   });
 
-  test('opt-in worker deadline covers cumulative SQL without changing statement and lock limits', async () => {
-    const bounded = createDatabase({ worker: urls.worker, workerTransactionTimeoutMs: 150 });
+  test.each(['worker', 'delivery'] as const)('opt-in %s deadline covers cumulative SQL without changing statement and lock limits', async (role) => {
+    const bounded = createDatabase({ [role]: urls[role], [`${role}TransactionTimeoutMs`]: 150 });
     try {
-      expect(await bounded.systemTransaction('worker', (tx) => tx.query(
+      expect(await bounded.systemTransaction(role, (tx) => tx.query(
         `SELECT current_setting('statement_timeout') AS statement, current_setting('lock_timeout') AS lock`)))
         .toEqual([{ statement: '5s', lock: '1s' }]);
-      await expect(bounded.systemTransaction('worker', async (tx) => {
+      await expect(bounded.systemTransaction(role, async (tx) => {
         await tx.query('INSERT INTO public.deadline_probe VALUES (6)');
         await tx.query('SELECT pg_sleep(0.09)');
         await tx.query('SELECT pg_sleep(0.09)');
@@ -289,17 +289,17 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     expect((await migrator.query('SELECT * FROM public.deadline_probe WHERE id = 6')).rows).toEqual([]);
   });
 
-  async function checkWorkerClose(failBeforeReady: boolean) {
+  async function checkBoundedClose(role: 'worker' | 'delivery', failBeforeReady: boolean) {
     // Establish real PostgreSQL readiness before advancing the transaction clock.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
-    const bounded = createDatabase({ worker: urls.worker, poolSize: 1, workerTransactionTimeoutMs: 100 });
+    const bounded = createDatabase({ [role]: urls[role], poolSize: 1, [`${role}TransactionTimeoutMs`]: 100 });
     let resume!: () => void;
     let entered!: () => void;
     let rejectReady!: (error: Error) => void;
     const held = new Promise<void>((resolve) => { resume = resolve; });
     const ready = new Promise<void>((resolve, reject) => { entered = resolve; rejectReady = reject; });
     let lateQuery: Promise<unknown> | undefined;
-    const pending = bounded.tenantTransaction('worker', userId, async (tx) => {
+    const pending = bounded.tenantTransaction(role, userId, async (tx) => {
       if (failBeforeReady) {
         const error = new Error('injected callback failure');
         rejectReady(error);
@@ -314,7 +314,7 @@ describe('PostgreSQL roles and transaction boundaries', () => {
     const readyOrFailed = Promise.race([
       ready,
       pending.then(
-        () => { throw new Error('worker callback completed before readiness'); },
+        () => { throw new Error(`${role} callback completed before readiness`); },
         (error: unknown) => { throw error; },
       ),
     ]);
@@ -351,29 +351,30 @@ describe('PostgreSQL roles and transaction boundaries', () => {
         await (closing ?? bounded.close());
       } finally { vi.useRealTimers(); }
     }
-    await expect(bounded.systemTransaction('worker', (tx) => tx.query('SELECT 1')))
+    await expect(bounded.systemTransaction(role, (tx) => tx.query('SELECT 1')))
       .rejects.toMatchObject({ code: 'DB_CLOSED' });
     expect((await migrator.query('SELECT * FROM public.deadline_probe WHERE id IN (7, 8)')).rows).toEqual([]);
   }
 
-  test('worker close waits only to the callback deadline and late work cannot write or commit', async () => {
-    await checkWorkerClose(false);
+  test.each(['worker', 'delivery'] as const)('%s close waits only to the callback deadline and late work cannot write or commit', async (role) => {
+    await checkBoundedClose(role, false);
   });
 
-  test('worker callback fixture cleans up when work fails before readiness', async () => {
-    await checkWorkerClose(true);
+  test.each(['worker', 'delivery'] as const)('%s callback fixture cleans up when work fails before readiness', async (role) => {
+    await checkBoundedClose(role, true);
   });
 
-  async function checkQueuedAcquisition(role: 'gateway' | 'worker', failBeforeReady: boolean) {
+  async function checkQueuedAcquisition(role: 'gateway' | 'worker' | 'delivery', failBeforeReady: boolean) {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
     const timeoutMs = role === 'gateway' ? 150 : 100;
-    const bounded = createDatabase({ [role]: urls[role], poolSize: 1, workerTransactionTimeoutMs: 100 });
+    const bounded = createDatabase({ [role]: urls[role], poolSize: 1, [`${role}TransactionTimeoutMs`]: 100 });
     const originalConnect = Pool.prototype.connect;
     let releaseConnection!: () => void;
     let acquired!: () => void;
     let rejectReady!: (error: Error) => void;
     const held = new Promise<void>((resolve) => { releaseConnection = resolve; });
     const ready = new Promise<void>((resolve, reject) => { acquired = resolve; rejectReady = reject; });
+    let queuedAcquisitionFinished = false;
     let settleQueuedAcquisition!: () => void;
     const queuedAcquisitionSettled = new Promise<void>((resolve) => { settleQueuedAcquisition = resolve; });
     let calls = 0;
@@ -394,7 +395,7 @@ describe('PostgreSQL roles and transaction boundaries', () => {
         acquired(); await held; return client;
       }
       try { return await originalConnect.call(this); }
-      finally { settleQueuedAcquisition(); }
+      finally { queuedAcquisitionFinished = true; settleQueuedAcquisition(); }
     });
     let callbackRan = false;
     let first: Promise<void> | undefined;
@@ -424,6 +425,7 @@ describe('PostgreSQL roles and transaction boundaries', () => {
         await vi.advanceTimersByTimeAsync(1);
         fallback = realSetTimeout(releaseConnection, 250);
         expect(settled).toBe(2);
+        expect(queuedAcquisitionFinished).toBe(true);
         await Promise.all([
           expect(first).rejects.toMatchObject({ code: 'DB_TIMEOUT' }),
           expect(second).rejects.toMatchObject({ code: 'DB_TIMEOUT' }),
@@ -454,42 +456,59 @@ describe('PostgreSQL roles and transaction boundaries', () => {
       .rejects.toMatchObject({ code: 'DB_CLOSED' });
   }
 
-  test('worker queued acquisition expires and neither queued nor late-acquired work can begin', async () => {
-    await checkQueuedAcquisition('worker', false);
+  test.each(['worker', 'delivery'] as const)('%s queued acquisition expires and neither queued nor late-acquired work can begin', async (role) => {
+    await checkQueuedAcquisition(role, false);
   });
 
-  test('worker acquisition fixture cleans up when the first connect fails before readiness', async () => {
-    await checkQueuedAcquisition('worker', true);
+  test.each(['worker', 'delivery'] as const)('%s acquisition fixture cleans up when the first connect fails before readiness', async (role) => {
+    await checkQueuedAcquisition(role, true);
   });
 
-  test('worker delayed COMMIT acknowledgement remains uncertain and discards the timed-out session', async () => {
-    const bounded = createDatabase({ worker: urls.worker, poolSize: 1, workerTransactionTimeoutMs: 100 });
+  test.each(['worker', 'delivery'] as const)('%s delayed COMMIT acknowledgement remains uncertain and discards the timed-out session', async (role) => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    const bounded = createDatabase({ [role]: urls[role], poolSize: 1, [`${role}TransactionTimeoutMs`]: 100 });
     const originalConnect = Pool.prototype.connect;
     let acknowledge!: () => void;
+    let committed!: () => void;
     const heldAck = new Promise<void>((resolve) => { acknowledge = resolve; });
+    const ready = new Promise<void>((resolve) => { committed = resolve; });
     const connect = vi.spyOn(Pool.prototype, 'connect').mockImplementationOnce(async function (this: Pool) {
       const client = await originalConnect.call(this);
       const query = client.query.bind(client);
       client.query = (async (...args: Parameters<typeof client.query>) => {
         const result = await query(...args);
-        if (args[0] === 'COMMIT') await heldAck;
+        if (args[0] === 'COMMIT') { committed(); await heldAck; }
         return result;
       }) as typeof client.query;
       return client;
     });
     let previousPid: number | undefined;
-    const pending = bounded.systemTransaction('worker', async (tx) => {
+    const pending = bounded.systemTransaction(role, async (tx) => {
       previousPid = (await tx.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'))[0]?.pid;
       await tx.query('INSERT INTO public.deadline_probe VALUES (9)');
     });
-    const fallback = setTimeout(acknowledge, 250);
+    let settled = false;
+    void pending.then(() => { settled = true; }, () => { settled = true; });
     try {
+      await fixtureReady(Promise.race([ready, pending.then(() => {
+        throw new Error('transaction completed before held COMMIT acknowledgement');
+      })]));
+      await vi.advanceTimersByTimeAsync(99);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(settled).toBe(true);
       await expect(pending).rejects.toMatchObject({ code: 'DB_TIMEOUT' });
       expect((await migrator.query('SELECT * FROM public.deadline_probe WHERE id = 9')).rows).toEqual([{ id: 9 }]);
-      const next = await bounded.systemTransaction('worker', (tx) => tx.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'));
+      const next = await fixtureReady(bounded.systemTransaction(role, (tx) =>
+        tx.query<{ pid: number }>('SELECT pg_backend_pid() AS pid')));
       expect(next[0]?.pid).not.toBe(previousPid);
     } finally {
-      clearTimeout(fallback); acknowledge(); connect.mockRestore(); await bounded.close();
+      try {
+        await vi.advanceTimersByTimeAsync(100);
+        acknowledge();
+        await Promise.allSettled([pending]);
+        await bounded.close();
+      } finally { connect.mockRestore(); vi.useRealTimers(); }
       await migrator.query('DELETE FROM public.deadline_probe WHERE id = 9');
     }
   });
