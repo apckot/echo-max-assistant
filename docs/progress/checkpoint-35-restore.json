@@ -7,6 +7,6 @@
   "pgVerifybackup": true,
   "replayEligibleOldOutbound": 0,
   "rpoMs": 0,
-  "rtoMs": 12043,
+  "rtoMs": 12680,
   "productionStorageVerified": false
 }
