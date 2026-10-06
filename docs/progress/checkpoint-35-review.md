@@ -1,5 +1,7 @@
 # Checkpoint35 cumulative independent review
 
+2026-10-06 retention correction: the same cumulative reviewer performed only the user-authorized scoped rereview of the retention service/store and scheduler clock-skew regression. **No findings.** PostgreSQL time is selected inside the same SQL operation; fixed-clock injection, explicit cutoffs and the SQL future guard remain intact. Supplied evidence: related 6/6 tests, typecheck and architecture guard passed. Controlled +60s skew is confirmed; exact historical gate clock values remain unknown. Reviewer ran no tests, gates, scans, edits or agents. No new audit of the block was performed.
+
 One authorized read-only reviewer inspected55977f317458cdd282bd522648d05c56dc410ac1..ec64bbe50c90c39c68a115adba9dc70bb7dfba0f. It reused supplied targeted logs/reports, inspected source and performed two filename rejection probes. No edits, delegated agents, full gates or load/functional-suite reruns.
 
 | Finding | Priority | Same-executor correction | Evidence |

@@ -1,5 +1,24 @@
 # Checkpoint35 — Stage1 completion boundary
 
+Current status (2026-10-06): the authorized gate repeat on `95b77ef` failed in the separate functional suite (304 passed, 1 failed), after the default suite passed (571 passed, 1 skipped). The failure was `DB_INVALID_INPUT` at `operations/checkpoint.test.ts` during `scheduler.clean()`. The focused retention correction below passed targeted checks; a new full gate requires separate user authorization. No push or real MAX canary was performed. Earlier boundary statements below are historical evidence.
+
+## Focused retention clock correction
+
+The original scenario currently passes without an artificial clock shift; its historical gate timestamps were not recorded, so the exact historical cause is not proven. A fixture-only diagnostic evaluated all original SQL input-validation branches using one captured PostgreSQL `clock_timestamp()`. With application Date advanced by 60 seconds, it reproduced the failure with these non-content values:
+
+| Input / observation | Value |
+|---|---|
+|`as_of`|`2026-10-06T14:27:04.496Z`|
+|PostgreSQL `clock_timestamp()` at validation|`2026-10-06T14:26:04.498262Z`|
+|`batch_limit`|`100`|
+|Rejecting branch|`as_of > clock_timestamp()` (`as_of_future`), SQLSTATE `22023`|
+
+Without the artificial shift, SQL validation observed `as_of=2026-10-06T14:25:46.266Z`, PostgreSQL time `2026-10-06T14:25:46.266039Z`, batch 100, branch `valid`. A separate earlier input probe saw application time 1 ms ahead of PostgreSQL, but the subsequent validation succeeded; that probe alone does not establish the historical failure.
+
+Ordinary retention now calls `retain_technical_records(clock_timestamp(), batch_limit)` inside the same scheduler database transaction and SQL operation. The explicit `clean(Date, limit)` path and injected fixed test clock remain available. Existing SQL future-time validation is unchanged; no delay or tolerance was added. Temporary diagnostic instrumentation was removed.
+
+The permanent regression failed RED on the old code with `DB_INVALID_INPUT`, using the actual scheduler and unchanged PostgreSQL routine. After correction, application Date 60 seconds ahead no longer breaks `scheduler.clean()`, while an explicitly supplied future cutoff still fails. Related checkpoint/retention/retention-fencing: **3 files, 6 tests passed**; typecheck and architecture guard passed. Only these targeted checks ran for the correction. Scoped confirmation by the same cumulative reviewer is recorded separately. Full checkpoint readiness remains pending an authorized gate; Stage 1 acceptance also requires the real MAX canary and its infrastructure/credentials. Stop before the next stage.
+
 Scope: iterations31–35, one primary executor in the existing context/branch; no per-iteration reviewer or full gate. Baseline55977f317458cdd282bd522648d05c56dc410ac1 (checkpoint30 accepted by user). One cumulative independent review and one final full gate/functional/clean-clone/secret scan are authorized after35; the single full gate failed; targeted repairs passed, but a repeat requires user authorization. See the verification record. No next-stage work is authorized.
 
 | Iteration | Result | Targeted evidence |

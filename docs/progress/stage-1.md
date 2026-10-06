@@ -1,6 +1,6 @@
 # Stage 1 progress
 
-Current status: **iterations21–25 implemented and independently reviewed; checkpoint25 awaits user acceptance. Final exact-HEAD clean-clone, secret-scan and push evidence is supplied in the coordinator checkpoint response. Stop after25; no26+ without acceptance.**
+Current status (2026-10-06): **checkpoint30 accepted; iterations31–35 implemented, checkpoint35 full gate pending separate authorization after the failed repeat on95b77ef. Focused retention correction passes 6 related tests, typecheck and architecture guard; same cumulative reviewer scoped-confirmed it with no findings. Real MAX canary awaits infrastructure and test credentials. No push or next-stage work.** See [checkpoint35](checkpoint-35.md) for exact failure and clock-diagnostic evidence. Earlier checkpoint statuses below are historical.
 
 The coordinator adds a row only after independent review.
 

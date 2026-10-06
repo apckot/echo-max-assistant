@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
-import { afterAll,beforeAll,expect,test } from 'vitest';
+import { afterAll,beforeAll,expect,test,vi } from 'vitest';
+import { PostgresRetentionStore } from '../../../src/infrastructure/postgres/postgres-retention-store.js';
 import { deliveryFixture } from '../../support/delivery-fixture.js';
 import { createGateway } from '../../../src/runtime/gateway.js';
 import { createScheduler } from '../../../src/runtime/scheduler.js';
@@ -30,6 +31,15 @@ afterAll(async()=>{
   server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await f?.close();
 });
 const health=async()=>(await app.inject({url:'/ops/health',headers:{authorization:'Bearer ops-secret'}})).json();
+test('scheduler retention uses PostgreSQL time when application time is ahead; explicit future cutoff is rejected',async()=>{
+  const pgNow=(await f.postgres.pool.query('SELECT clock_timestamp() AS now')).rows[0].now as Date;
+  const future=new Date(pgNow.getTime()+60_000);
+  vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(future);
+  try{
+    await expect(scheduler.clean()).resolves.toEqual({conversationWork:0,deliveryWork:0,attempts:0});
+    await expect(new PostgresRetentionStore(database).clean(future,100)).rejects.toMatchObject({code:'DB_INVALID_INPUT'});
+  }finally{vi.useRealTimers();}
+});
 test('operations checkpoint: stale monitoring is visible, retention preserves content, deletion resumes after restart',async()=>{
   await scheduler.checkSubscription();expect((await health()).subscription.status).toBe('healthy');
   await f.postgres.pool.query("UPDATE public.integration_health SET checked_at=clock_timestamp()-interval '11 minutes'");
