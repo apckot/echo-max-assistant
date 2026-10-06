@@ -1,0 +1,43 @@
+{
+  "codeBase": "804a806895e8c01ad2e30c99a04e41f26006dfae",
+  "measuredAt": "2026-10-06T07:55:12.159Z",
+  "postgres": 17,
+  "pools": {
+    "gateway": 10,
+    "worker": 10,
+    "delivery": 5
+  },
+  "runtime": "local Node22, PostgreSQL17 container, real HTTP, loopback FakeMAX",
+  "queueWakeMetric": "receipt commit timestamp minus ingress creation (upper bound on actual claim wake)",
+  "scenarios": [
+    {
+      "offeredRps": 5,
+      "seconds": 30,
+      "requests": 150,
+      "webhookP95Ms": 8.79045799999949,
+      "webhookP99Ms": 10.103875000000698,
+      "maxSchedulingLagMs": 1.4732919999987644,
+      "queueWakeP95Ms": 107.286,
+      "drainMs": 185.083333999999
+    },
+    {
+      "offeredRps": 30,
+      "seconds": 60,
+      "requests": 1800,
+      "webhookP95Ms": 6.1972919999971054,
+      "webhookP99Ms": 21.651000000005297,
+      "maxSchedulingLagMs": 10.09520766667265,
+      "queueWakeP95Ms": 106.965,
+      "drainMs": 139.62745800000266
+    }
+  ],
+  "backlog": {
+    "requests": 300,
+    "depth": 300,
+    "drainMs": 6079.149541999999
+  },
+  "maxDepth": 300,
+  "maxConnections": 23,
+  "maxWaitingLocks": 1,
+  "thresholdsPassed": true
+}
