@@ -16,6 +16,7 @@ export class DatabaseError extends Error {
 }
 
 export interface DbTx {
+  readonly signal?: AbortSignal;
   query<T extends QueryResultRow = QueryResultRow>(sql: string, params?: readonly unknown[]): Promise<T[]>;
 }
 
@@ -97,6 +98,8 @@ export function createDatabase(urls: DatabaseUrls): Database {
     let client: PoolClient | undefined;
     let released = false;
     let expired = false;
+    let authorityFailure: DatabaseError | undefined;
+    const cancellation = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new DatabaseError('DB_TIMEOUT', 'Database operation timed out');
     let rejectDeadline: (error: DatabaseError) => void;
@@ -104,21 +107,26 @@ export function createDatabase(urls: DatabaseUrls): Database {
     const release = (discard: boolean) => {
       if (client && !released) {
         released = true;
+        client.removeListener('error', lostAuthority);
         client.release(discard);
       }
     };
-    const expire = () => {
+    const expire = (error: DatabaseError = timeout) => {
+      if (expired) return;
       expired = true;
+      authorityFailure = error;
+      cancellation.abort();
       active = false;
       // Destroy the session instead of waiting for SQL or the application callback.
       // PostgreSQL rolls back an open transaction when its connection closes.
       release(true);
-      rejectDeadline(timeout);
+      rejectDeadline(error);
     };
+    const lostAuthority = () => expire(new DatabaseError('DB_UNAVAILABLE', 'Database unavailable'));
     const checkDeadline = () => {
       if (expired || performance.now() >= deadline) {
         if (!expired) expire();
-        throw timeout;
+        throw authorityFailure ?? timeout;
       }
     };
     let active = true;
@@ -127,6 +135,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
     const run = async () => {
       try {
         client = await pools[role].connect().catch((error: unknown) => { throw databaseError(error); });
+        client.on('error', lostAuthority);
         // A pool acquisition can finish after the caller's deadline. Never use it.
         checkDeadline();
         await client.query('BEGIN');
@@ -139,6 +148,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
         await client.query(role === 'gateway'
           ? "SET LOCAL lock_timeout = '100ms'" : "SET LOCAL lock_timeout = '1s'");
         const tx: DbTx = {
+          signal: cancellation.signal,
           async query<T extends QueryResultRow = QueryResultRow>(sql: string, params?: readonly unknown[]): Promise<T[]> {
             if (!active) throw new DatabaseError('DB_CLOSED', 'Transaction is closed');
             try {
@@ -163,7 +173,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
         if (begun && !expired) {
           try { await client!.query('ROLLBACK'); } catch { discardClient = true; }
         }
-        if (expired) throw timeout;
+        if (expired) throw authorityFailure ?? timeout;
         if (error instanceof DatabaseError || !(error instanceof Error) || !('code' in error)) throw error;
         throw databaseError(error);
       } finally {
@@ -175,6 +185,7 @@ export function createDatabase(urls: DatabaseUrls): Database {
       return await Promise.race([run(), deadlineReached]);
     } finally {
       clearTimeout(timer);
+      cancellation.abort();
     }
   }
 

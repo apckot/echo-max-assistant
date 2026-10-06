@@ -48,7 +48,7 @@ describe('protected system state', () => {
     }>(`SELECT id, schema_version, restore_fence, restored_snapshot_at, deployment_epoch
         FROM public.system_state`);
     expect(result.rows).toEqual([{
-      id: 1, schema_version: 21, restore_fence: false,
+      id: 1, schema_version: 22, restore_fence: false,
       restored_snapshot_at: null, deployment_epoch: '0',
     }]);
   });
@@ -115,7 +115,7 @@ describe('protected system state', () => {
       await expect(delivery.query('SELECT public.guard_delivery_restore_fence()'))
         .rejects.toMatchObject({ code: 'P0001', message: 'Delivery unavailable' });
     } finally {
-      await migrator.query(`INSERT INTO public.system_state (id, schema_version) VALUES (1, 21)
+      await migrator.query(`INSERT INTO public.system_state (id, schema_version) VALUES (1, 22)
         ON CONFLICT (id) DO UPDATE SET restore_fence = false`);
     }
   });

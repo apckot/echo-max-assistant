@@ -49,3 +49,18 @@ test('cleanup skips locked dead work, enforces batch bounds and clears closure o
   await f.postgres.pool.query("UPDATE public.delivery_work SET state='ready' WHERE outbound_message_id=$1",[rows[0]!.id]);
   expect((await f.postgres.pool.query('SELECT incident_closed_at FROM public.delivery_work WHERE outbound_message_id=$1',[rows[0]!.id])).rows[0]).toEqual({incident_closed_at:null});
 });
+test('permanent not_sent journals expire strictly after90 days even after dead work is removed',async()=>{
+  await f.postgres.pool.query('TRUNCATE public.users CASCADE');
+  const row=await f.seed();
+  await f.postgres.pool.query("UPDATE public.outbound_messages SET status='not_sent' WHERE id=$1",[row.id]);
+  await f.postgres.pool.query("UPDATE public.delivery_work SET state='dead' WHERE outbound_message_id=$1",[row.id]);
+  await f.postgres.pool.query("UPDATE public.delivery_work SET incident_closed_at='2026-08-01' WHERE outbound_message_id=$1",[row.id]);
+  await f.postgres.pool.query(`INSERT INTO public.delivery_attempts(outbound_message_id,user_id,attempt_number,phase,lease_owner,lease_generation,recorded_at)
+    VALUES($1,$2,1,'started',$3,1,'2026-07-03')`,[row.id,row.user_id,ownerA]);
+  await f.postgres.pool.query(`INSERT INTO public.delivery_attempts(outbound_message_id,user_id,attempt_number,phase,lease_owner,lease_generation,recorded_at,certainty,code)
+    VALUES($1,$2,1,'completed',$3,1,'2026-07-03','not_sent','rejected')`,[row.id,row.user_id,ownerA]);
+  let now=new Date('2026-10-01');const service=new RetentionService(new PostgresRetentionStore(db),()=>now);
+  expect(await service.run(1)).toEqual({conversationWork:0,deliveryWork:1,attempts:0});
+  now=new Date('2026-10-02');
+  expect(await service.run(1)).toEqual({conversationWork:0,deliveryWork:0,attempts:2});
+});
