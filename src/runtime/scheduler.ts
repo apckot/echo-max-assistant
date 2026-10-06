@@ -1,3 +1,5 @@
+import { DeleteAccount } from '../modules/identity/application/delete-account.js';
+import { PostgresAccountDeletion } from '../infrastructure/postgres/postgres-account-deletion.js';
 import { RetentionService } from '../modules/operations/application/retention-service.js';
 import { PostgresRetentionStore } from '../infrastructure/postgres/postgres-retention-store.js';
 import { createDatabase } from '../infrastructure/postgres/database.js';
@@ -11,6 +13,12 @@ export function createScheduler(environment:Record<string,unknown>,options:{base
   const database=createDatabase({scheduler:config.DATABASE_URL_SCHEDULER,poolSize:2,schedulerTransactionTimeoutMs:30_000});
   const monitor=new SubscriptionMonitor(new PostgresSubscriptionStore(database),createMaxSubscriptionClient({token:config.MAX_BOT_TOKEN,baseUrl:options.baseUrl}),
     {url:config.MAX_WEBHOOK_URL,secret:config.MAX_WEBHOOK_SECRET,version:config.MAX_WEBHOOK_SECRET_VERSION});
+  const deletion=new DeleteAccount(new PostgresAccountDeletion(database));
+  let deleting:Promise<unknown>|undefined;
+  const erase=()=>{
+    if(stopping || config.RESTORE_FENCE==='on')return Promise.resolve();
+    return deleting??=deletion.resume().finally(()=>{deleting=undefined;});
+  };
   const retention=new RetentionService(new PostgresRetentionStore(database));
   let cleaning:Promise<unknown>|undefined;
   const clean=()=>{
@@ -32,11 +40,11 @@ export function createScheduler(environment:Record<string,unknown>,options:{base
   };
   const timers:ReturnType<typeof setInterval>[]=[];
   if(options.automatic!==false){
-    timers.push(setInterval(()=>{void clean().catch(()=>{});},60_000),setInterval(()=>{void scan().catch(()=>{});},5000),setInterval(()=>{void checkSubscription().catch(()=>{});},300_000));
+    timers.push(setInterval(()=>{void erase().catch(()=>{});},5000),setInterval(()=>{void clean().catch(()=>{});},60_000),setInterval(()=>{void scan().catch(()=>{});},5000),setInterval(()=>{void checkSubscription().catch(()=>{});},300_000));
     void scan().catch(()=>{});void checkSubscription().catch(()=>{});
   }
-  return {checkSubscription,scan,clean,stop(){return stopped??=(async()=>{
+  return {checkSubscription,scan,clean,erase,stop(){return stopped??=(async()=>{
     stopping=true;for(const timer of timers)clearInterval(timer);
-    await Promise.allSettled([checking,scanning,cleaning]);await database.close();
+    await Promise.allSettled([checking,scanning,cleaning,deleting]);await database.close();
   })();}};
 }
