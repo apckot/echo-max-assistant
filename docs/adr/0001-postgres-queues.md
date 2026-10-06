@@ -1,0 +1,3 @@
+# ADR1: PostgreSQL durable queues
+
+Accepted Stage1 design: PostgreSQL17 owns inbound sequence, durable conversation/delivery work and fencing generations; no Redis broker. NOTIFY is only a hint; bounded runtime polls and scheduler scans recover lost notifications. Admission and effect commit share database transactions, with ordered conversation head selection, tenant RLS and immutable receipts. Queue rows contain UUID/state/lease metadata, never message bodies or provider IDs. Generation floors survive technical queue retention and disappear with privacy erasure. Throughput acceptance uses real HTTP and PostgreSQL with5RPS steady and30RPS/60s burst; see checkpoint35 performance evidence. Future broker adoption needs separate evidence and ADR.

@@ -44,6 +44,7 @@ test('isolated physical encrypted restore: verified WAL/data, fenced replay, mea
  const report={kind:'isolated_physical_restore',postgres:17,authenticatedEncryption:true,pgVerifybackup:true,replayEligibleOldOutbound:0,
  rpoMs:Date.now()-Date.parse(manifest.snapshot_at),rtoMs:Date.now()-started,productionStorageVerified:false};
  expect(report.rpoMs).toBeLessThanOrEqual(300_000);expect(report.rtoMs).toBeLessThanOrEqual(14_400_000);
+ if(process.env.ECHO_RESTORE_REPORT)await writeFile(process.env.ECHO_RESTORE_REPORT,JSON.stringify(report,null,2)+'\n');
  console.log('RESTORE_DRILL '+JSON.stringify(report));
  }finally{await restoredPool?.end();await pool?.end();await restored?.stop();await source?.stop();await rm(root,{recursive:true,force:true});}
 },120_000);

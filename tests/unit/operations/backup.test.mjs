@@ -36,6 +36,7 @@ for arg; do case "$arg" in --pgdata=*) dest=\${arg#--pgdata=};; esac; done
 mkdir "$dest"
 printf '%s' '{"WAL-Ranges":[{"Timeline":1,"Start-LSN":"0/1000000","End-LSN":"0/2000000"}]}' > "$dest/backup_manifest"
 printf 'private data' > "$dest/data"
+: > "$dest/postgresql.auto.conf"
 `);await chmod(join(bin,'pg_basebackup'),0o700);
  await writeFile(join(bin,'pg_verifybackup'),'#!/bin/sh\nexit "${VERIFY_EXIT:-0}"\n');await chmod(join(bin,'pg_verifybackup'),0o700);
  const env={...process.env,PATH:bin+':'+process.env.PATH,BACKUP_ROOT:root,BACKUP_KEY_FILE:key};

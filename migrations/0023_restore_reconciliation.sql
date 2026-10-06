@@ -123,4 +123,29 @@ BEGIN
 END $$;
 
 
+CREATE OR REPLACE FUNCTION public.component_health() RETURNS jsonb
+LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog AS $$
+SELECT jsonb_build_object(
+  'schemaVersion',s.schema_version,'restoreFence',s.restore_fence,
+  'migrations',(SELECT coalesce(jsonb_object_agg(name,checksum),'{}'::jsonb) FROM public.schema_migrations),
+  'queue',jsonb_build_object('depth',(SELECT count(*) FROM public.inbound_events e JOIN public.conversations c
+    ON c.id=e.conversation_id WHERE e.sequence>=c.next_apply_sequence),
+    'lagSeconds',(SELECT coalesce(extract(epoch FROM clock_timestamp()-min(e.received_at)),0) FROM public.inbound_events e
+      JOIN public.conversations c ON c.id=e.conversation_id WHERE e.sequence>=c.next_apply_sequence),
+    'expiredLeases',(SELECT count(*) FROM public.conversation_work WHERE state='leased' AND lease_until<clock_timestamp())),
+  'delivery',jsonb_build_object(
+    'pending',(SELECT count(*) FROM public.outbound_messages o JOIN public.conversations c ON c.id=o.conversation_id
+      JOIN public.inbound_events e ON e.id=o.source_inbound_event_id
+      WHERE o.status IN ('pending','retry') AND c.state='active' AND e.sequence>c.delivery_cancelled_through_sequence),
+    'cancelled',(SELECT count(*) FROM public.outbound_messages o JOIN public.conversations c ON c.id=o.conversation_id
+      JOIN public.inbound_events e ON e.id=o.source_inbound_event_id WHERE o.status='cancelled' OR
+      (o.status IN ('pending','retry') AND (c.state='stopped' OR e.sequence<=c.delivery_cancelled_through_sequence))),
+    'uncertain',(SELECT count(*) FROM public.outbound_messages WHERE status IN ('uncertain','uncertain_restore')),
+    'expiredLeases',(SELECT count(*) FROM public.delivery_work WHERE state='leased' AND lease_until<clock_timestamp())),
+  'subscription',coalesce((SELECT jsonb_build_object('status',status,'failures',failures,'checkedAt',checked_at)
+    FROM public.integration_health WHERE component='max_subscription'),'{"status":"unknown"}'::jsonb),
+  'backup','unknown','deletion',jsonb_build_object('pending',(SELECT count(*) FROM public.users WHERE status='deleting')))
+FROM public.system_state s WHERE s.id=1
+$$;
+
 UPDATE public.system_state SET schema_version=23 WHERE id=1 AND schema_version=22;

@@ -20,6 +20,7 @@ test('restore is preview-only by default; fenced reconciliation quarantines old 
  await f.pools.migrator.query('SELECT public.reconcile_restore($1,$2,true)',[incident,snapshot]);
  expect((await f.postgres.pool.query('SELECT DISTINCT status FROM public.outbound_messages')).rows).toEqual([{status:'uncertain_restore'}]);
  expect((await f.postgres.pool.query('SELECT DISTINCT state,lease_generation,lease_owner FROM public.delivery_work')).rows).toEqual([{state:'cancelled',lease_generation:'8',lease_owner:null}]);
+ expect((await f.pools.gateway.query('SELECT public.component_health() AS h')).rows[0].h.delivery.uncertain).toBe(3);
  await f.pools.migrator.query('SELECT public.reopen_restore($1)',[incident]);
  const fresh=await f.seed();expect((await f.postgres.pool.query('SELECT status FROM public.outbound_messages WHERE id=$1',[fresh.id])).rows[0].status).toBe('pending');
  // An old unprocessed inbound materialized after reopen remains quarantined.

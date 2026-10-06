@@ -14,7 +14,7 @@ trap 'rm -rf -- "$work"' EXIT HUP INT TERM
 pg_basebackup --no-password --format=plain --wal-method=stream --checkpoint=fast --manifest-checksums=SHA256 --pgdata="$work/data" > "$work/pg.log" 2>&1 || { echo 'pg_basebackup failed' >&2; exit 1; }
 pg_verifybackup "$work/data" > "$work/verify.log" 2>&1 || { echo 'pg_verifybackup failed' >&2; exit 1; }
 # Do not embed restored replication credentials or source connection settings.
-! awk '/^[[:space:]]*($|#)/ {next} {found=1} END {exit !found}' "$work/data/postgresql.auto.conf" || { echo 'Backup contains source auto configuration; review offline' >&2; exit 1; }
+[ -f "$work/data/postgresql.auto.conf" ] && ! awk '/^[[:space:]]*($|#)/ {next} {found=1} END {exit !found}' "$work/data/postgresql.auto.conf" || { echo 'Backup contains source auto configuration; review offline' >&2; exit 1; }
 node -e 'require("node:fs").writeFileSync(process.argv[1],new Date().toISOString())' "$work/data/echo_snapshot_at"
 tar -C "$work/data" -cf "$work/base.tar" .
 node "$script_dir/crypto.mjs" encrypt "$work/base.tar" "$work/base.enc" "$BACKUP_KEY_FILE"
