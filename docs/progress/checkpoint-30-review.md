@@ -23,3 +23,8 @@ Scoped confirmation by the same reviewer is recorded below before final checkpoi
 ## Scoped confirmation on a34f9ff
 
 The original reviewer marked all three findings ADDRESSED and found no concrete remaining defect in the directly affected code. This was a read-only check of fixes and supplied regression evidence, with no additional tests/gate or second whole-checkpoint audit. The reviewer reiterates that remote mutations already received cannot be recalled by HTTP cancellation; full checkpoint acceptance awaits the final gate.
+
+
+## Executor verification after scoped confirmation
+
+On October 6 the user authorized one repeat full checkpoint gate at repaired SHA a3dec1e. The fresh-clone gate passed default 554/554, separate functional 303/303, typecheck, architecture guard and build. Secret scans reported zero findings. This is executor verification after review, not a further independent audit. See [verification evidence](checkpoint-30-verification.log). The documentation publication commit does not change the verified runtime or tests.
