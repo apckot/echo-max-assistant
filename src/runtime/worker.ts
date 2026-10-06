@@ -57,7 +57,7 @@ export function startWorkerLoop(options: WorkerOptions) {
 }
 
 export function createWorker(environment: Record<string, unknown>) {
-  const config = parseRuntimeConfig(environment);
+  const config = parseRuntimeConfig(environment, 'worker');
   const database = createDatabase({ worker: config.DATABASE_URL_WORKER, poolSize: config.WORKER_CONCURRENCY,
     workerTransactionTimeoutMs: config.WORK_LEASE_RENEW_MS });
   const guard = <T>(fn: (tx: DbTx) => Promise<T>) => async (tx: DbTx) => {

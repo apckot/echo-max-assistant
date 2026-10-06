@@ -8,7 +8,7 @@ import { acceptMaxInbound } from '../infrastructure/postgres/postgres-intake-sto
 import { parseRuntimeConfig } from '../shared/config/config.js';
 
 export function createGateway(environment: Record<string, unknown>, logger?: Logger) {
-  const config = parseRuntimeConfig(environment);
+  const config = parseRuntimeConfig(environment, 'gateway');
   const database = createDatabase({ gateway: config.DATABASE_URL_GATEWAY, poolSize: config.GATEWAY_DB_POOL_SIZE });
   const app = createMaxWebhookApp({
     secret: config.MAX_WEBHOOK_SECRET,

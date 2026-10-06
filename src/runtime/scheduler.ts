@@ -8,7 +8,7 @@ import { createMaxSubscriptionClient } from '../infrastructure/max/max-subscript
 import { SubscriptionMonitor } from '../modules/operations/application/subscription-monitor.js';
 import { parseRuntimeConfig } from '../shared/config/config.js';
 export function createScheduler(environment:Record<string,unknown>,options:{baseUrl?:string;automatic?:boolean}={}) {
-  const config=parseRuntimeConfig(environment);
+  const config=parseRuntimeConfig(environment, 'scheduler');
   if(!config.MAX_WEBHOOK_SECRET_VERSION)throw new Error('subscription_secret_version_required');
   const database=createDatabase({scheduler:config.DATABASE_URL_SCHEDULER,poolSize:2,schedulerTransactionTimeoutMs:30_000});
   const monitor=new SubscriptionMonitor(new PostgresSubscriptionStore(database),createMaxSubscriptionClient({token:config.MAX_BOT_TOKEN,baseUrl:options.baseUrl}),

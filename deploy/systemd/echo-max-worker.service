@@ -1,0 +1,19 @@
+[Unit]
+Description=Echo MAX worker
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/echo-max/worker.env
+ExecStart=/usr/bin/docker run --rm --name echo-max-worker --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop=ALL --security-opt=no-new-privileges --network echo-max --env-file /etc/echo-max/worker.env echo-max:stage1 worker
+ExecStop=/usr/bin/docker stop --time 65 echo-max-worker
+TimeoutStopSec=70
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

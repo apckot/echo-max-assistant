@@ -1,0 +1,9 @@
+*
+!deploy/Dockerfile
+!package.json
+!package-lock.json
+!tsconfig.json
+!src/
+!src/**
+!migrations/
+!migrations/**

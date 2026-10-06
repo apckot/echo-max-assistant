@@ -56,7 +56,7 @@ export function startDeliveryLoop(options: DeliveryOptions) {
 
 export function createDelivery(environment: Record<string, unknown>,
   max: { baseUrl?: string; timeoutMs?: number } = {}) {
-  const config = parseRuntimeConfig(environment);
+  const config = parseRuntimeConfig(environment, 'delivery');
   const timeoutMs = max.timeoutMs ?? 5000;
   const transactionMs = Math.floor(config.WORK_LEASE_RENEW_MS / 2);
   // Claim ACK + admission + sender + completion must fit even without renewal.

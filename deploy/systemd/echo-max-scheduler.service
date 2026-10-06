@@ -1,0 +1,19 @@
+[Unit]
+Description=Echo MAX scheduler
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/echo-max/scheduler.env
+ExecStart=/usr/bin/docker run --rm --name echo-max-scheduler --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop=ALL --security-opt=no-new-privileges --network echo-max --env-file /etc/echo-max/scheduler.env echo-max:stage1 scheduler
+ExecStop=/usr/bin/docker stop --time 65 echo-max-scheduler
+TimeoutStopSec=70
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -43,6 +43,13 @@ const runtimeConfigSchema = z.object({
 
 export type RuntimeConfig = z.infer<typeof runtimeConfigSchema>;
 
-export function parseRuntimeConfig(input: Record<string, unknown>): RuntimeConfig {
+export function parseRuntimeConfig(input: Record<string, unknown>, role?: 'gateway' | 'worker' | 'delivery' | 'scheduler'): RuntimeConfig {
+  if (role) {
+    input = { ...input };
+    // Other credentials are neither required nor accessed by a single-role runtime.
+    for (const name of ['gateway','worker','delivery','scheduler','migrations']) {
+      if (name !== role) input[`DATABASE_URL_${name.toUpperCase()}`] ??= `postgres://echo_${name}@invalid.invalid/unused`;
+    }
+  }
   return runtimeConfigSchema.parse(input);
 }
