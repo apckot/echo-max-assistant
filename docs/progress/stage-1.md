@@ -374,3 +374,5 @@ User authorized26–30 with one executor/context, five numbered implementation c
 |30|review|8e79c2de3012f4655180aed36c3745b6d586bb71|Three findings ADDRESSED in a34f9ff; scoped confirmation|46 targeted tests; typecheck/architecture PASS|STOP before31|
 
 Full gate/clean-clone/history-scan evidence is produced once after cumulative review and any confirmed fixes, on the final frozen checkpoint SHA. No push is authorized in this block.31–35 await user acceptance.
+
+Checkpoint30 final gate blocker: first frozen SHA62a6565 passed553/554 default tests; only the old conversation_work schema allowlist missed incident_closed_at. Repair is in the checkpoint fixture-fix commit and focused4/4 + typecheck/architecture pass. Build/separate functional were not reached. Gitleaks found no secrets on that first SHA. A complete repeat gate requires the user's approval under the explicit no-additional-full-runs constraint; no repeat has run. Next required decision: authorize one fresh-clone checkpoint gate and final-SHA scans after the fixture fix.

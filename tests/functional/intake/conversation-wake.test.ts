@@ -133,7 +133,7 @@ describe('durable conversation wake', () => {
       WHERE table_schema = 'public' AND table_name = 'conversation_work' ORDER BY ordinal_position`))
       .rows.map((row) => row.column_name);
     expect(columns).toEqual(['conversation_id', 'user_id', 'available_at', 'attempt_count',
-      'last_error_code', 'lease_owner', 'lease_until', 'lease_generation', 'state']);
+      'last_error_code', 'lease_owner', 'lease_until', 'lease_generation', 'state', 'incident_closed_at']);
     await expect(gateway.query('SELECT * FROM public.conversation_work')).rejects.toMatchObject({ code: '42501' });
     await expect(gateway.query('UPDATE public.conversation_work SET state = $1', ['dead']))
       .rejects.toMatchObject({ code: '42501' });
