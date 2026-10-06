@@ -1,9 +1,11 @@
 import {spawn,execFile} from 'node:child_process';
 import {promisify} from 'node:util';
-import {expect,test} from 'vitest';
+import {beforeAll,expect,test} from 'vitest';
 const exec=promisify(execFile);
 // Image construction happens once in iteration33/final gate, never once per role/test.
 const image=process.env.ECHO_SMOKE_IMAGE;
+// Default gate runs tests before its final build; prepare the process artifact deterministically.
+beforeAll(async()=>{if(!image)await exec('npm',['run','build']);},30_000);
 test.each(['gateway','worker','delivery','scheduler'])('%s command starts fenced and drains on SIGTERM',async role=>{
  const args=image?['run','--rm','--read-only','--tmpfs','/tmp:rw,noexec,nosuid,size=16m','--network','none',
  '--env','RESTORE_FENCE=on','--env','FOUNDATION_ECHO_ENABLED=true','--env','MAX_BOT_TOKEN=test-token','--env','MAX_WEBHOOK_SECRET=test-secret','--env','MAX_WEBHOOK_SECRET_VERSION=v1','--env','MAX_WEBHOOK_URL=https://example.org/hook',
