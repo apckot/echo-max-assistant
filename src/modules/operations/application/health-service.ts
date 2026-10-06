@@ -13,6 +13,10 @@ export class HealthService {
       const {migrations,...snapshot}=await this.store.snapshot();
       const matching=Object.keys(migrations).length===Object.keys(this.expected).length &&
         Object.entries(this.expected).every(([name,checksum])=>migrations[name]===checksum);
+      if(snapshot.subscription.status==='healthy' && (!snapshot.subscription.checkedAt ||
+        Date.now()-Date.parse(snapshot.subscription.checkedAt)>600_000)) {
+        snapshot.subscription={...snapshot.subscription,status:'stale'};
+      }
       const ready=!this.configuredFence && !snapshot.restoreFence && matching &&
         snapshot.schemaVersion===Object.keys(this.expected).length;
       return {ready,...snapshot};

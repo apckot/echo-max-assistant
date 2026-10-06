@@ -52,3 +52,11 @@ test('already admitted send must resolve before privacy erasure; ordinary immuta
   expect(await deletion.finish(input)).toMatchObject({status:'completed'});
   expect((await f.postgres.pool.query('SELECT 1 FROM public.delivery_attempts')).rowCount).toBe(0);
 });
+test('a second operation cannot delete a different tenant or bypass the pending job',async()=>{
+  const seed=await f.seed();const other=await f.seed();const input=request(seed.user_id);
+  await deletion.begin(input);
+  await expect(deletion.begin({...input,userId:other.user_id as UserId})).rejects.toThrow();
+  await expect(deletion.begin({...input,operationId:randomUUID()})).rejects.toThrow();
+  expect((await f.postgres.pool.query('SELECT status FROM public.users WHERE id=$1',[other.user_id])).rows[0]).toEqual({status:'active'});
+  expect(await deletion.finish(input)).toMatchObject({status:'completed'});
+});

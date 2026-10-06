@@ -31,3 +31,21 @@ test('bounded technical retention uses incident closure and completed attempt ag
   await expect(f.pools.scheduler.query('DELETE FROM public.delivery_attempts')).rejects.toThrow();
   await expect(service.run(101)).rejects.toThrow();
 });
+test('cleanup skips locked dead work, enforces batch bounds and clears closure on revival',async()=>{
+  await f.postgres.pool.query('TRUNCATE public.users CASCADE');
+  const rows=await Promise.all([f.seed(),f.seed(),f.seed()]);
+  for(const row of rows){
+    await f.postgres.pool.query("UPDATE public.delivery_work SET state='dead' WHERE outbound_message_id=$1",[row.id]);
+    await f.postgres.pool.query("UPDATE public.delivery_work SET incident_closed_at='2026-08-01' WHERE outbound_message_id=$1",[row.id]);
+  }
+  const client=await f.postgres.pool.connect();
+  try{
+    await client.query('BEGIN');
+    await client.query('SELECT 1 FROM public.delivery_work WHERE outbound_message_id=$1 FOR UPDATE',[rows[0]!.id]);
+    const service=new RetentionService(new PostgresRetentionStore(db),()=>new Date('2026-10-01'));
+    expect(await service.run(1)).toEqual({conversationWork:0,deliveryWork:1,attempts:0});
+    expect((await f.postgres.pool.query('SELECT count(*)::int AS count FROM public.delivery_work')).rows[0]).toEqual({count:2});
+  }finally{await client.query('ROLLBACK');client.release();}
+  await f.postgres.pool.query("UPDATE public.delivery_work SET state='ready' WHERE outbound_message_id=$1",[rows[0]!.id]);
+  expect((await f.postgres.pool.query('SELECT incident_closed_at FROM public.delivery_work WHERE outbound_message_id=$1',[rows[0]!.id])).rows[0]).toEqual({incident_closed_at:null});
+});
