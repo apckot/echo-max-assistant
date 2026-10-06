@@ -8,7 +8,7 @@ Scope: iterations31–35, one primary executor in the existing context/branch; n
 |32|Offline preview/apply restore, anonymous incident, quarantine old outbox and late old-inbound materialization, generation invalidation|restore+system-state+backup15; isolated physical data/WAL restore|
 |33|One pinned Node22 non-root read-only image, four roles, bounded SIGTERM, systemd/nginx|local startup/config23; container smoke5; image build|
 |34|Real HTTP5RPS/30s steady,30RPS/60s burst,300message paused-worker backlog|load thresholds; receipt latency upper bound; max runnable depth/connections/waiting locks|
-|35|Review Focus reused fixtures, voice end-to-end, ADRs/architecture and safe real-canary preparation|five suites30; canary guard2; static checks|
+|35|Review Focus reused fixtures, voice end-to-end, ADRs/architecture and safe real-canary preparation|six Review Focus suites40 (includes ordered-head); canary guard2; static checks|
 
 [Performance report](checkpoint-35-performance.json); [isolated restore report](checkpoint-35-restore.json). First load passed latency/drain thresholds but its depth counter included sleeping work; a focused repeat corrected runnable depth and measured phase-specific wake latency. This was a targeted metric correction, not a second full gate. PostgreSQL auto.conf contains default comments; backup rejects active configuration while allowing comments. Both are documented diagnostics, with progress and focused fixes.
 
@@ -33,3 +33,6 @@ Stage1 remains **blocked on real MAX canary**: environment/local envfiles do not
 |No application/domain adapter imports|npm run lint:architecture; tests/architecture/dependency-boundaries.test.ts|
 
 Backup/restore tooling and the local physical drill do not establish ongoing deployed WAL continuity, storage location, key escrow or monthly drills. Health intentionally reports backup unknown until operator monitoring establishes those facts. Canary/production setup requirements are operational blockers, not silently assumed successful results.
+
+
+Cumulative review found four local issues: encrypted archived-WAL recovery/RPO proof missing; archive success before fsync; .history/.backup rejected; unready-head test absent from focused suite. Same executor adds authenticated archive preparation with a named recovery target, a post-base acknowledged marker drill, durable publish/retry, all valid PostgreSQL archive filename shapes and the existing ordered-head suite. SQL rejects snapshot cutoffs older than restored inbound/outbound so PITR cannot partially quarantine. One focused run had39/40 with an ingress503 in an existing restart/idempotency case; diagnostic assertion now exposes response code without retrying. The isolated affected test subsequently passed1/1; the failure remains preserved in local evidence. Full gate remains unrun until scoped review confirmation.

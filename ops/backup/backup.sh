@@ -23,4 +23,5 @@ node "$script_dir/crypto.mjs" verify "$work/base.enc" "$work/manifest.json"
 rm -rf -- "$work/data" "$work/base.tar" "$work/pg.log" "$work/verify.log"
 backup_id=$(basename "$work" | sed 's/^\.in-progress\./backup-/')
 mv -- "$work" "$BACKUP_ROOT/$backup_id"
+node "$script_dir/crypto.mjs" sync "$BACKUP_ROOT/$backup_id" "$BACKUP_ROOT"
 echo "$BACKUP_ROOT/$backup_id"

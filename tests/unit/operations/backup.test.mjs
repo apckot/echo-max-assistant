@@ -46,3 +46,15 @@ printf 'private data' > "$dest/data"
  await expect(exec('sh',['ops/backup/backup.sh'],{env:{...env,VERIFY_EXIT:'1'}})).rejects.toThrow();
  expect(await readdir(root)).toHaveLength(1);
 });
+test('WAL archive accepts segments and timeline/backup history, rejects traversal, and verifies retry identity',async()=>{
+ const {execFile}=await import('node:child_process');const {promisify}=await import('node:util');const exec=promisify(execFile);
+ const {mkdir}=await import('node:fs/promises');const dir=await mkdtemp(join(tmpdir(),'echo-wal-'));dirs.push(dir);
+ const root=join(dir,'wal'),key=join(dir,'key'),input=join(dir,'input');await mkdir(root);await writeFile(key,randomBytes(32),{mode:0o600});await writeFile(input,'WAL bytes');
+ const env={...process.env,WAL_ARCHIVE_ROOT:root,BACKUP_KEY_FILE:key};
+ for(const name of ['000000010000000000000001','00000002.history','0000000100001234000055CD.007C9330.backup']){
+ await exec('sh',['ops/backup/archive-wal.sh',input,name],{env});await exec('sh',['ops/backup/archive-wal.sh',input,name],{env});
+ expect((await readFile(join(root,name+'.enc'))).length).toBeGreaterThan(36);
+ }
+ await expect(exec('sh',['ops/backup/archive-wal.sh',input,'../00000002.history'],{env})).rejects.toThrow();
+ await writeFile(input,'different WAL');await expect(exec('sh',['ops/backup/archive-wal.sh',input,'00000002.history'],{env})).rejects.toThrow();
+});

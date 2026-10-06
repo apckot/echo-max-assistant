@@ -25,6 +25,7 @@ archive_mode = 'off'
 archive_command = ''
 listen_addresses = ''
 CONFIG
+node "$script_dir/prepare-wal.mjs" "$work/data"
 printf 'RESTORE_FENCE=on\n' > "$work/restore.env"
 mv "$work/data" "$RESTORE_ISOLATED_ROOT/pgdata"
 mv "$work/restore.env" "$RESTORE_ISOLATED_ROOT/restore.env"

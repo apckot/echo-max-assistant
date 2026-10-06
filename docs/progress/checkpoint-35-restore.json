@@ -1,10 +1,12 @@
 {
+  "postBaseAcknowledgedMarkerRecovered": true,
+  "recoverySource": "authenticated encrypted archived WAL",
   "kind": "isolated_physical_restore",
   "postgres": 17,
   "authenticatedEncryption": true,
   "pgVerifybackup": true,
   "replayEligibleOldOutbound": 0,
-  "rpoMs": 3039,
-  "rtoMs": 6548,
+  "rpoMs": 0,
+  "rtoMs": 12043,
   "productionStorageVerified": false
 }

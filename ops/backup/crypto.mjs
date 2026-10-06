@@ -1,16 +1,19 @@
 import { createCipheriv,createDecipheriv,randomBytes,createHash } from 'node:crypto';
 import { createReadStream,createWriteStream } from 'node:fs';
-import { readFile,writeFile,stat,rm,rename } from 'node:fs/promises';
+import { readFile,writeFile,stat,rm,rename,open } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 import { pathToFileURL } from 'node:url';
 const header=Buffer.from('ECHOBAK1');
+export async function syncPath(path){const fd=await open(path,'r');try{await fd.sync();}finally{await fd.close();}}
+async function publish(temp,output){await syncPath(temp);await rename(temp,output);const {dirname}=await import('node:path');await syncPath(dirname(output));}
+export const validWalName=name=>/^(?:[0-9A-F]{24}|[0-9A-F]{8}\.history|[0-9A-F]{24}\.[0-9A-F]{8}\.backup)$/.test(name);
 async function key(path){const s=await stat(path);if((s.mode&0o077)!==0)throw Error('Key must be private');const k=await readFile(path);if(k.length!==32)throw Error('Key must contain 32 random bytes');return k;}
 export async function encrypt(input,output,keyFile){
  const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',await key(keyFile),iv);cipher.setAAD(header);
  const temp=output+'.partial';
  try{await writeFile(temp,Buffer.concat([header,iv]),{mode:0o600,flag:'wx'});
  await pipeline(createReadStream(input),cipher,createWriteStream(temp,{flags:'a'}));
- await writeFile(temp,cipher.getAuthTag(),{flag:'a'});await rename(temp,output);
+ await writeFile(temp,cipher.getAuthTag(),{flag:'a'});await publish(temp,output);
  }catch(e){await rm(temp,{force:true});throw e;}
 }
 export async function decrypt(input,output,keyFile){
@@ -21,7 +24,7 @@ export async function decrypt(input,output,keyFile){
  if(!prefix.subarray(0,8).equals(header))throw Error('Unknown encryption format');
  const cipher=createDecipheriv('aes-256-gcm',await key(keyFile),prefix.subarray(8));cipher.setAAD(header);cipher.setAuthTag(tag);
  const temp=output+'.partial';await rm(output,{force:true});
- try{await pipeline(createReadStream(input,{start:20,end:s.size-17}),cipher,createWriteStream(temp,{flags:'wx',mode:0o600}));await rename(temp,output);}
+ try{await pipeline(createReadStream(input,{start:20,end:s.size-17}),cipher,createWriteStream(temp,{flags:'wx',mode:0o600}));await publish(temp,output);}
  catch(e){await rm(temp,{force:true});throw e;}
 }
 async function sha(path){const h=createHash('sha256');for await(const b of createReadStream(path))h.update(b);return h.digest('hex');}
@@ -36,7 +39,9 @@ export async function verifyManifest(path,m){
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  const [command,...args]=process.argv.slice(2);
  try{if(command==='encrypt')await encrypt(...args);else if(command==='decrypt')await decrypt(...args);else if(command==='manifest'){
- const [archive,pgPath,out,snapshotPath]=args;await writeFile(out,JSON.stringify(await manifest(archive,await readFile(snapshotPath,'utf8'),JSON.parse(await readFile(pgPath,'utf8'))),null,2)+'\n',{mode:0o600,flag:'wx'});
- }else if(command==='verify')await verifyManifest(args[0],JSON.parse(await readFile(args[1],'utf8')));else throw Error('Unknown backup command');
+ const [archive,pgPath,out,snapshotPath]=args;await writeFile(out,JSON.stringify(await manifest(archive,await readFile(snapshotPath,'utf8'),JSON.parse(await readFile(pgPath,'utf8'))),null,2)+'\n',{mode:0o600,flag:'wx'});await syncPath(out);
+ }else if(command==='sync'){for(const path of args)await syncPath(path);}
+ else if(command==='wal-name'){if(!validWalName(args[0]))throw Error('Invalid WAL filename');}
+ else if(command==='verify')await verifyManifest(args[0],JSON.parse(await readFile(args[1],'utf8')));else throw Error('Unknown backup command');
  }catch{console.error('Backup operation failed (details suppressed to protect connection/key data)');process.exitCode=1;}
 }

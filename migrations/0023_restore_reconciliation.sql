@@ -46,7 +46,10 @@ BEGIN
   RETURN jsonb_build_object('applied',true,'outbound',0,'already_applied',true);
  END IF;
  SELECT count(*) INTO affected FROM public.outbound_messages WHERE status IN ('pending','sending','retry') AND created_at<=snapshot;
- IF NOT apply THEN RETURN jsonb_build_object('applied',false,'outbound',affected);END IF;
+ IF EXISTS(SELECT 1 FROM public.inbound_events WHERE created_at>snapshot)
+  OR EXISTS(SELECT 1 FROM public.outbound_messages WHERE created_at>snapshot) THEN
+  RAISE EXCEPTION 'Snapshot older than restored data';END IF;
+ IF apply IS DISTINCT FROM true THEN RETURN jsonb_build_object('applied',false,'outbound',affected);END IF;
  INSERT INTO public.restore_incidents(id,snapshot_at) VALUES(incident,snapshot);
  UPDATE public.system_state SET restored_snapshot_at=snapshot,deployment_epoch=deployment_epoch+1 WHERE id=1;
  UPDATE public.outbound_messages SET status='uncertain_restore',updated_at=clock_timestamp()

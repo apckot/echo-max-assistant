@@ -11,6 +11,7 @@ test('restore is preview-only by default; fenced reconciliation quarantines old 
  await f.postgres.pool.query("UPDATE public.delivery_work SET state='leased',lease_owner=$1,lease_generation=7,lease_until=clock_timestamp()+interval '1 hour'",[randomUUID()]);
  const snapshot=(await f.postgres.pool.query('SELECT clock_timestamp() AS t')).rows[0].t;
  const incident=randomUUID();await f.postgres.pool.query('UPDATE public.system_state SET restore_fence=true');
+ await expect(f.pools.migrator.query('SELECT public.reconcile_restore($1,$2,true)',[randomUUID(),'2020-01-01T00:00:00Z'])).rejects.toThrow('Snapshot older than restored data');
  const preview=await f.pools.migrator.query('SELECT public.reconcile_restore($1,$2,false) AS result',[incident,snapshot]);
  expect(preview.rows[0].result).toMatchObject({outbound:3,applied:false});
  expect((await f.postgres.pool.query("SELECT count(*)::int n FROM public.delivery_work WHERE state='leased'")).rows[0].n).toBe(3);

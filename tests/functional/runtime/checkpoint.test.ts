@@ -62,8 +62,10 @@ const post = (app: ReturnType<typeof createGateway>, payload: object | string,
   headers: Record<string, string> = { 'x-max-bot-api-secret': 'test-secret' }, url = '/webhooks/max') =>
   app.inject({ method: 'POST', url, headers: { 'content-type': 'application/json', ...headers },
     payload: typeof payload === 'string' ? payload : JSON.stringify(payload) });
-const accepted = async (app: ReturnType<typeof createGateway>, payload: object | string) =>
-  expect((await post(app, payload)).statusCode).toBe(200); // One attempt; never hide an ingress failure.
+const accepted = async (app: ReturnType<typeof createGateway>, payload: object | string) => {
+  const response=await post(app,payload);
+  expect(response.statusCode,`Ingress boundary: ${response.body}`).toBe(200); // One attempt, never retry.
+};
 
 beforeAll(async () => {
   f = await deliveryFixture();
