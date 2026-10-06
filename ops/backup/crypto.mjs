@@ -3,6 +3,7 @@ import { createReadStream,createWriteStream } from 'node:fs';
 import { readFile,writeFile,stat,rm,rename,open } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 import { pathToFileURL } from 'node:url';
+import {realpathSync} from 'node:fs';
 const header=Buffer.from('ECHOBAK1');
 export async function syncPath(path){const fd=await open(path,'r');try{await fd.sync();}finally{await fd.close();}}
 async function publish(temp,output){await syncPath(temp);await rename(temp,output);const {dirname}=await import('node:path');await syncPath(dirname(output));}
@@ -36,7 +37,7 @@ export async function verifyManifest(path,m){
  if(m.version!==1||m.encryption!=='aes-256-gcm'||!/^\d{4}-\d\d-\d\dT.*Z$/.test(m.snapshot_at)||!Number.isFinite(Date.parse(m.snapshot_at))||!Array.isArray(m.wal_ranges)||!m.wal_ranges.length||m.wal_ranges.some(w=>!Number.isInteger(w.Timeline)||w.Timeline<1||![w['Start-LSN'],w['End-LSN']].every(x=>/^[0-9A-F]+\/[0-9A-F]+$/.test(x)))||!/^[a-f0-9]{64}$/.test(m.pg_manifest_sha256)||await sha(path)!==m.ciphertext_sha256)throw Error('Invalid backup manifest/checksum');
  return true;
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+if(process.argv[1]&&import.meta.url===pathToFileURL(realpathSync(process.argv[1])).href){
  const [command,...args]=process.argv.slice(2);
  try{if(command==='encrypt')await encrypt(...args);else if(command==='decrypt')await decrypt(...args);else if(command==='manifest'){
  const [archive,pgPath,out,snapshotPath]=args;await writeFile(out,JSON.stringify(await manifest(archive,await readFile(snapshotPath,'utf8'),JSON.parse(await readFile(pgPath,'utf8'))),null,2)+'\n',{mode:0o600,flag:'wx'});await syncPath(out);

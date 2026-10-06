@@ -58,3 +58,11 @@ test('WAL archive accepts segments and timeline/backup history, rejects traversa
  await expect(exec('sh',['ops/backup/archive-wal.sh',input,'../00000002.history'],{env})).rejects.toThrow();
  await writeFile(input,'different WAL');await expect(exec('sh',['ops/backup/archive-wal.sh',input,'00000002.history'],{env})).rejects.toThrow();
 });
+test('backup CLI actually executes through a symlinked checkout path',async()=>{
+ const {execFile}=await import('node:child_process');const {promisify}=await import('node:util');const exec=promisify(execFile);
+ const {symlink}=await import('node:fs/promises');const {resolve}=await import('node:path');
+ const dir=await mkdtemp(join(tmpdir(),'echo-symlink-'));dirs.push(dir);const link=join(dir,'checkout'),key=join(dir,'key'),input=join(dir,'plain'),out=join(dir,'encrypted');
+ await symlink(resolve('.'),link,'dir');await writeFile(key,randomBytes(32),{mode:0o600});await writeFile(input,'database bytes');
+ await exec('node',[join(link,'ops/backup/crypto.mjs'),'encrypt',input,out,key]);
+ expect((await readFile(out)).length).toBeGreaterThan(36);
+});

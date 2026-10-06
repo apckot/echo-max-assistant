@@ -19,4 +19,5 @@ if [ -e "$WAL_ARCHIVE_ROOT/$2.enc" ]; then
  node "$script_dir/crypto.mjs" sync "$WAL_ARCHIVE_ROOT/$2.enc" "$WAL_ARCHIVE_ROOT"
 else
  node "$script_dir/crypto.mjs" encrypt "$1" "$WAL_ARCHIVE_ROOT/$2.enc" "$BACKUP_KEY_FILE"
+ [ -s "$WAL_ARCHIVE_ROOT/$2.enc" ] || exit 1
 fi

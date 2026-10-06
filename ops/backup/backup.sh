@@ -19,6 +19,7 @@ node -e 'require("node:fs").writeFileSync(process.argv[1],new Date().toISOString
 tar -C "$work/data" -cf "$work/base.tar" .
 node "$script_dir/crypto.mjs" encrypt "$work/base.tar" "$work/base.enc" "$BACKUP_KEY_FILE"
 node "$script_dir/crypto.mjs" manifest "$work/base.enc" "$work/data/backup_manifest" "$work/manifest.json" "$work/data/echo_snapshot_at"
+[ -s "$work/base.enc" ] && [ -s "$work/manifest.json" ] || { echo 'Encrypted artifacts missing; refusing publication' >&2; exit 1; }
 node "$script_dir/crypto.mjs" verify "$work/base.enc" "$work/manifest.json"
 rm -rf -- "$work/data" "$work/base.tar" "$work/pg.log" "$work/verify.log"
 backup_id=$(basename "$work" | sed 's/^\.in-progress\./backup-/')

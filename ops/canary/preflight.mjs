@@ -1,4 +1,5 @@
 import {pathToFileURL} from 'node:url';
+import {realpathSync} from 'node:fs';
 export function preflight(env){
  const missing=['MAX_BOT_TOKEN','MAX_WEBHOOK_SECRET','MAX_WEBHOOK_SECRET_VERSION'].filter(k=>!env[k]?.trim());
  if(env.MAX_CANARY_TEST_CONFIRMED!=='true')missing.push('MAX_CANARY_TEST_CONFIRMED');
@@ -6,6 +7,6 @@ export function preflight(env){
  try{const url=new URL(env.MAX_WEBHOOK_URL);if(url.protocol!=='https:'||url.username||url.password)throw Error();}catch{missing.push('MAX_WEBHOOK_URL');}
  return {ready:missing.length===0,missing};
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+if(process.argv[1]&&import.meta.url===pathToFileURL(realpathSync(process.argv[1])).href){
  const result=preflight(process.env);console.log(JSON.stringify({canary:'prepared',...result}));if(!result.ready)process.exitCode=2;
 }
