@@ -48,6 +48,12 @@ test('isolated physical encrypted restore: verified WAL/data, fenced replay, mea
  restored=await new PostgreSqlContainer('postgres:17').withBindMounts([{source:join(target,'pgdata'),target:'/var/lib/postgresql/data'}])
  .withCommand(['postgres','-c','listen_addresses=*']).start();
  restoredPool=new Pool({connectionString:restored.getConnectionUri()});
+ // A PostgreSQL socket is reachable during hot standby, before named-target promotion.
+ const recoveryDeadline=Date.now()+10000;
+ while((await restoredPool.query('SELECT pg_is_in_recovery() AS recovering')).rows[0].recovering){
+  if(Date.now()>recoveryDeadline)throw Error('Named recovery target/promotion boundary failed');
+  await new Promise(r=>setTimeout(r,25));
+ }
  await restoredPool.query('UPDATE public.system_state SET restore_fence=true');
  await expect(restoredPool.query('SELECT public.guard_delivery_restore_fence()')).rejects.toThrow();
  const incident=randomUUID();await restoredPool.query('SELECT public.reconcile_restore($1,$2,true)',[incident,snapshot]);
