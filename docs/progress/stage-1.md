@@ -360,3 +360,17 @@ See [implementation, commits, validation and decisions](checkpoint-25.md) and [i
 Checkpoint20's earlier rejection above is a historical record: scheduling fix `5e8a5b708361bc9cd622929d760b543ea002a418` was subsequently accepted by the user before this block.
 
 Next, only after acceptance:26 component health;27 subscription/lost-notify reconciliation;28 technical retention;29 account deletion;30 operations checkpoint.
+
+## Checkpoint30 — current protocol
+
+User authorized26–30 with one executor/context, five numbered implementation commits, one cumulative independent review and one final checkpoint gate. Historical per-iteration agent/review/gate statements above do not govern this block. See [the checkpoint report](checkpoint-30.md).
+
+| Iteration | Status | Implementation commit | Review result | Evidence | Blocker/next |
+|---|---|---|---|---|---|
+|26|review|a558c88aec79be407caa11627d3379ff7659eeca|Three findings ADDRESSED in a34f9ff; scoped confirmation|health1 RED→GREEN; typecheck/architecture PASS|live/ready/protected ops|
+|27|review|547c47329a752ed49311f014e541de0ee48e80d3|Three findings ADDRESSED in a34f9ff; scoped confirmation|subscription/lost-NOTIFY2 + health1; typecheck/architecture PASS|scheduler and secret version|
+|28|review|fdb2ce115dbba09d16837fa86db3c708d04d54a3|Three findings ADDRESSED in a34f9ff; scoped confirmation|retention1 + operations/health3; typecheck/architecture PASS|technical records only|
+|29|review|01cde997f846a2ded713a2e57134c7741fdcecd2|Three findings ADDRESSED in a34f9ff; scoped confirmation|deletion2 + operations/health4; typecheck/architecture PASS|anonymous audited erasure|
+|30|review|8e79c2de3012f4655180aed36c3745b6d586bb71|Three findings ADDRESSED in a34f9ff; scoped confirmation|46 targeted tests; typecheck/architecture PASS|STOP before31|
+
+Full gate/clean-clone/history-scan evidence is produced once after cumulative review and any confirmed fixes, on the final frozen checkpoint SHA. No push is authorized in this block.31–35 await user acceptance.
