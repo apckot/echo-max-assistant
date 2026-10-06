@@ -12,6 +12,7 @@ const runtimeConfigSchema = z.object({
   DATABASE_URL_DELIVERY: postgresUrl,
   DATABASE_URL_SCHEDULER: postgresUrl,
   DATABASE_URL_MIGRATIONS: postgresUrl,
+  OPS_HEALTH_TOKEN: secret.optional(),
   MAX_BOT_TOKEN: secret,
   MAX_WEBHOOK_SECRET: secret,
   MAX_WEBHOOK_URL: z.url({ protocol: /^https$/ }),

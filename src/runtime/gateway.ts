@@ -1,3 +1,6 @@
+import { registerHealthRoutes } from '../infrastructure/http/health-routes.js';
+import { PostgresHealthStore, expectedMigrations } from '../infrastructure/postgres/postgres-health-store.js';
+import { HealthService } from '../modules/operations/application/health-service.js';
 import type { Logger } from 'pino';
 import { createMaxWebhookApp } from '../infrastructure/http/max-webhook-route.js';
 import { createDatabase } from '../infrastructure/postgres/database.js';
@@ -13,6 +16,10 @@ export function createGateway(environment: Record<string, unknown>, logger?: Log
     restoreFence: () => config.RESTORE_FENCE === 'on',
     intake: (event, hash) => acceptMaxInbound(database, event, hash, config.QUEUE_HARD_LIMIT),
     logger,
+  });
+  app.register(async scoped => {
+    registerHealthRoutes(scoped, new HealthService(new PostgresHealthStore(database), await expectedMigrations(),
+      config.RESTORE_FENCE === 'on'), config.OPS_HEALTH_TOKEN);
   });
   app.addHook('onClose', () => database.close());
   return app;
