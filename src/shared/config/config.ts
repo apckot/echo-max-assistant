@@ -15,6 +15,7 @@ const runtimeConfigSchema = z.object({
   OPS_HEALTH_TOKEN: secret.optional(),
   MAX_BOT_TOKEN: secret,
   MAX_WEBHOOK_SECRET: secret,
+  MAX_WEBHOOK_SECRET_VERSION: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/).optional(),
   MAX_WEBHOOK_URL: z.url({ protocol: /^https$/ }),
   RESTORE_FENCE: z.enum(['on', 'off']).default('on'),
   FOUNDATION_ECHO_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),

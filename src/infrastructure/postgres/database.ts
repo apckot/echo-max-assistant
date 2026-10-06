@@ -29,6 +29,7 @@ type DatabaseUrls = Partial<Record<SystemRole, string>> & {
   poolSize?: number;
   workerTransactionTimeoutMs?: number;
   deliveryTransactionTimeoutMs?: number;
+  schedulerTransactionTimeoutMs?: number;
 };
 const roles: readonly SystemRole[] = ['gateway', 'worker', 'delivery', 'scheduler'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -54,9 +55,10 @@ export function createDatabase(urls: DatabaseUrls): Database {
     gateway: 150,
     worker: urls.workerTransactionTimeoutMs,
     delivery: urls.deliveryTransactionTimeoutMs,
+    scheduler: urls.schedulerTransactionTimeoutMs,
   };
   for (const [label, timeoutMs] of [
-    ['Worker', roleTimeouts.worker], ['Delivery', roleTimeouts.delivery],
+    ['Worker', roleTimeouts.worker], ['Delivery', roleTimeouts.delivery], ['Scheduler', roleTimeouts.scheduler],
   ] as const) {
     if (timeoutMs !== undefined &&
       (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300_000)) {
