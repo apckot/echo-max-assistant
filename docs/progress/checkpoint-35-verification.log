@@ -37,3 +37,37 @@ Push withheld: successful-checkpoint condition is unmet. Independently queried
 remote branch remains55977f317458cdd282bd522648d05c56dc410ac1.
 Final documentation-only HEAD is scanned once with Gitleaks8.30.1 full reachable
 history and tracked archive; actual scan/publication status is reported afterward.
+
+
+Authorized repeat on95b77efc0c835611fbc0b8c69acddc4a666e1c36, 2026-10-06:
+ npm ci/typecheck/architecture PASS; default55files/571PASS/1SKIP,93.93s; buildPASS.
+ Separate functional32files/304PASS/1FAIL,80.49s; combined exit1.
+ Failure: operations/checkpoint.test.ts scheduler.clean(), DB_INVALID_INPUT.
+ No further gate/push until user authorization. Same executor subsequently fixed
+ ordinary retention to use PostgreSQL time inside the same SQL operation in46e6273.
+ Controlled app-clock+60s RED reproduced SQL22023/as_of_future; explicit future
+ cutoff remains rejected. Related3files/6tests GREEN; typecheck/architecturePASS.
+ Same cumulative reviewer scoped-confirmed correction; no new audit/reviewer.
+
+Final explicitly authorized gate, 2026-10-07 Europe/Moscow:
+ Frozen code SHA46e6273aedbc5a30a40e85d098943eb2cb49ac2b.
+ New local clone (--no-local): /tmp/echo-max-checkpoint35-final.UEqLBYdB/repo
+ Command: caffeinate -i sh .superpowers/checkpoint-35/gate-final-46e6273.sh
+ Node22.23.3/npm11.16.0; npm ci284packages/audit0vulnerabilities, exit0.
+ npm run typecheck: PASS/exit0; npm run lint:architecture: PASS/exit0.
+ npm test:55filesPASS;572testsPASS/1SKIP;77.16s.
+ npm run test:functional:32filesPASS;306testsPASS;63.67s.
+ npm run build: PASS/exit0. Combined gate exit0; CHECKPOINT35_GATE_PASS recorded.
+ Fresh clone SHA remained46e6273 and tracked status clean before/after.
+ One gate invocation only under this authorization. No Docker image build or
+ additional image-only suite requested/run; the default image-only test skipped.
+ Earlier iteration33 image evidence remains separate from this exact gate.
+
+Final publication procedure (user-authorized): documentation-only commit, then
+ Gitleaks8.30.1 on that exact publication HEAD: full reachable history and git
+ archive tracked tree, default rules/no baseline/no config overrides/redacted.
+ Actual scan counts, publication SHA and independent git ls-remote comparison
+ are recorded in final response/local publication evidence after execution.
+ No new reviewer, no next stage. Real MAX canary NOT RUN: infrastructure,
+ dedicated TEST credentials and a safe recipient remain prerequisites.
+ Stage1 status: code and automated checks ready, external MAX canary pending.

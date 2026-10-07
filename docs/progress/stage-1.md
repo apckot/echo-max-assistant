@@ -1,6 +1,6 @@
 # Stage 1 progress
 
-Current status (2026-10-06): **checkpoint30 accepted; iterations31–35 implemented, checkpoint35 full gate pending separate authorization after the failed repeat on95b77ef. Focused retention correction passes 6 related tests, typecheck and architecture guard; same cumulative reviewer scoped-confirmed it with no findings. Real MAX canary awaits infrastructure and test credentials. No push or next-stage work.** See [checkpoint35](checkpoint-35.md) for exact failure and clock-diagnostic evidence. Earlier checkpoint statuses below are historical.
+Current status (2026-10-07): **checkpoint30 accepted; iterations31–35 code and automated checks ready. Final user-authorized clean-clone gate on46e6273: default572PASS/1SKIP, functional306/306PASS, typecheck/architecture/buildPASS. Real MAX canary awaits infrastructure and test credentials; Stage 1 is not complete. Documentation publication is authorized after final secret scan. No next-stage work.** See [checkpoint35](checkpoint-35.md) for exact evidence and publication procedure. Earlier checkpoint statuses below are historical.
 
 The coordinator adds a row only after independent review.
 
@@ -379,15 +379,18 @@ Historical gate blocker, resolved: first frozen SHA62a6565 passed553/554; the ol
 
 ## Checkpoint35 — implementation and real-canary blocker
 
-Checkpoint30 was accepted by the user before31–35. The same executor owns this entire final block. See [checkpoint35 and §19 evidence map](checkpoint-35.md), architecture/ADRs, performance and physical restore reports. One cumulative review completed with four corrected findings; the one final gate failed and focused repairs passed. Stage1 acceptance remains blocked on an authorized gate repeat and on dedicated test MAX credentials, safe recipient and HTTPS endpoint. Prepared preflight makes no external calls. No Task Domain work has started. Historical “STOP before31” and earlier authorization statements above describe completed checkpoint30, not the current block.
+Checkpoint30 was accepted by the user before31–35. The same executor owns this entire final block. See [checkpoint35 and §19 evidence map](checkpoint-35.md), architecture/ADRs, performance and physical restore reports. One cumulative review completed with four corrected findings and scoped confirmations. After the documented failures and focused repairs, the final authorized gate passed on46e6273. Stage1 acceptance remains blocked on dedicated test MAX credentials, a safe recipient and HTTPS endpoint for the real canary. Prepared preflight makes no external calls. No Task Domain work has started. Historical “STOP before31” and earlier authorization statements above describe completed checkpoint30, not the current block.
 
 
 | Iteration | Status | Implementation commit | Review result | Evidence | Blocker/next |
 |---|---|---|---|---|---|
-|31|implemented|714bf94069ad7e117c25470d195d009a2ab892ff|Four cumulative findings corrected03fb24b; scoped confirmation|backup RED/GREEN; latest backup5PASS; staticPASS|checkpoint gate repeat + canary|
-|32|implemented|bbe2334c4781d61797f79c55ab3b9405ad57fb26|Same reviewer confirmed WAL/fencing corrections|post-base encrypted WAL recovery; latest isolated clone physical1PASS; RPO0ms/RTO12680ms|checkpoint gate repeat + canary|
-|33|implemented|804a806895e8c01ad2e30c99a04e41f26006dfae|Cumulative review complete|local startup/config23; image build; container5PASS|final image/gate pending after failed default|
-|34|implemented|dffb549b6ce0605d7557754f2a36a60c6cac3007|Load methodology reviewed|5RPS steady/30RPS60s; burstp99=21.7ms;wakep95=107ms;300backlog drained6.1s|checkpoint gate repeat + canary|
-|35|blocked|ec64bbe50c90c39c68a115adba9dc70bb7dfba0f|40ReviewFocusPASS; code repairs scoped-confirmed; no new reviewer|single fullgate566PASS/3FAIL/1SKIP; focused fixes PASS; secret scan finalHEAD reported separately|explicit gate-repeat authorization + TEST canary setup; no push/next stage|
+|31|implemented|714bf94069ad7e117c25470d195d009a2ab892ff|Four cumulative findings corrected03fb24b; scoped confirmation|backup RED/GREEN; latest backup5PASS; staticPASS|automated gate PASS; real canary pending|
+|32|implemented|bbe2334c4781d61797f79c55ab3b9405ad57fb26|Same reviewer confirmed WAL/fencing corrections|post-base encrypted WAL recovery; latest isolated clone physical1PASS; RPO0ms/RTO12680ms|automated gate PASS; real canary pending|
+|33|implemented|804a806895e8c01ad2e30c99a04e41f26006dfae|Cumulative review complete|local startup/config23; image build; container5PASS|requested final gate PASS; prior image evidence retained|
+|34|implemented|dffb549b6ce0605d7557754f2a36a60c6cac3007|Load methodology reviewed|5RPS steady/30RPS60s; burstp99=21.7ms;wakep95=107ms;300backlog drained6.1s|automated gate PASS; real canary pending|
+|35|blocked|ec64bbe50c90c39c68a115adba9dc70bb7dfba0f|40ReviewFocusPASS; code repairs scoped-confirmed; no new reviewer|final46e6273 clean-clone default572PASS/1SKIP; functional306PASS; static/buildPASS; finalHEAD scan reported separately|TEST canary infrastructure/credentials pending; publication authorized; no next stage|
 
-Final implementation repair SHAe351079fe117a04e5768ed8fdb4c6c28b1f27155. Same executor/context throughout31–35 and all corrections. CLI symlink correction1300def, promotion-readiness test correctione351079. No full gate repeat was spent without authorization. Stage1 is not accepted; documentation/publication must not imply success. See [exact failure/repair record](checkpoint-35-verification.log).
+Historical pre-retention repair SHAe351079fe117a04e5768ed8fdb4c6c28b1f27155; final tested code SHA46e6273aedbc5a30a40e85d098943eb2cb49ac2b. Same executor/context throughout31–35 and all corrections. CLI symlink correction1300def, promotion-readiness test correctione351079. No full gate repeat was spent without authorization. Stage1 is not accepted; documentation/publication must not imply success. See [exact failure/repair record](checkpoint-35-verification.log).
+
+
+Final checkpoint35 automated boundary (2026-10-07): exactly one gate in a new clean clone on46e6273 after explicit user approval; all requested checks passed (default572PASS/1SKIP; functional306PASS; static/buildPASS). No new review, additional gate, MAX request or next-stage work. Code and automated checks are ready; Stage1 acceptance awaits the real MAX canary. Publication HEAD changes documentation only; the final response records its secret scan and independently verified remote SHA.
