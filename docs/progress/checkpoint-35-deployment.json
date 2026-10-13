@@ -60,6 +60,8 @@
   "sourceChanged": false,
   "nextStageStarted": false,
   "evidence": "checkpoint-35-canary.json",
-  "acceptance": "awaiting_owner",
-  "productionOperationalGuarantees": "not_established_by_TEST_canary"
+  "acceptance": "owner_accepted_2026-10-13",
+  "productionOperationalGuarantees": "not_established_by_TEST_canary",
+  "stage1": "completed_with_real_callback_exception",
+  "deferredAcceptanceScenario": "real_callback_and_duplicate_replay_at_stage_introducing_buttons"
 }

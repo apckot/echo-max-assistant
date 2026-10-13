@@ -295,7 +295,20 @@
   "operationalLimits": [
     "TEST host chosen by owner is in Kazakhstan; this does not establish Russian production data/storage geography",
     "No deployed continuous backup/WAL monitoring, second-storage geography, key escrow or monthly production restore drill is claimed",
-    "User acceptance of checkpoint35 is separate; next stage is not authorized"
+    "Next stage requires separate owner authorization"
   ],
-  "authenticationRootCause": "executor initially passed max-bot-token= prefix together with token; corrected extraction restored HTTP200; actual token was valid"
+  "authenticationRootCause": "executor initially passed max-bot-token= prefix together with token; corrected extraction restored HTTP200; actual token was valid",
+  "ownerAcceptance": {
+    "date": "2026-10-13",
+    "checkpoint35": "accepted",
+    "stage1": "completed",
+    "exception": {
+      "scenario": "real_MAX_callback",
+      "reason": "no_test_button",
+      "requiredAcceptanceBoundary": "stage_introducing_buttons",
+      "requiresRealCallbackAndDuplicateReplay": true,
+      "syntheticTestsAloneSufficient": false
+    },
+    "nextStageAuthorized": false
+  }
 }

@@ -99,3 +99,14 @@ Real dedicated TEST MAX canary,2026-10-13 Europe/Moscow:
  No code changes, full gate, new reviewer/agent or next-stage work for canary.
  Owner acceptance remains separate. Production storage geography/continuous
  backup/WAL monitoring/escrow/monthly drills are not established by TEST canary.
+
+
+Owner acceptance2026-10-13: checkpoint35 accepted; Stage1 completed with the
+ explicit exception real MAX callback not exercised (no test button).
+ Real callback and duplicate replay must be included in acceptance of the stage
+ introducing buttons; project AGENTS.md is now tracked and preserves this rule.
+ Canary documentation00cc31746183c46d337b98689320c5ec646b44fe pushed successfully;
+ independent git ls-remote matched that exact SHA before acceptance edits.
+ Acceptance/AGENTS changes are documentation only; no repeated full gate/review.
+ Final documentation commit is pushed and local/remote SHA verified separately.
+ No next-stage authorization or work.
