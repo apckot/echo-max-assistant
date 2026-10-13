@@ -16,8 +16,8 @@ Base implementation SHA: a462564. No iteration41, deployment or real MAX task/ca
 
 | Iteration | Commit | Targeted RED → GREEN | Static checks |
 |---|---|---|---|
-|36| pending | command-contract.test.ts: missing implementation → 4PASS (Node22) | typecheck/architecture PASS |
-|37| not started | | |
+|36| 8a60aa6 | command-contract.test.ts: missing implementation → 4PASS (Node22) | typecheck/architecture PASS |
+|37| pending | time.test.ts: missing resolver → 8PASS with command contract | typecheck/architecture PASS |
 |38| not started | | |
 |39| not started | | |
 |40| not started | | |
