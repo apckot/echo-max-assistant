@@ -1,6 +1,6 @@
 # Stage 2 — checkpoint40 ledger
 
-Status: in progress; authorised36–40 only. Spec/plan accepted2026-10-13, documentation commit a462564.
+Status: **checkpoint40 verified and ready for owner acceptance; stopped before41**. Authorised36–40 only. Spec/plan accepted2026-10-13, documentation commit a462564.
 Base implementation SHA: a462564. No iteration41, deployment or real MAX task/callback canary authorised.
 
 ## Rulings / pre-flight
@@ -24,7 +24,20 @@ Base implementation SHA: a462564. No iteration41, deployment or real MAX task/ca
 
 ## Checkpoint
 
-Cumulative review: one independent reviewer, initial request-changes (three P2 findings), targeted fixes39PASS/staticPASS; scoped confirmation pending. Clean-clone full gate: not started. Push/SHA match: not started.
+Cumulative review: **all three P2 findings closed**, one independent reviewer with scoped fix checks; final approval on acb8f2d. See [review record](stage-2-checkpoint-40-review.md).
+
+Final tested code SHA: `acb8f2d9f29ecdcf9f6097542a21bd3d942ca7d2`. One clean clone: `/tmp/echo-max-stage2-checkpoint40.Cu7QhM/repo`.
+Node22.23.3/npm11.16.0/PostgreSQL17. Combined gate exit0,60files/613PASS/0FAIL/0SKIP;113.46s test run.
+Functional34files/322PASS is extracted from that **same** JSON report; no second functional run.
+Unit20files/241PASS; integration3/36PASS; architecture1/8PASS; e2e1/1PASS; smoke1/5PASS.
+
+Commands, each once at this checkpoint: npm ci; typecheck; architecture; build; docker build; npm test.
+Ruling: build image before the single test suite and set ECHO_SMOKE_IMAGE, so all image-only smoke cases run within it without a separate rerun. Fresh-clone HEAD/ tracked status unchanged after gate. No new Task performance run or Task restore drill (iteration50); the existing foundation restore test ran as part of default suite.
+
+Gitleaks8.30.1 (pinned image digest c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f): full reachable history95commits and tracked archive on that code SHA, both0leaks/exit0. Broad source scan: no TODO/FIXME/TBD in src/migrations, diff whitespace clean, all three Task-table INSERT sites within the sole Tasks PostgreSQL adapter. Enforced cross-module SQL ownership guard is still iteration48, not claimed here.
+[Full verification log](stage-2-checkpoint-40-verification.log).
+
+Publication: this progress/evidence commit is a documentation-only descendant of the tested code SHA; no code changes or gate rerun. Owner-authorised next action is push `codex/stage-2-task-domain` to origin and compare publication HEAD with git ls-remote. Actual push/SHA result is reported in the final handoff, not preclaimed in a pre-push commit. Iteration41 remains not started.
 
 Iteration39 evidence: fixture initially used nonnumeric MAX IDs (setup error corrected before RED); actual RED was missing schema24. First SQL GREEN exposed shared-trigger NEW.task_id on work_items; raw runtime-role PG diagnostic identified it; JSON-based field selection fixed it. Strict receipt malformed-map/error-code RED→GREEN added before commit.
 
@@ -39,3 +52,9 @@ Checkpoint review fixes (same executor): SQL null outcome/error.code/kind/outcom
 Review declined-to-judge areas41–50 remain intentionally deferred per accepted scope; no new implementation is inferred from checkpoint40 tests. Migration0024 is new in this un-deployed checkpoint, so its review correction does not edit any previously deployed Stage1 migration.
 
 Scoped confirmation closed SQL-null and undefined findings; timezone finding remained open on resolver→create (Intl renamed usable Asia/Kolkata to missing Asia/Calcutta). Added real resolver→create RED, retained original timezone in TemporalResult, targeted create10/time4GREEN plus staticPASS. Same reviewer receives only this remaining finding for closure; full gate has still not run.
+
+## Checkpoint result and boundaries
+
+Typed single-create harness now proves optional dates, timezone snapshots, persisted current state/event/receipt, exact payload replay, concurrent-key serialization, closed rejection and precommit rollback. Pure lifecycle/date contracts are tested but persistent existing-target commands are not exposed until41. Multi-command groups42, queries43/49, privacy integration45 and transactional inbound bridge46 remain deferred. No production deployment, AI/STT/reminders/billing/Mini App, extra executor or full-gate repeat. The real MAX callback/duplicate replay exception remains open for the buttons stage.
+
+Owner acceptance of checkpoint40 and authorisation of the next block are required before41.
