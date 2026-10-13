@@ -1,8 +1,62 @@
 # Checkpoint35 — Stage1 completion boundary
 
-Current status (2026-10-07): **code and automated checks ready; real MAX canary awaits infrastructure and credentials. Stage 1 is not complete.** The single user-authorized final gate on `46e6273aedbc5a30a40e85d098943eb2cb49ac2b` passed in a fresh clone: default **572 PASS / 1 SKIP**, functional **306/306 PASS**, typecheck, architecture guard and build exit 0. Clone SHA and clean tracked state were verified before/after. No reviewer or next-stage work was started. Earlier failure/boundary statements below are historical evidence.
+Current status (2026-10-13): **code, automated gate and real dedicated TEST MAX canary PASS; checkpoint35 evidence ready for owner acceptance. No next stage started.** The single final gate on `46e6273aedbc5a30a40e85d098943eb2cb49ac2b` passed in a fresh clone: default572PASS/1SKIP, functional306PASS, typecheck/architecture/buildPASS. Real canary used documentation-only descendant `c42baff0fb50ffadf70d70673f06ea3b024b2457` with unchanged source/migrations. [Anonymous real-canary evidence](checkpoint-35-canary.json). TEST runtimes are now stopped/disabled/fenced, separate MAX PostgreSQL17 stopped, subscription removed, application test account and private captures erased. Earlier pending/failure statements below are historical evidence, not current blockers.
 
-Publication is separately authorized after this gate: commit documentation, scan the final publication HEAD with pinned Gitleaks8.30.1 (full reachable history and tracked archive), push without force, independently compare local/remote SHA. Actual final scan and publication SHA results are supplied in the checkpoint response; they are not preclaimed here. [Verification record](checkpoint-35-verification.log). [Short MAX setup instructions](../runbooks/max-canary-setup.md).
+Historical automated-checkpoint publication procedure (completed on2026-10-07): commit documentation, scan the final publication HEAD with pinned Gitleaks8.30.1 (full reachable history and tracked archive), push without force, independently compare local/remote SHA. Actual final scan and publication SHA results are supplied in the checkpoint response; they are not preclaimed here. [Verification record](checkpoint-35-verification.log). [Short MAX setup instructions](../runbooks/max-canary-setup.md).
+
+## Historical canary access attempt — awaiting environment location
+
+The user reports TEST infrastructure and credentials prepared and authorizes only the runbook canary. The executor has not yet received the protected env-file location or remote connection target. Local-process preflight returned exit2: required MAX canary variables are absent from this process; standard local env-file paths are absent. This observation does not establish whether the prepared remote environment is ready. No credentials were printed, no provider requests were sent, and no real MAX case was executed. [Anonymous access/preflight evidence](checkpoint-35-canary.json) records this incomplete attempt, not a passing canary. Required next input: protected env-file path and, for a remote setup, SSH alias and checkout directory; never secret values. The automated gate remains passed; Stage 1 completion awaits actual canary results. No full gate, reviewer, push or next-stage work was performed for this attempt.
+
+## Real MAX canary — final PASS and cleanup
+
+| Runbook case | Result | Evidence |
+|---|---|---|
+|1 Subscription|PASS|Provider200; one matching HTTPS webhook/all four types; healthy version; real signed Start received|
+|2 Real text|PASS|Owner confirmed reply; one receipt/outbox/dispatch/sent; inbound persistence→provider completion741ms|
+|3 Exact duplicate|PASS|Private raw body matched original hash; signed replay200; unchanged inbound/receipt/outbox/dispatch/sent counts; callback N/A without test button|
+|4 Stop/start|PASS|Real stopped/started events; pending old source covered by cutoff, actual claim/admit cancelled without sender; fresh post-start reply confirmed|
+|5 Worker restart|PASS|Only MAX worker restarted after processing commit before delivery; persisted counts/state unchanged; one fresh confirmed send, no old send|
+|6 Real voice|PASS|Owner confirmed honest unsupported explanation; applied voice retains capability_unavailable; exactly one confirmed voice dispatch; no transcription|
+|7 Cleanup|PASS|Only MAX runtimes stopped/disabled, test subscription removed, account/queues/content/attempts erased, private capture/participant env removed; anonymous erasure audit remains|
+
+Before erasure: inbound7/receipts7/outbound4, confirmedSent3, cancelled1, uncertain0. After erasure: users/accounts/conversations/inbound/receipts/outbound/attempts/queue work all0; one completed erasure with user_id=NULL. Echo Secretary and OpenVPN observed PIDs stayed unchanged; Amnezia remained active and existing nginx routes are preserved. No source changes, full gate rerun, reviewer or new agent.
+
+Two diagnostic assertions initially demanded states not required by the code: immediate physical cancellation while delivery was paused (finalization occurs on claim/admit), and preparation_status=failed for unsupported voice (normalized payload stays ready, capability_unavailable is recorded during applied processing). Correct criteria were established from the existing implementation and runbook; initial observations are preserved in JSON. Neither required a code change. Earlier401 was executor credential parsing error, not a bad bot token; corrected extraction accepted by MAX. All evidence omits token values, IDs, raw DTOs, user text and media URLs.
+
+Canary satisfies the previously pending real-provider condition. The owner still decides checkpoint acceptance. This TEST deployment on the owner-selected Kazakhstan host does not establish Russian production storage placement, continuously deployed encrypted WAL/backup monitoring, key escrow or monthly production drills. Existing restore/load evidence remains scoped as documented. No Task Domain or later stage began.
+
+## Worker restart durability and fresh post-start reply — PASS
+
+The fresh post-start text produced one eligible pending outbox before dispatch. With MAX delivery still paused, restarted only the MAX worker after processing commit. Process changed; inbound6/applied6/receipts6/outbound3 and sent1/cancelled1/ready1 work remained unchanged across restart. Then opened delivery: exactly one fresh confirmed sent attempt, total dispatchStarts2/confirmedSent2/uncertain0, sent2/cancelled1. The old cancelled source still has no delivery_attempts. This completes fresh post-start eligibility and worker-restart durability using one real message; no admitted send was interrupted. Owner's visual confirmation of the fresh reply and real voice/cleanup remain pending. No new code, full gate or independent review.
+
+## Real stop/start — cancellation verified, fresh reply pending
+
+Real lifecycle events show two starts/one stop, same single account active again. The pending pre-stop outbound source is covered by the monotonic sequence cutoff and had no dispatch admission. An initial assertion incorrectly expected immediate physical cancellation while delivery was paused; migration16 explicitly finalizes on claim/admit. Read-only cutoff check confirmed the guard, then the actual PostgresDeliveryQueue/Admission adapters finalized cancelled without invoking a sender. Final counts: inbound5/receipts5/outbound2, delivery sent1/cancelled1, dispatchStarts1/confirmedSent1/uncertain0. The first premature observation is preserved in anonymous evidence, not hidden as a code repair. No source change or full gate. Delivery remains paused for a fresh post-start text, which will also exercise worker restart after processing commit before delivery. Full stop/start fresh-send and worker-restart outcomes are still pending.
+
+## Real text and exact duplicate replay — PASS
+
+Owner confirmed the real MAX reply. Verified one applied text, one outbound, one started dispatch and one confirmed sent completion; inbound persistence to provider completion741ms. Exact privately captured webhook body matched the stored original SHA256 and was replayed through the authenticated public HTTPS route:200, unchanged inbound2/receipts2/outbound1/dispatchStarts1/sent1/uncertain0 (counts include the initial lifecycle event). No second dispatch. Callback replay is not applicable because no test button exists. Only anonymous outcomes/counts/timing are retained in tracked evidence. For the upcoming stop/start case, MAX delivery was gracefully paused only after proving no ready/leased/retry work; its runtime fence is ON. No admitted send was interrupted. Pending: stop/start cancellation, worker restart durability, real voice expectation and cleanup. Stage1 remains incomplete.
+
+## Real canary progress — participant verified
+
+Owner pressed Start from the test MAX account. The real signed bot_started event created exactly one account/inbound; after private participant configuration and successful preflight, worker/delivery were opened. Anonymous baseline: one applied inbound, one receipt, zero outbound, ready=true, subscription healthy. Participant ID is stored only in the protected server canary env. Temporary raw-body capture for the upcoming exact duplicate replay is private (0700 directory/0600 file), omits authorization headers and must be removed during runbook cleanup. Text/duplicate/stop-start/restart/voice outcomes are still pending; no full canary success or Stage1 completion is claimed. [Current anonymous evidence](checkpoint-35-deployment.json).
+
+## Authentication correction and subscription readiness — 2026-10-13
+
+The root cause of401 was executor error: secrets.txt contains a max-bot-token= assignment, but the entire line was passed as the credential. Exact-transfer checks had verified that wrong complete line, not the parsed token value. After extracting only the value after the prefix, GET /me returned200/is_bot=true and GET /subscriptions returned200. The actual bot token was valid; prior suggestions to revoke it were unwarranted. Secret values were never displayed.
+
+Verified migration checksums and schema23 on the fresh isolated database, opened its fence and only gateway/scheduler runtime fences. Scheduler registered one matching webhook with all four expected update types; protected health ready=true and subscription healthy/failures0. Worker/delivery are active but remain fenced until the owner presses Start from a consenting test account, which allows private participant identification before enabling replies. Echo Secretary/OpenVPN observed PIDs unchanged. No real inbound/voice/replay/restart/stop-start canary result is claimed yet. [Anonymous current deployment evidence](checkpoint-35-deployment.json).
+
+The earlier authentication-failure observations below are historical and superseded by this established parsing cause.
+
+## TEST deployment on nwc-kz — 2026-10-13
+
+Owner authorized Echo MAX deployment on the Kazakhstan host and the existing domain, preserving Echo Secretary and VPN. Committed code c42baff is installed at /opt/echo with the existing Docker/systemd runtime artifacts. PostgreSQL17 runs in its own container/network/volume, without a published DB port; all23 migrations applied. Four MAX runtimes are active with restore fences ON. Gateway binds host loopback18080 because8080 belongs to another service. Existing nginx routes are byte-for-byte preserved apart from one MAX-only include, validated and gracefully reloaded.
+
+Public HTTPS verification passed. The existing Let's Encrypt full chain was already valid: earlier local Python verification had zero trusted CAs, so the certificate itself was not changed. MAX API needs its Russian CA; the official CA bundle is mounted only into MAX containers through NODE_EXTRA_CA_CERTS, without modifying system trust or Echo Secretary/VPN. Secret values were never printed or stored in tracked documentation.
+
+Infrastructure checks: protected ops health200/schema23/fenceON/empty queue; unsigned public webhook401 unauthorized (expected); all four MAX services active. Echo Secretary and OpenVPN observed PIDs unchanged, Amnezia active. Provider authentication is BLOCKED: GET /me and GET /subscriptions return401 for the supplied token. A subsequent owner-authorized single GET /me diagnostic from nwc-kz returned JSON code verify.token and message Invalid access_token; the exact token transfer and Authorization header were previously verified. This establishes provider token-validation rejection, but does not distinguish revocation, incomplete copy or other token-issuance state. No subscription created, no real messages sent, no canary case passed. The owner must replace secrets.txt with a valid dedicated MAX bot token before reopening and the real canary. [Anonymous deployment result](checkpoint-35-deployment.json). No source changes, full project gate, reviewer or next-stage work.
 
 ## Focused retention clock correction
 
@@ -33,13 +87,13 @@ Scope: iterations31–35, one primary executor in the existing context/branch; n
 
 [Performance report](checkpoint-35-performance.json); [isolated restore report](checkpoint-35-restore.json). First load passed latency/drain thresholds but its depth counter included sleeping work; a focused repeat corrected runnable depth and measured phase-specific wake latency. This was a targeted metric correction, not a second full gate. PostgreSQL auto.conf contains default comments; backup rejects active configuration while allowing comments. Both are documented diagnostics, with progress and focused fixes.
 
-Stage1 remains **blocked on real MAX canary**: environment/local envfiles do not provide a dedicated test token, safe recipient confirmation or reachable HTTPS endpoint. Preflight exit2 names only MAX_BOT_TOKEN, MAX_WEBHOOK_SECRET, MAX_WEBHOOK_SECRET_VERSION, MAX_CANARY_TEST_CONFIRMED, MAX_CANARY_TEST_USER_ID, MAX_WEBHOOK_URL. No external calls, bot creation, server provisioning or real sends occurred. [Prepared canary checklist](../runbooks/foundation-canary.md) states the exact user-provisioned prerequisites. Do not accept Stage1 or start Task Domain from FakeMAX evidence alone. The user authorizes code/automated-evidence publication after the passing gate while real-canary acceptance remains pending.
+Historical real-canary blocker, resolved by the PASS above: environment/local envfiles do not provide a dedicated test token, safe recipient confirmation or reachable HTTPS endpoint. Preflight exit2 names only MAX_BOT_TOKEN, MAX_WEBHOOK_SECRET, MAX_WEBHOOK_SECRET_VERSION, MAX_CANARY_TEST_CONFIRMED, MAX_CANARY_TEST_USER_ID, MAX_WEBHOOK_URL. No external calls, bot creation, server provisioning or real sends occurred. [Prepared canary checklist](../runbooks/foundation-canary.md) states the exact user-provisioned prerequisites. Do not accept Stage1 or start Task Domain from FakeMAX evidence alone. The user authorizes code/automated-evidence publication after the passing gate while real-canary acceptance remains pending.
 
 ## Specification §19 evidence map
 
 | Acceptance requirement | Evidence |
 |---|---|
-|Real and repeated MAX text end-to-end|FakeMAX runtime checkpoint proves duplicate behavior; real-provider canary BLOCKED|
+|Real and repeated MAX text end-to-end|FakeMAX runtime checkpoint proves duplicate behavior; real-provider canary PASS, checkpoint-35-canary.json|
 |Duplicate text/callback no second event/sequence/receipt/outbox/send|functional/runtime/checkpoint.test.ts|
 |Strict sequence and unready head, terminal continuation|functional/runtime/worker.test.ts; functional/intake/ordered-head.test.ts|
 |Independent conversations run concurrently|functional/runtime/checkpoint.test.ts; runtime/worker.test.ts|
@@ -47,7 +101,7 @@ Stage1 remains **blocked on real MAX canary**: environment/local envfiles do not
 |Crash after processing commit preserves reply|e2e/foundation-flow.test.ts; functional/runtime/checkpoint.test.ts|
 |Consumed-body timeout becomes uncertain, no blind retry|functional/runtime/checkpoint.test.ts; delivery-worker.test.ts|
 |Tenant RLS isolation|functional/postgres/roles-and-transactions.test.ts; identity/RLS tests|
-|Subscription detect/recover|functional/operations/subscription.test.ts and subscription-deadline.test.ts; real-provider BLOCKED|
+|Subscription detect/recover|functional/operations/subscription.test.ts and subscription-deadline.test.ts; real-provider PASS, checkpoint-35-canary.json|
 |5RPS steady/30RPS burst, no Redis, drain thresholds|checkpoint-35-performance.json; manual performance scenario|
 |Restore RPO≤5m/RTO≤4h and no old outbox|checkpoint-35-restore.json; restore-fence.test.ts; production second-storage/PITR continuity requires deployment evidence|
 |Account erasure removes queues/content/mappings|functional/identity/deletion tests; operations/checkpoint.test.ts|

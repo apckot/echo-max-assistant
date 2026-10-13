@@ -1,0 +1,301 @@
+{
+  "date": "2026-10-13",
+  "status": "PASS",
+  "scope": "real_dedicated_TEST_MAX_canary_only",
+  "codeSha": "c42baff0fb50ffadf70d70673f06ea3b024b2457",
+  "hostAlias": "nwc-kz",
+  "automatedGateCodeSha": "46e6273aedbc5a30a40e85d098943eb2cb49ac2b",
+  "codeChangedSinceGate": false,
+  "cases": {
+    "subscription": {
+      "status": "PASS",
+      "health": {
+        "ready": true,
+        "schemaVersion": 23,
+        "databaseFence": false,
+        "subscription": {
+          "status": "healthy",
+          "failures": 0,
+          "checkedAt": "2026-10-13T18:09:47.745376+00:00"
+        },
+        "queueDepth": 0
+      },
+      "provider": {
+        "providerHttpStatus": 200,
+        "matchingSubscriptions": 1,
+        "expectedUpdateTypes": true
+      },
+      "actualStartedWebhookReceived": true
+    },
+    "realText": {
+      "status": "PASS",
+      "ownerConfirmedReply": true,
+      "confirmedSent": 1,
+      "inboundPersistedToProviderCompletionMs": 741
+    },
+    "exactDuplicateReplay": {
+      "status": "PASS",
+      "httpStatus": 200,
+      "rawHashMatchedOriginal": true,
+      "before": {
+        "inbound": 2,
+        "text": 1,
+        "receipts": 2,
+        "outbound": 1,
+        "dispatchStarts": 1,
+        "confirmedSent": 1,
+        "uncertain": 0
+      },
+      "after": {
+        "inbound": 2,
+        "text": 1,
+        "receipts": 2,
+        "outbound": 1,
+        "dispatchStarts": 1,
+        "confirmedSent": 1,
+        "uncertain": 0
+      }
+    },
+    "callbackReplay": {
+      "status": "NOT_APPLICABLE",
+      "reason": "no_test_button"
+    },
+    "stopStart": {
+      "checkedAtUtc": "2026-10-13T18:29:32.083572+00:00",
+      "case": "real_stop_start_pending_reply_cancellation",
+      "status": "PASS",
+      "counts": {
+        "accounts": 1,
+        "activeAccounts": 1,
+        "started": 2,
+        "stopped": 1,
+        "inbound": 5,
+        "receipts": 5,
+        "outbound": 2,
+        "cancelledOutbounds": 1,
+        "deliveryStates": [
+          {
+            "state": "sent",
+            "count": 1
+          },
+          {
+            "state": "cancelled",
+            "count": 1
+          }
+        ],
+        "dispatchStarts": 1,
+        "confirmedSent": 1,
+        "uncertain": 0
+      },
+      "oldReplyCancelledWithoutDispatch": true,
+      "finalization": "actual_delivery_claim_and_admission_without_sender",
+      "firstObservation": {
+        "stage": "delivery_paused_before_claim",
+        "workStillReady": true,
+        "assertionPremature": true,
+        "checkedAtUtc": "2026-10-13T18:27:42.845307+00:00"
+      },
+      "freshPostStartEligibility": "PASS",
+      "ownerConfirmedFreshReply": true
+    },
+    "workerRestart": {
+      "checkedAtUtc": "2026-10-13T18:32:51.530468+00:00",
+      "case": "worker_restart_after_processing_commit_before_delivery",
+      "restartPrecondition": "PASS",
+      "workerProcessChanged": true,
+      "pendingOutboxSurvived": true,
+      "before": {
+        "accounts": 1,
+        "inbound": 6,
+        "applied": 6,
+        "receipts": 6,
+        "outbound": 3,
+        "deliveryStates": [
+          {
+            "state": "sent",
+            "count": 1
+          },
+          {
+            "state": "ready",
+            "count": 1
+          },
+          {
+            "state": "cancelled",
+            "count": 1
+          }
+        ],
+        "dispatchStarts": 1,
+        "confirmedSent": 1,
+        "uncertain": 0,
+        "freshEligible": 1
+      },
+      "afterRestart": {
+        "accounts": 1,
+        "inbound": 6,
+        "applied": 6,
+        "receipts": 6,
+        "outbound": 3,
+        "deliveryStates": [
+          {
+            "state": "sent",
+            "count": 1
+          },
+          {
+            "state": "ready",
+            "count": 1
+          },
+          {
+            "state": "cancelled",
+            "count": 1
+          }
+        ],
+        "dispatchStarts": 1,
+        "confirmedSent": 1,
+        "uncertain": 0,
+        "freshEligible": 1
+      },
+      "admittedDeliveryInterrupted": false,
+      "postRestartSend": "PASS",
+      "status": "PASS",
+      "afterDelivery": {
+        "inbound": 6,
+        "receipts": 6,
+        "outbound": 3,
+        "deliveryStates": [
+          {
+            "state": "sent",
+            "count": 2
+          },
+          {
+            "state": "cancelled",
+            "count": 1
+          }
+        ],
+        "dispatchStarts": 2,
+        "confirmedSent": 2,
+        "uncertain": 0,
+        "freshSent": 1,
+        "oldCancelledWithoutAttempt": 1
+      },
+      "oldReplyStillCancelledWithoutDispatch": true,
+      "checkedAfterDeliveryUtc": "2026-10-13T18:33:28.772746+00:00"
+    },
+    "realVoice": {
+      "checkedAtUtc": "2026-10-13T18:35:21.733089+00:00",
+      "case": "real_voice_capability_unavailable",
+      "status": "PASS",
+      "counts": {
+        "accounts": 1,
+        "inbound": 7,
+        "receipts": 7,
+        "outbound": 4,
+        "voice": [
+          {
+            "preparation_status": "ready",
+            "processing_status": "applied",
+            "failure_code": "capability_unavailable",
+            "count": 1
+          }
+        ],
+        "deliveryStates": [
+          {
+            "state": "sent",
+            "count": 3
+          },
+          {
+            "state": "cancelled",
+            "count": 1
+          }
+        ],
+        "dispatchStarts": 3,
+        "confirmedSent": 3,
+        "uncertain": 0,
+        "voiceSent": 1,
+        "voiceAttempts": 1
+      },
+      "ownerConfirmedExplanation": true,
+      "ownerConfirmedPostRestartReply": true,
+      "transcriptionClaimed": false,
+      "readyBeforeCleanup": true,
+      "subscriptionStatusBeforeCleanup": "healthy",
+      "firstObservation": {
+        "assertionExpectedPreparationFailed": true,
+        "observedPreparationStatus": "ready",
+        "reason": "normalized voice pointer remains ready; capability_unavailable is recorded on applied processing per existing code",
+        "assertionIncorrect": true,
+        "originalExpectationNotRequiredByRunbook": true
+      },
+      "criteriaReviewedUtc": "2026-10-13T18:36:44.636372+00:00"
+    },
+    "cleanup": {
+      "checkedAtUtc": "2026-10-13T18:38:45.370511+00:00",
+      "case": "runbook_cleanup",
+      "status": "PASS",
+      "countsAfterErasure": {
+        "users": 0,
+        "accounts": 0,
+        "conversations": 0,
+        "inbound": 0,
+        "receipts": 0,
+        "outbound": 0,
+        "attempts": 0,
+        "conversationWork": 0,
+        "deliveryWork": 0,
+        "anonymousCompletedErasure": 1,
+        "linkedErasure": 0,
+        "databaseFence": true
+      },
+      "maxRuntimes": {
+        "gateway": {
+          "ActiveState": "inactive",
+          "UnitFileState": "disabled"
+        },
+        "worker": {
+          "ActiveState": "inactive",
+          "UnitFileState": "disabled"
+        },
+        "delivery": {
+          "ActiveState": "inactive",
+          "UnitFileState": "disabled"
+        },
+        "scheduler": {
+          "ActiveState": "inactive",
+          "UnitFileState": "disabled"
+        }
+      },
+      "privateCaptureRemoved": true,
+      "participantEnvCleared": true,
+      "secretaryAndOpenvpnPidsPreserved": true,
+      "existingNginxRoutesPreserved": true,
+      "subscriptionRemovalPreviouslyVerified": true,
+      "postgresStateAfterCleanup": "stopped",
+      "amneziaActiveAfterCleanup": true
+    }
+  },
+  "ownerConfirmations": {
+    "initialTextReply": true,
+    "postRestartReply": true,
+    "voiceExplanation": true
+  },
+  "privacy": {
+    "onlyAnonymousOutcomesCountsTimesAndShaRetained": true,
+    "noTokensHeadersProviderIdsOrUserContentInReport": true,
+    "privateRawCaptureRemoved": true,
+    "testParticipantEnvCleared": true,
+    "applicationTestAccountErased": true
+  },
+  "execution": {
+    "fullGateRerun": false,
+    "newReviewer": false,
+    "newAgents": false,
+    "nextStageStarted": false
+  },
+  "currentTestRuntimeState": "stopped_disabled_fenced",
+  "currentTestSubscriptionState": "removed",
+  "operationalLimits": [
+    "TEST host chosen by owner is in Kazakhstan; this does not establish Russian production data/storage geography",
+    "No deployed continuous backup/WAL monitoring, second-storage geography, key escrow or monthly production restore drill is claimed",
+    "User acceptance of checkpoint35 is separate; next stage is not authorized"
+  ],
+  "authenticationRootCause": "executor initially passed max-bot-token= prefix together with token; corrected extraction restored HTTP200; actual token was valid"
+}

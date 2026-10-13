@@ -71,3 +71,31 @@ Final publication procedure (user-authorized): documentation-only commit, then
  No new reviewer, no next stage. Real MAX canary NOT RUN: infrastructure,
  dedicated TEST credentials and a safe recipient remain prerequisites.
  Stage1 status: code and automated checks ready, external MAX canary pending.
+
+
+Real dedicated TEST MAX canary,2026-10-13 Europe/Moscow:
+ code/source SHA c42baff0fb50ffadf70d70673f06ea3b024b2457 (doc-only descendant of tested46e6273).
+ Owner-authorized nwc-kz deployment preserves Echo Secretary and VPN.
+ Cases: subscriptionPASS, real textPASS, exact replayPASS, stop/startPASS,
+ worker restart after commit before deliveryPASS, real voicePASS, cleanupPASS.
+ Callback replay N/A: no test button.
+ Text inbound persistence -> provider completed741ms; one confirmed send.
+ Replay200, original raw hash matches, counts unchanged; no second dispatch.
+ Stop cutoff persisted across restart; cancellation finalized through real
+ claim/admit without sender. Fresh post-start reply confirmed by owner.
+ MAX worker process changed; outbox survived; one fresh confirmed send.
+ Voice applied/capability_unavailable, one dispatch/sent; honest explanation
+ confirmed by owner, no transcription claimed.
+ Before erasure: inbound7/receipts7/outbound4; dispatchStarts3/sent3/cancelled1/uncertain0.
+ Cleanup: MAX roles inactive/disabled and fencesON; dedicated subscription removed.
+ Users/accounts/conversations/events/receipts/outbound/attempts/queue work all0;
+ one completed anonymous erasure audit (user_idNULL); captures removed and
+ private participant env cleared. Secretary/OpenVPN observed PIDs unchanged.
+ Credential401 root cause was executor including max-bot-token= in the header;
+ value-only extraction restored provider200. Token itself was valid.
+ Initial timing/state assertions were corrected against existing code (claim-time
+ physical cancellation; normalized voice preparationREADY), not code fixes;
+ observations preserved in checkpoint-35-canary.json.
+ No code changes, full gate, new reviewer/agent or next-stage work for canary.
+ Owner acceptance remains separate. Production storage geography/continuous
+ backup/WAL monitoring/escrow/monthly drills are not established by TEST canary.

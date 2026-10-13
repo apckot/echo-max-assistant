@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-13",
+  "status": "real_canary_PASS_cleanup_complete",
+  "codeSha": "c42baff0fb50ffadf70d70673f06ea3b024b2457",
+  "hostAlias": "nwc-kz",
+  "webhookUrl": "https://xn----8sbeood6ac4aabdjc.xn--p1ai/webhooks/max",
+  "gatewayHostBind": "127.0.0.1:18080",
+  "checkoutDirectory": "/opt/echo",
+  "imageDigest": "sha256:a48b2de35ded75f01ee8de5bb3772ad0e5759ee47ef74ed938fe7e7447c71ce3",
+  "postgres": {
+    "major": 17,
+    "isolatedNetworkAndVolume": true,
+    "publicPort": false,
+    "schemaVersion": 23,
+    "restoreFence": true,
+    "stateAfterCleanup": "stopped"
+  },
+  "runtimes": {
+    "gateway": "inactive_disabled_fenced",
+    "worker": "inactive_disabled_fenced",
+    "delivery": "inactive_disabled_fenced",
+    "scheduler": "inactive_disabled_fenced"
+  },
+  "tls": {
+    "publicDomainVerified": true,
+    "existingCertificateChanged": false,
+    "extraRussianCaScopedToMaxContainers": true,
+    "systemTrustStoreChanged": false
+  },
+  "resources": {
+    "runtimeMemoryLimitMiB": 128,
+    "postgresMemoryLimitMiB": 256,
+    "workerConcurrency": 1,
+    "deliveryConcurrency": 1
+  },
+  "verificationBeforeCleanup": {
+    "ready": true,
+    "subscriptionHealthy": true,
+    "providerAuthenticationHttpStatus": 200,
+    "matchingWebhookSubscriptions": 1,
+    "sent": 3,
+    "cancelled": 1,
+    "uncertain": 0
+  },
+  "afterCleanup": {
+    "testSubscriptionRemoved": true,
+    "applicationTestAccountErased": true,
+    "privateCaptureRemoved": true,
+    "privateParticipantEnvCleared": true,
+    "anonymousErasureAuditRows": 1
+  },
+  "preservation": {
+    "echoSecretaryObservedPidsUnchanged": true,
+    "openvpnObservedPidUnchanged": true,
+    "amneziaContainerActive": true,
+    "existingNginxRoutesPreserved": true
+  },
+  "fullGateRerun": false,
+  "newReviewer": false,
+  "sourceChanged": false,
+  "nextStageStarted": false,
+  "evidence": "checkpoint-35-canary.json",
+  "acceptance": "awaiting_owner",
+  "productionOperationalGuarantees": "not_established_by_TEST_canary"
+}

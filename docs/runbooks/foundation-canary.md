@@ -1,8 +1,10 @@
-# Dedicated TEST MAX canary — prepared, not executed
+# Dedicated TEST MAX canary — repeatable runbook
+
+Execution record: real TEST canary PASS on2026-10-13; [anonymous evidence](../progress/checkpoint-35-canary.json). Cleanup completed: roles stopped, subscription removed, test data/captures erased. Checklist below describes a future explicitly authorized repeat, not an instruction to restart now.
 
 Короткая пошаговая подготовка для владельца: [создание бота, переменные, HTTPS webhook и безопасный получатель](max-canary-setup.md).
 
-Run `node ops/canary/preflight.mjs` first. Missing configuration returns exit2 and only variable names; it performs no network request. Required: dedicated TEST bot `MAX_BOT_TOKEN`, `MAX_WEBHOOK_SECRET`, `MAX_WEBHOOK_SECRET_VERSION`, reachable HTTPS `MAX_WEBHOOK_URL`, an explicitly safe test participant `MAX_CANARY_TEST_USER_ID`, and `MAX_CANARY_TEST_CONFIRMED=true`. Provision secrets locally in mode0600 env files/secret manager, never paste them into a report or commit. The test participant must own that account and authorize receiving test replies. Do not use production credentials or guess recipients. Environment currently has no token, receiver or endpoint; no bot creation or external deployment was performed.
+Run `node ops/canary/preflight.mjs` first. Missing configuration returns exit2 and only variable names; it performs no network request. Required: dedicated TEST bot `MAX_BOT_TOKEN`, `MAX_WEBHOOK_SECRET`, `MAX_WEBHOOK_SECRET_VERSION`, reachable HTTPS `MAX_WEBHOOK_URL`, an explicitly safe test participant `MAX_CANARY_TEST_USER_ID`, and `MAX_CANARY_TEST_CONFIRMED=true`. Provision secrets locally in mode0600 env files/secret manager, never paste them into a report or commit. The test participant must own that account and authorize receiving test replies. Do not use production credentials or guess recipients. Secrets remain private; participant confirmation must be provisioned anew for a future run because cleanup clears it.
 
 Once provisioned, start isolated PostgreSQL17 with migrations/role credentials, the four Stage1 commands, private ops token, explicit production foundation echo opt-in and both restore fences off. Deploy the prepared nginx/TLS config to an approved test endpoint; verify readiness before subscription. Dedicated test bot owns its subscription set: scheduler may remove stale URLs, so this must not share production bot ownership.
 
