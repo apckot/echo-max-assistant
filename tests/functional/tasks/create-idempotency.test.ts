@@ -80,3 +80,14 @@ test('deleting user and restore fence deny creation before any receipt or effect
  try{await expect(commands.execute(r.context,r.group)).rejects.toThrow();expect(await counts()).toEqual(before);}
  finally{await f.migrator.query('UPDATE public.system_state SET restore_fence=false');}
 });
+test('accepted timezone casing and aliases canonicalize before fingerprint and storage',async()=>{
+ const r=request();r.context.timezoneSnapshot='europe/moscow';
+ const first=await commands.execute(r.context,r.group);expect(first.receipt.snapshots[0].timezone).toBe('Europe/Moscow');
+ expect(await commands.execute({...r.context,timezoneSnapshot:'Europe/Moscow'},r.group)).toEqual({receipt:first.receipt,replayed:true});
+ for(const input of ['US/Eastern','Asia/Kolkata']){
+ const alias=request();alias.group.commands[0]={...alias.group.commands[0],timezone:input};
+ const stored=(await commands.execute(alias.context,alias.group)).receipt.snapshots[0];
+ expect((await f.migrator.query('SELECT public.task_valid_timezone($1) AS valid',[stored.timezone])).rows[0].valid).toBe(true);
+ expect(new IanaTimeResolver().localDate('2026-10-13T23:00:00.000Z',stored.timezone)).toBe(input==='US/Eastern'?'2026-10-13':'2026-10-14');
+ }
+});

@@ -109,6 +109,7 @@ BEGIN
  IF jsonb_typeof(r)<>'object' OR (SELECT count(*) FROM jsonb_object_keys(r))<>8 OR
  NOT r ?& ARRAY['receiptId','contractVersion','effectKey','outcome','commandResults','localIdMap','snapshots','error'] OR
  r->'contractVersion'<>'1'::jsonb OR jsonb_typeof(r->'receiptId')<>'string' OR
+ jsonb_typeof(r->'outcome')<>'string' OR jsonb_typeof(r->'effectKey')<>'string' OR
  (r->>'receiptId')::uuid='00000000-0000-0000-0000-000000000000'::uuid OR
  r->>'effectKey'!~'^[A-Za-z0-9:_-]{1,200}$' OR r->>'outcome' NOT IN('applied','no_change','rejected') OR
  jsonb_typeof(r->'commandResults')<>'array' OR jsonb_typeof(r->'localIdMap')<>'object' OR jsonb_typeof(r->'snapshots')<>'array' THEN RETURN false; END IF;
@@ -118,20 +119,21 @@ BEGIN
  FOR label,identifier IN SELECT key,value FROM jsonb_each(r->'localIdMap') LOOP
   IF label!~'^[A-Za-z0-9_-]{1,64}$' OR jsonb_typeof(identifier)<>'string' OR (identifier#>>'{}')::uuid='00000000-0000-0000-0000-000000000000'::uuid THEN RETURN false; END IF;
  END LOOP;
- IF r->>'outcome'='rejected' THEN RETURN r->'commandResults'='[]'::jsonb AND r->'snapshots'='[]'::jsonb AND r->'localIdMap'='{}'::jsonb
-  AND jsonb_typeof(r->'error')='object' AND r->'error' ? 'code'
+ IF r->>'outcome'='rejected' THEN RETURN COALESCE(r->'commandResults'='[]'::jsonb AND r->'snapshots'='[]'::jsonb AND r->'localIdMap'='{}'::jsonb
+  AND jsonb_typeof(r->'error')='object' AND r->'error' ? 'code' AND jsonb_typeof(r->'error'->'code')='string'
   AND (SELECT count(*) FROM jsonb_object_keys(r->'error'))=CASE WHEN r->'error' ? 'index' THEN 2 ELSE 1 END
   AND r->'error'->>'code' IN('invalid_command','invalid_title','invalid_description','invalid_time','invalid_timezone',
   'ambiguous_local_time','nonexistent_local_time','invalid_schedule','invalid_evidence','unsupported_actor','task_not_found',
   'version_conflict','invalid_transition','idempotency_conflict','invalid_local_reference','group_limit_exceeded','version_exhausted','account_unavailable')
   AND (NOT r->'error' ? 'index' OR (jsonb_typeof(r->'error'->'index')='number' AND (r->'error'->>'index')::numeric BETWEEN 0 AND 19
-  AND (r->'error'->>'index')::numeric=(r->'error'->>'index')::integer)); END IF;
+  AND (r->'error'->>'index')::numeric=(r->'error'->>'index')::integer)),false); END IF;
  IF r->'error'<>'null'::jsonb OR jsonb_array_length(r->'commandResults') NOT BETWEEN 1 AND 20 THEN RETURN false; END IF;
  FOR entry IN SELECT value FROM jsonb_array_elements(r->'commandResults') LOOP
   IF jsonb_typeof(entry)<>'object' OR (SELECT count(*) FROM jsonb_object_keys(entry))<>6 OR
   NOT entry ?& ARRAY['index','kind','taskId','beforeVersion','afterVersion','outcome'] OR
   jsonb_typeof(entry->'index')<>'number' OR (entry->>'index')::integer NOT BETWEEN 0 AND 19 OR
   (entry->>'index')::numeric<>idx OR entry->>'kind' NOT IN('create','update','complete','cancel','reopen') OR
+  jsonb_typeof(entry->'kind')<>'string' OR jsonb_typeof(entry->'outcome')<>'string' OR
   jsonb_typeof(entry->'taskId')<>'string' OR (entry->>'taskId')::uuid IS NULL OR
   jsonb_typeof(entry->'afterVersion')<>'number' OR (entry->>'afterVersion')::numeric NOT BETWEEN 1 AND 2147483647 OR
   (entry->>'afterVersion')::numeric<>(entry->>'afterVersion')::integer OR entry->>'outcome' NOT IN('applied','no_change') THEN RETURN false; END IF;
@@ -152,7 +154,7 @@ CREATE TABLE public.task_command_receipts (
  effect_key text NOT NULL CHECK(effect_key~'^[A-Za-z0-9:_-]{1,200}$'),UNIQUE(user_id,effect_key),
  contract_version integer NOT NULL DEFAULT 1 CHECK(contract_version=1),payload_hash char(64) NOT NULL CHECK(payload_hash~'^[0-9a-f]{64}$'),
  canonical_payload jsonb NOT NULL CHECK(jsonb_typeof(canonical_payload)='object'),
- result jsonb NOT NULL CHECK(public.valid_task_receipt(result) AND result->>'receiptId'=id::text AND result->>'effectKey'=effect_key),
+ result jsonb NOT NULL CHECK((public.valid_task_receipt(result) AND result->>'receiptId'=id::text AND result->>'effectKey'=effect_key) IS TRUE),
  source_kind text NOT NULL CHECK(source_kind IN('typed','turn')),source_id uuid NOT NULL,actor text NOT NULL CHECK(actor IN('owner','operator','import')),
  source_occurred_at timestamptz NOT NULL CHECK(isfinite(source_occurred_at)),timezone_snapshot text NOT NULL CHECK(public.task_valid_timezone(timezone_snapshot)),
  recorded_at timestamptz NOT NULL DEFAULT date_trunc('milliseconds',clock_timestamp())

@@ -2,6 +2,7 @@ import type { TaskError } from '../domain/task.js';
 export interface LocalDateTime {readonly date:string;readonly time:string;readonly timezone:string;readonly offset?:string}
 export type TemporalResult = {readonly at:string;readonly timezone:string}|{readonly error:TaskError};
 export interface TemporalPort {
+ canonicalTimezone(timezone:string):string|null;
  validTimezone(timezone:string):boolean;
  resolveLocalTime(input:LocalDateTime):TemporalResult;
  localDate(at:string,timezone:string):string;
@@ -26,6 +27,7 @@ export interface TaskCommandSession {
  readonly recordedAt:string;readonly effectsPolicy:TaskEffectsPolicy;
  newId():string;
  fingerprint(payload:CanonicalTaskPayload):{hash:string;canonicalPayload:CanonicalTaskPayload};
+ storageTimezone(input:string,canonical:string):Promise<string|null>;
  lockEffect(effectKey:string):Promise<void>;
  findReceipt(effectKey:string):Promise<StoredTaskReceipt|null>;
  persistChanges(changes:readonly (TaskChange&{readonly eventId:string})[],receiptId:string):Promise<void>;

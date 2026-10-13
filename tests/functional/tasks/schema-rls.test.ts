@@ -59,3 +59,13 @@ test('receipt JSON rejects malformed results, local identity maps and nonclosed 
  {...base,outcome:'rejected',commandResults:[],localIdMap:{},snapshots:[],error:{code:'invalid_schedule',privateText:'secret'}}];
  for(const receipt of bad)expect((await f.migrator.query('SELECT public.valid_task_receipt($1::jsonb) AS valid',[JSON.stringify(receipt)])).rows[0].valid).toBe(false);
 });
+test('receipt validator rejects JSON null scalars and runtime CHECK never accepts SQL NULL',async()=>{
+ const base={receiptId:randomUUID(),contractVersion:1,effectKey:'null:probe',outcome:'applied',commandResults:[{index:0,kind:'create',taskId,beforeVersion:null,afterVersion:1,outcome:'applied'}],localIdMap:{a:taskId},snapshots:[snapshot(f.a)],error:null};
+ const rejected={...base,outcome:'rejected',commandResults:[],localIdMap:{},snapshots:[],error:{code:null}};
+ for(const receipt of [{...base,outcome:null},{...base,effectKey:null},{...base,commandResults:[{...base.commandResults[0],kind:null}]},
+ {...base,commandResults:[{...base.commandResults[0],outcome:null}]},rejected]){
+ expect((await f.migrator.query('SELECT public.valid_task_receipt($1::jsonb) AS valid',[JSON.stringify(receipt)])).rows[0].valid).toBe(false);
+ }
+ await expect(f.database.tenantTransaction('worker',f.a,tx=>tx.query(`INSERT INTO public.task_command_receipts(id,user_id,effect_key,payload_hash,canonical_payload,result,source_kind,source_id,actor,source_occurred_at,timezone_snapshot)
+ VALUES($1,$2,'null:probe',$3,'{}',$4,'typed',$5,'owner',now(),'UTC')`,[rejected.receiptId,f.a,'a'.repeat(64),JSON.stringify(rejected),sourceId]))).rejects.toThrow();
+});

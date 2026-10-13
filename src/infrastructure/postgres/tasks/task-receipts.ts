@@ -19,5 +19,5 @@ export async function findReceipt(tx:DbTx,userId:string,key:string):Promise<Stor
 export async function persistReceipt(tx:DbTx,context:TaskExecutionContext,receipt:TaskReceipt,payload:CanonicalTaskPayload,hash:string):Promise<void>{
  await tx.query(`INSERT INTO public.task_command_receipts(id,user_id,effect_key,payload_hash,canonical_payload,result,source_kind,source_id,actor,source_occurred_at,timezone_snapshot)
  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,[receipt.receiptId,context.userId,receipt.effectKey,hash,JSON.stringify(payload),JSON.stringify(receipt),context.source.kind,
- context.source.kind==='typed'?context.source.operationId:context.source.turnId,context.actor,context.sourceOccurredAt,context.timezoneSnapshot]);
+ context.source.kind==='typed'?context.source.operationId:context.source.turnId,context.actor,context.sourceOccurredAt,payload.timezoneSnapshot]);
 }

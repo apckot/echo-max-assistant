@@ -2,10 +2,11 @@ import type { LocalDateTime, TemporalPort, TemporalResult } from '../../modules/
 import { normalizeInstant, validDate } from '../../modules/tasks/domain/validation.js';
 
 export class IanaTimeResolver implements TemporalPort {
- validTimezone(timezone:string):boolean {
-  if(!/^[A-Za-z_]+(?:\/[A-Za-z0-9_+\-]+)*$/.test(timezone))return false;
-  try {new Intl.DateTimeFormat('en',{timeZone:timezone});return true;}catch{return false;}
+ canonicalTimezone(timezone:string):string|null {
+  if(!/^[A-Za-z_]+(?:\/[A-Za-z0-9_+\-]+)*$/.test(timezone))return null;
+  try {return new Intl.DateTimeFormat('en',{timeZone:timezone}).resolvedOptions().timeZone;}catch{return null;}
  }
+ validTimezone(timezone:string):boolean {return this.canonicalTimezone(timezone)!==null;}
  private localStamp(at:number,timezone:string):string {
   const parts=new Intl.DateTimeFormat('en-US-u-ca-iso8601-nu-latn',{timeZone:timezone,year:'numeric',month:'2-digit',day:'2-digit',
    hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(at));
@@ -17,7 +18,7 @@ export class IanaTimeResolver implements TemporalPort {
   return this.localStamp(Date.parse(at),timezone).slice(0,10);
  }
  resolveLocalTime(input:LocalDateTime):TemporalResult {
-  if(!this.validTimezone(input.timezone))return {error:{code:'invalid_timezone'}};
+  const timezone=this.canonicalTimezone(input.timezone);if(!timezone)return {error:{code:'invalid_timezone'}};
   if(!validDate(input.date)||!/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(input.time))return {error:{code:'invalid_time'}};
   const wall=input.date+'T'+(input.time.length===5?input.time+':00':input.time);
   const nominal=Date.parse(wall+'Z');
@@ -35,9 +36,9 @@ export class IanaTimeResolver implements TemporalPort {
    if(!/^[+-](?:[01]\d|2[0-3]):[0-5]\d$/.test(input.offset))return {error:{code:'invalid_time'}};
    const minutes=(Number(input.offset.slice(1,3))*60+Number(input.offset.slice(4)))*(input.offset[0]==='-'?-1:1);
    const match=matches.find(m=>m.offset===minutes*60000);
-   return match?{at:new Date(match.at).toISOString(),timezone:input.timezone}:{error:{code:'invalid_time'}};
+   return match?{at:new Date(match.at).toISOString(),timezone}:{error:{code:'invalid_time'}};
   }
   if(matches.length>1)return {error:{code:'ambiguous_local_time'}};
-  return {at:new Date(matches[0]!.at).toISOString(),timezone:input.timezone};
+  return {at:new Date(matches[0]!.at).toISOString(),timezone};
  }
 }

@@ -23,6 +23,7 @@ const command=z.discriminatedUnion('kind',[
  ...(['complete','cancel','reopen'] as const).map(kind=>z.object({kind:z.literal(kind),target,expectedVersion}).strict()),
 ]);
 export function normalizeCommand(input:unknown):TaskCommand|TaskError {
+ if(hasUndefinedOrCycle(input))return {code:'invalid_command'};
  const parsed=command.safeParse(input);
  if(parsed.success) return normalizeTemporalCommand(parsed.data);
  const paths=parsed.error.issues.map(issue=>issue.path.at(-1));
@@ -59,4 +60,11 @@ export function validateSchedule(values:{scheduledAt:string|null;dueAt:string|nu
  if(values.scheduledAt&&values.dueAt&&values.scheduledAt>values.dueAt) return {code:'invalid_schedule'};
  if(values.scheduledAt&&values.dueDate&&(!scheduledLocalDate||scheduledLocalDate>values.dueDate))return {code:'invalid_schedule'};
  return null;
+}
+
+function hasUndefinedOrCycle(value:unknown,path=new Set<object>()):boolean {
+ if(value===undefined)return true;
+ if(value===null||typeof value!=='object')return false;
+ if(path.has(value))return true;
+ path.add(value);const invalid=Object.values(value).some(child=>hasUndefinedOrCycle(child,path));path.delete(value);return invalid;
 }

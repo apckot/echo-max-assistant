@@ -11,16 +11,29 @@ export class TaskCommands {
   const context=parseExecutionContext(contextInput);if('code' in context)return {error:context};
   if(context.source.kind!=='typed')return {error:{code:'invalid_command'}};
   const occurred=normalizeInstant(context.sourceOccurredAt);if(typeof occurred!=='string')return {error:occurred};
-  if(!this.temporal.validTimezone(context.timezoneSnapshot))return {error:{code:'invalid_timezone'}};
+  const timezoneSnapshot=this.temporal.canonicalTimezone(context.timezoneSnapshot);if(!timezoneSnapshot)return {error:{code:'invalid_timezone'}};
   const shape=envelope.safeParse(groupInput);if(!shape.success)return {error:{code:'invalid_command'}};
   const commands:TaskCommand[]=[];
   for(const raw of shape.data.commands){const value=normalizeCommand(raw);if('code' in value)return {error:value};commands.push(value.kind==='create'?{...value,timezone:value.timezone??context.timezoneSnapshot}:value);}
   const group={...shape.data,commands};
-  const stableContext={...context,sourceOccurredAt:occurred};
+  const stableContext={...context,sourceOccurredAt:occurred,timezoneSnapshot};
   // Zod parsed DTOs are independent of the caller's mutable input before awaiting DB work.
-  const payload:CanonicalTaskPayload={contractVersion:1,commands,actor:context.actor,source:context.source,
-   sourceOccurredAt:occurred,timezoneSnapshot:context.timezoneSnapshot,intents:context.intents};
+  const initialPayload:CanonicalTaskPayload={contractVersion:1,commands,actor:context.actor,source:context.source,
+   sourceOccurredAt:occurred,timezoneSnapshot,intents:context.intents};
   return this.runner.run<TaskExecutionResult>(stableContext,async session=>{
+   const resolvedSnapshot=await session.storageTimezone(context.timezoneSnapshot,timezoneSnapshot);
+   if(!resolvedSnapshot)return {error:{code:'invalid_timezone'}};
+   const storedCommands:TaskCommand[]=[];let badTimezone:import('../domain/task.js').TaskError|null=null;
+   for(const [index,command] of group.commands.entries()){
+    if(command.kind!=='create'){storedCommands.push(command);continue;}
+    const candidate=command.timezone!;const canonical=this.temporal.canonicalTimezone(candidate);
+    const stored=canonical?await session.storageTimezone(candidate,canonical):null;
+    if(!stored)badTimezone={code:'invalid_timezone',index};
+    storedCommands.push({...command,timezone:stored??candidate});
+   }
+   const payload={...initialPayload,commands:storedCommands,timezoneSnapshot:resolvedSnapshot};
+   const resolvedContext={...stableContext,timezoneSnapshot:resolvedSnapshot};
+   const resolvedGroup={...group,commands:storedCommands};
    const fingerprint=session.fingerprint(payload);
    await session.lockEffect(group.effectKey);
    const previous=await session.findReceipt(group.effectKey);
@@ -30,7 +43,7 @@ export class TaskCommands {
     return {receipt:previous.receipt,replayed:true};
    }
    const receiptId=session.newId();
-   const plan=planCreate(stableContext,group,session.newId(),receiptId,session.recordedAt,this.temporal);
+   const plan=badTimezone??planCreate(resolvedContext,resolvedGroup,session.newId(),receiptId,session.recordedAt,this.temporal);
    let receipt:TaskReceipt;
    if('code' in plan){receipt={receiptId,contractVersion:1,effectKey:group.effectKey,outcome:'rejected',commandResults:[],
     localIdMap:{},snapshots:[],error:plan};}

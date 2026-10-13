@@ -20,11 +20,11 @@ Base implementation SHA: a462564. No iteration41, deployment or real MAX task/ca
 |37| fb115ec | time.test.ts: missing resolver → 8PASS with command contract | typecheck/architecture PASS |
 |38| 8ba8e11 | transitions.test.ts: missing transitions → 15PASS (12 cells +3 scenarios) | typecheck/architecture PASS |
 |39| 77c2606 | schema24 absent → schema/RLS5 + migrations4 + system-state10 =19PASS | typecheck/architecture PASS |
-|40| pending | create-idempotency.test.ts: missing executor → 8PASS; affected pure lifecycle15PASS | typecheck/architecture PASS |
+|40| 33aeeca | create-idempotency.test.ts: missing executor → 8PASS; affected pure lifecycle15PASS | typecheck/architecture PASS |
 
 ## Checkpoint
 
-Cumulative review: not started. Clean-clone full gate: not started. Push/SHA match: not started.
+Cumulative review: one independent reviewer, initial request-changes (three P2 findings), targeted fixes39PASS/staticPASS; scoped confirmation pending. Clean-clone full gate: not started. Push/SHA match: not started.
 
 Iteration39 evidence: fixture initially used nonnumeric MAX IDs (setup error corrected before RED); actual RED was missing schema24. First SQL GREEN exposed shared-trigger NEW.task_id on work_items; raw runtime-role PG diagnostic identified it; JSON-based field selection fixed it. Strict receipt malformed-map/error-code RED→GREEN added before commit.
 
@@ -33,3 +33,7 @@ Iteration39 correction before publication: premature commit after the strict-JSO
 Iteration40 rulings: structural context/shape validation precedes replay; semantic intent denial follows exact canonical-payload comparison, so same key + changed evidence yields idempotency_conflict per A03. Defaults (including timezone) and source instant canonicalised before fingerprint. Single-create only; existing-target persistence41 and multi-command application42 are not implemented. Turn contexts rejected until guarded bridge46 proves source ownership. Pure create now uses its validated normalised DTO.
 
 Iteration40 internal steps separated within the same executor/commit: extend DTO-only session ports/context parser, implement the four PostgreSQL adapter files, then wire one public executor. Small interface edits to ports/evidence/transitions are necessary to compose the planned single behavior; no additional execution owner or behavior added.
+
+Checkpoint review fixes (same executor): SQL null outcome/error.code/kind/outcome rejected and receipt CHECK uses IS TRUE; optional undefined rejected before patch application; timezone names normalised against the PG17 catalogue before canonical fingerprint/persistence (raw accepted name first, Intl canonical fallback). ICU Asia/Calcutta absent from PG catalogue while Asia/Kolkata present was reproduced; using ICU names alone was insufficient. New session timezone lookup is a read-only compatibility check, not a second Task writer. Targeted review regression RED3/17PASS → GREEN39PASS across five files, typecheck/architecture PASS. No full gate run yet.
+
+Review declined-to-judge areas41–50 remain intentionally deferred per accepted scope; no new implementation is inferred from checkpoint40 tests. Migration0024 is new in this un-deployed checkpoint, so its review correction does not edit any previously deployed Stage1 migration.

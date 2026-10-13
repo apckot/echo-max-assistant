@@ -35,3 +35,7 @@ test('non_owner_or_nonaffirmative_intent_rejected',()=>{
  expect(validateEvidence(context,normalizeCommand(update))).toEqual({code:'invalid_evidence'});
  expect(normalizeCommand(update)).toHaveProperty('kind','update');
 });
+test('explicit undefined patch values cannot masquerade as omission or clear',()=>{
+ for(const patch of [{title:undefined},{deadline:undefined},{targetDate:undefined},{description:undefined},{title:'Changed',deadline:undefined}])
+ expect(normalizeCommand({kind:'update',target:{taskId:id},expectedVersion:1,patch})).toEqual({code:'invalid_command'});
+});
