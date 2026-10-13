@@ -19,8 +19,8 @@ Base implementation SHA: a462564. No iteration41, deployment or real MAX task/ca
 |36| 8a60aa6 | command-contract.test.ts: missing implementation → 4PASS (Node22) | typecheck/architecture PASS |
 |37| fb115ec | time.test.ts: missing resolver → 8PASS with command contract | typecheck/architecture PASS |
 |38| 8ba8e11 | transitions.test.ts: missing transitions → 15PASS (12 cells +3 scenarios) | typecheck/architecture PASS |
-|39| pending | schema24 absent → schema/RLS5 + migrations4 + system-state10 =19PASS | typecheck/architecture PASS |
-|40| not started | | |
+|39| 77c2606 | schema24 absent → schema/RLS5 + migrations4 + system-state10 =19PASS | typecheck/architecture PASS |
+|40| pending | create-idempotency.test.ts: missing executor → 8PASS; affected pure lifecycle15PASS | typecheck/architecture PASS |
 
 ## Checkpoint
 
@@ -29,3 +29,7 @@ Cumulative review: not started. Clean-clone full gate: not started. Push/SHA mat
 Iteration39 evidence: fixture initially used nonnumeric MAX IDs (setup error corrected before RED); actual RED was missing schema24. First SQL GREEN exposed shared-trigger NEW.task_id on work_items; raw runtime-role PG diagnostic identified it; JSON-based field selection fixed it. Strict receipt malformed-map/error-code RED→GREEN added before commit.
 
 Iteration39 correction before publication: premature commit after the strict-JSON run had failed SQL parsing (CASE in IF needed parentheses); fixed and observed19PASS. Event→receipt FK also deferred: raw worker-role event-before-receipt RED→GREEN proves planned write order; constraints still enforce final commit. Latest unpushed iteration39 commit amended to preserve one reviewable commit.
+
+Iteration40 rulings: structural context/shape validation precedes replay; semantic intent denial follows exact canonical-payload comparison, so same key + changed evidence yields idempotency_conflict per A03. Defaults (including timezone) and source instant canonicalised before fingerprint. Single-create only; existing-target persistence41 and multi-command application42 are not implemented. Turn contexts rejected until guarded bridge46 proves source ownership. Pure create now uses its validated normalised DTO.
+
+Iteration40 internal steps separated within the same executor/commit: extend DTO-only session ports/context parser, implement the four PostgreSQL adapter files, then wire one public executor. Small interface edits to ports/evidence/transitions are necessary to compose the planned single behavior; no additional execution owner or behavior added.

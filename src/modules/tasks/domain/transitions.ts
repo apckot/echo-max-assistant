@@ -12,6 +12,8 @@ function applied(before:Task|null,after:Task,kind:TaskCommand['kind']):Transitio
 }
 export function createTask(command:CreateTask,facts:TransitionFacts&{readonly id:string;readonly userId:UserId;readonly timezone:string}):TransitionResult {
  const valid=normalizeCommand(command);if('code' in valid)return valid;
+ if(valid.kind!=='create')return {code:'invalid_command'};
+ command=valid;
  const task:Task={id:facts.id,userId:facts.userId,title:command.title,description:command.description,
   status:'open',targetDate:command.targetDate,scheduledAt:command.scheduledAt,
   dueDate:command.deadline?.kind==='date'?command.deadline.date:null,

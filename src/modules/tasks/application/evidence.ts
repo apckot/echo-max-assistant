@@ -19,3 +19,10 @@ export function validateEvidence(context:unknown,command:TaskCommand|TaskError,i
  !('created' in intent.binding)||target.created!==intent.binding.created)) return {code:'invalid_evidence'};
  return null;
 }
+
+export function parseExecutionContext(input:unknown):import('./context.js').TaskExecutionContext|TaskError {
+ const parsed=evidenceContext.safeParse(input);
+ if(!parsed.success)return {code:'invalid_evidence'};
+ if(parsed.data.actor!=='owner')return {code:'unsupported_actor'};
+ return {...parsed.data,userId:parsed.data.userId as import('../../../shared/types/identity.js').UserId};
+}
