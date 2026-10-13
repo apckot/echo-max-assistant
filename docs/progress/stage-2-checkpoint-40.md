@@ -18,10 +18,14 @@ Base implementation SHA: a462564. No iteration41, deployment or real MAX task/ca
 |---|---|---|---|
 |36| 8a60aa6 | command-contract.test.ts: missing implementation → 4PASS (Node22) | typecheck/architecture PASS |
 |37| fb115ec | time.test.ts: missing resolver → 8PASS with command contract | typecheck/architecture PASS |
-|38| pending | transitions.test.ts: missing transitions → 15PASS (12 cells +3 scenarios) | typecheck/architecture PASS |
-|39| not started | | |
+|38| 8ba8e11 | transitions.test.ts: missing transitions → 15PASS (12 cells +3 scenarios) | typecheck/architecture PASS |
+|39| pending | schema24 absent → schema/RLS5 + migrations4 + system-state10 =19PASS | typecheck/architecture PASS |
 |40| not started | | |
 
 ## Checkpoint
 
 Cumulative review: not started. Clean-clone full gate: not started. Push/SHA match: not started.
+
+Iteration39 evidence: fixture initially used nonnumeric MAX IDs (setup error corrected before RED); actual RED was missing schema24. First SQL GREEN exposed shared-trigger NEW.task_id on work_items; raw runtime-role PG diagnostic identified it; JSON-based field selection fixed it. Strict receipt malformed-map/error-code RED→GREEN added before commit.
+
+Iteration39 correction before publication: premature commit after the strict-JSON run had failed SQL parsing (CASE in IF needed parentheses); fixed and observed19PASS. Event→receipt FK also deferred: raw worker-role event-before-receipt RED→GREEN proves planned write order; constraints still enforce final commit. Latest unpushed iteration39 commit amended to preserve one reviewable commit.
