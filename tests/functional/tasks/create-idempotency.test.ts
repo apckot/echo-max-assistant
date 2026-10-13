@@ -91,3 +91,9 @@ test('accepted timezone casing and aliases canonicalize before fingerprint and s
  expect(new IanaTimeResolver().localDate('2026-10-13T23:00:00.000Z',stored.timezone)).toBe(input==='US/Eastern'?'2026-10-13':'2026-10-14');
  }
 });
+test('resolved local meeting can be passed directly to typed creation with a storage-compatible timezone',async()=>{
+ const resolved=new IanaTimeResolver().resolveLocalTime({date:'2026-10-14',time:'12:00',timezone:'Asia/Kolkata'});
+ expect(resolved).toHaveProperty('at','2026-10-14T06:30:00.000Z');
+ const r=request();r.group.commands[0]={...r.group.commands[0],timezone:resolved.timezone,scheduledAt:resolved.at};
+ expect((await commands.execute(r.context,r.group)).receipt.snapshots[0]).toMatchObject({timezone:'Asia/Kolkata',scheduledAt:'2026-10-14T06:30:00.000Z'});
+});

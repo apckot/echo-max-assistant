@@ -36,9 +36,9 @@ export class IanaTimeResolver implements TemporalPort {
    if(!/^[+-](?:[01]\d|2[0-3]):[0-5]\d$/.test(input.offset))return {error:{code:'invalid_time'}};
    const minutes=(Number(input.offset.slice(1,3))*60+Number(input.offset.slice(4)))*(input.offset[0]==='-'?-1:1);
    const match=matches.find(m=>m.offset===minutes*60000);
-   return match?{at:new Date(match.at).toISOString(),timezone}:{error:{code:'invalid_time'}};
+   return match?{at:new Date(match.at).toISOString(),timezone:input.timezone}:{error:{code:'invalid_time'}};
   }
   if(matches.length>1)return {error:{code:'ambiguous_local_time'}};
-  return {at:new Date(matches[0]!.at).toISOString(),timezone};
+  return {at:new Date(matches[0]!.at).toISOString(),timezone:input.timezone};
  }
 }
