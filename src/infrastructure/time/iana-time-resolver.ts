@@ -41,4 +41,24 @@ export class IanaTimeResolver implements TemporalPort {
   if(matches.length>1)return {error:{code:'ambiguous_local_time'}};
   return {at:new Date(matches[0]!.at).toISOString(),timezone:input.timezone};
  }
+ private wallMillis(stamp:string):number {
+  const [date,time]=stamp.split('T');const [year,month,day]=date!.split('-').map(Number);const [hour,minute,second]=time!.split(':').map(Number);
+  const d=new Date(0);d.setUTCFullYear(year!,month!-1,day!);d.setUTCHours(hour!,minute!,second!,0);return d.getTime();
+ }
+ dayBoundary(date:string,timezone:string):string {
+  if((!validDate(date)&&date!=='10000-01-01')||!this.validTimezone(timezone))throw new RangeError('Invalid day boundary');
+  const nominal=this.wallMillis(date+'T00:00:00');const offset=(at:number)=>this.wallMillis(this.localStamp(at,timezone))-Math.floor(at/1000)*1000;
+  const samples=Array.from({length:25},(_,n)=>nominal+(n-12)*6*3600000);
+  const offsets=new Set(samples.map(offset).filter(v=>Math.abs(v)<=26*3600000));const candidates:number[]=[];
+  for(const o of offsets){const at=nominal-o;if(this.localStamp(at,timezone)===date+'T00:00:00')candidates.push(at);}
+  // A missing midnight/day is entered at a timezone transition, not by strict meeting resolution.
+  for(let n=1;n<samples.length;n++){
+   let low=samples[n-1]!,high=samples[n]!;const before=offset(low);if(before===offset(high))continue;
+   while(high-low>1){const mid=Math.floor((low+high)/2);if(offset(mid)===before)low=mid;else high=mid;}
+   if(this.localStamp(high,timezone).slice(0,-9)>=date&&this.localStamp(high-1,timezone).slice(0,-9)<date)candidates.push(high);
+  }
+  if(!candidates.length)throw new RangeError('No calendar boundary');
+  return new Date(Math.min(...candidates)).toISOString();
+ }
+
 }

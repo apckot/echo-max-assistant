@@ -68,3 +68,8 @@ function hasUndefinedOrCycle(value:unknown,path=new Set<object>()):boolean {
  if(path.has(value))return true;
  path.add(value);const invalid=Object.values(value).some(child=>hasUndefinedOrCycle(child,path));path.delete(value);return invalid;
 }
+
+export function nextCalendarDate(date:string):string {
+ const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+1);
+ return `${String(d.getUTCFullYear()).padStart(4,'0')}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}

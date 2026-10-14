@@ -6,6 +6,7 @@ export interface TemporalPort {
  validTimezone(timezone:string):boolean;
  resolveLocalTime(input:LocalDateTime):TemporalResult;
  localDate(at:string,timezone:string):string;
+ dayBoundary(date:string,timezone:string):string;
 }
 
 import type { TaskCommandGroup, TaskCommand } from '../domain/commands.js';
