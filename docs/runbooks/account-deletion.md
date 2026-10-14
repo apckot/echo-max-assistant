@@ -9,3 +9,5 @@ An already admitted send cannot be recalled. Finish returns `waiting` while any 
 Completed audit contains only a random operation UUID, closed actor/reason codes, counts and times; user_id is nulled and no external ID, payload, hash or target mapping is retained. A subsequent MAX interaction after completed erasure can create a fresh identity. Permanent suppression would require retaining an external identity tombstone and is outside this privacy contract.
 
 Stage1 has no downloaded media objects. Encrypted backup rotation removes historical data within35days; restore reconciliation and backup tooling are iterations31–32, not claimed by this checkpoint.
+
+Stage2 Tasks are included in the same preview/begin/finish workflow: counts.tasks/taskEvents/taskReceipts, then immutable events → receipts → current tasks erased before identity. Terminal tasks/history/effect keys are not technical retention data. Begin blocks further typed Task reads/writes via the active-user guard; finish leaves anonymous counts only and does not retain titles, task IDs or source IDs. No separate task hard-delete command exists.
