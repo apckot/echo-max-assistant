@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import {IanaTimeResolver} from '../../time/iana-time-resolver.js';
 import type { DbTx, Database } from '../database.js';
 import type { TaskExecutionContext } from '../../../modules/tasks/application/context.js';
 import type { TaskCommandSession, TaskSessionRunner } from '../../../modules/tasks/application/ports.js';
@@ -37,7 +38,7 @@ export class PostgresBoundTaskSessionRunner implements TaskSessionRunner {
  constructor(private readonly tx:DbTx,private readonly event:import('../../../modules/intake/domain/inbound-event.js').InboundEvent){}
  async run<T>(context:TaskExecutionContext,fn:(session:TaskCommandSession)=>Promise<T>):Promise<T|{error:TaskError}>{
   if(context.userId!==this.event.userId||context.source.kind!=='turn'||context.source.turnId!==this.event.id||
-   context.sourceOccurredAt!==this.event.occurredAt.toISOString()||context.timezoneSnapshot!==this.event.timezoneSnapshot)
+   context.sourceOccurredAt!==this.event.occurredAt.toISOString()||context.timezoneSnapshot!==new IanaTimeResolver().canonicalTimezone(this.event.timezoneSnapshot))
    return {error:{code:'invalid_evidence'}};
   return fn(await taskSession(this.tx,context));
  }

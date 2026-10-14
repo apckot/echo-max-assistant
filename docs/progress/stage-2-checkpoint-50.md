@@ -14,6 +14,10 @@ Base d33f73af076dbe5745b240d72f4ba6371c10d882; branch codex/stage-2-task-domain.
 
 |Iteration|Commit|Targeted RED→GREEN|Static|
 |---|---|---|---|
-|46|pending|missing bridge API → processing4 + affected foundation/privacy/schema tests77 PASS|typecheck/architecture PASS|
+|46|da94419|missing bridge API → processing4 + affected foundation/privacy/schema tests77 PASS|typecheck/architecture PASS|
 
 Review, full gate, A24 and physical drill not started. No separate review-focus/functional rerun planned.
+
+|47|pending|real backend disconnect/COMMIT ACK loss and authority races7 PASS; alias snapshot regression RED → GREEN12 including processing4|typecheck/architecture PASS|
+
+Iteration47 diagnosis: application canonicalises Asia/Kolkata to ICU Asia/Calcutta before the bound session; authority had compared against raw event timezone. Compare canonical temporal zone on both sides, while PostgreSQL-compatible storage still resolves the original snapshot. Regression covers actual typed inbound with a Kolkata profile. Other fault proofs passed immediately against46: evidence of existing guards, not invented RED. COMMIT failure fixture throws only after real transaction COMMIT; independent raw DB counts/immutable receipt and restarted connections prove durability.
