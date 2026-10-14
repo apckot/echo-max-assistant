@@ -9,7 +9,7 @@ export class TaskCommands {
  constructor(private readonly runner:TaskSessionRunner,private readonly temporal:TemporalPort){}
  async execute(contextInput:unknown,groupInput:unknown):Promise<TaskExecutionResult>{
   const context=parseExecutionContext(contextInput);if('code' in context)return {error:context};
-  if(context.source.kind!=='typed')return {error:{code:'invalid_command'}};
+  if(context.source.kind==='turn'&&!this.runner.acceptsTurnSource)return {error:{code:'invalid_command'}};
   const occurred=normalizeInstant(context.sourceOccurredAt);if(typeof occurred!=='string')return {error:occurred};
   const timezoneSnapshot=this.temporal.canonicalTimezone(context.timezoneSnapshot);if(!timezoneSnapshot)return {error:{code:'invalid_timezone'}};
   const shape=envelope.safeParse(groupInput);if(!shape.success)return {error:{code:shape.error.issues.some(i=>i.path[0]==='commands'&&i.code==='too_big')?'group_limit_exceeded':'invalid_command'}};

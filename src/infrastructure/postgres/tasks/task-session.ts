@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Database } from '../database.js';
+import type { DbTx, Database } from '../database.js';
 import type { TaskExecutionContext } from '../../../modules/tasks/application/context.js';
 import type { TaskCommandSession, TaskSessionRunner } from '../../../modules/tasks/application/ports.js';
 import type { TaskError } from '../../../modules/tasks/domain/task.js';
@@ -13,6 +13,12 @@ export class PostgresTaskSessionRunner implements TaskSessionRunner {
    await tx.query('SELECT public.guard_worker_restore_fence()');
    const [user]=await tx.query<{status:string}>('SELECT status FROM public.users WHERE id=$1 FOR SHARE',[context.userId]);
    if(user?.status!=='active')return {error:{code:'account_unavailable'}};
+   return fn(await taskSession(tx,context));
+  });
+ }
+}
+
+async function taskSession(tx:DbTx,context:TaskExecutionContext):Promise<TaskCommandSession>{
    const [clock]=await tx.query<{at:Date}>("SELECT date_trunc('milliseconds',clock_timestamp()) AS at");
    const session:TaskCommandSession={recordedAt:clock!.at.toISOString(),effectsPolicy:new NoopTaskEffectsPolicy(),newId:randomUUID,fingerprint,
     storageTimezone:async(input,canonical)=>{const [zone]=await tx.query<{name:string}>(
@@ -22,7 +28,17 @@ export class PostgresTaskSessionRunner implements TaskSessionRunner {
     lockEffect:async key=>{await tx.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))",['tasks:'+context.userId+':'+key]);},
     findReceipt:key=>findReceipt(tx,context.userId,key),persistChanges:(changes,receiptId)=>persistTaskChanges(tx,changes,receiptId),
     persistReceipt:(receipt,payload,hash)=>persistReceipt(tx,context,receipt,payload,hash)};
-   return fn(session);
-  });
+ return session;
+}
+
+// Infrastructure-only adapter: source authority is the locked ordered head, never caller JSON.
+export class PostgresBoundTaskSessionRunner implements TaskSessionRunner {
+ readonly acceptsTurnSource=true as const;
+ constructor(private readonly tx:DbTx,private readonly event:import('../../../modules/intake/domain/inbound-event.js').InboundEvent){}
+ async run<T>(context:TaskExecutionContext,fn:(session:TaskCommandSession)=>Promise<T>):Promise<T|{error:TaskError}>{
+  if(context.userId!==this.event.userId||context.source.kind!=='turn'||context.source.turnId!==this.event.id||
+   context.sourceOccurredAt!==this.event.occurredAt.toISOString()||context.timezoneSnapshot!==this.event.timezoneSnapshot)
+   return {error:{code:'invalid_evidence'}};
+  return fn(await taskSession(this.tx,context));
  }
 }

@@ -37,5 +37,6 @@ export interface TaskCommandSession {
  persistReceipt(receipt:TaskReceipt,payload:CanonicalTaskPayload,hash:string):Promise<void>;
 }
 export interface TaskSessionRunner {
+ readonly acceptsTurnSource?:true;
  run<T>(context:TaskExecutionContext,fn:(session:TaskCommandSession)=>Promise<T>):Promise<T|{error:TaskError}>;
 }

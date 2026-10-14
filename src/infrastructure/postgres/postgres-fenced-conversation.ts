@@ -11,6 +11,9 @@ export class PostgresFencedConversation {
   async run<T>(lease: ConversationLease,
     callback: (tx: DbTx) => Promise<{ value: T; disposition: WorkDisposition }>): Promise<T> {
     return this.database.tenantTransaction('worker', lease.userId, async (tx) => {
+      await tx.query('SELECT public.guard_worker_restore_fence()');
+      const [user]=await tx.query<{status:string}>('SELECT status FROM public.users WHERE id=$1::uuid FOR SHARE',[lease.userId]);
+      if(user?.status!=='active')throw new ConversationLeaseLostError();
       const ids = [lease.conversationId, lease.userId];
       const token = [...ids, lease.ownerId, lease.leaseGeneration.toString()];
       // Ingress takes these locks in this same order.

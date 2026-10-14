@@ -7,6 +7,10 @@ import type { DbTx } from './database.js';
 import type { PostgresOrderedHead } from './postgres-ordered-head.js';
 import { PostgresOutbox } from './postgres-outbox.js';
 
+export interface ProcessingContinuation {
+ continue(tx:DbTx,event:InboundEvent,prepared:HandleInboundResult):Promise<HandleInboundResult>;
+}
+
 // Created only around the pure callback; never retain raw error messages/codes.
 class PureHandlerFailure extends Error {
   constructor(readonly id: string, readonly sequence: bigint) { super('Inbound handler failed'); }
@@ -15,7 +19,7 @@ const errorResult: HandleInboundResult = { receiptType: 'foundation_echo', recei
   messages: [{ version: 1, kind: 'text', text: 'Не удалось обработать сообщение. Попробуйте отправить его ещё раз.' }] };
 
 export class PostgresAtomicProcessing implements AtomicProcessingPort {
-  constructor(private readonly ordered: PostgresOrderedHead) {}
+  constructor(private readonly ordered: PostgresOrderedHead, private readonly continuation?:ProcessingContinuation) {}
 
   async run(lease: ConversationLease, handle: (input: HandleInboundInput) => Promise<HandleInboundResult>):
     Promise<ProcessingRunResult> {
@@ -29,6 +33,7 @@ export class PostgresAtomicProcessing implements AtomicProcessingPort {
         let result: HandleInboundResult;
         try { result = await handle({ sequence: event.sequence, payload: event.payload }); }
         catch { throw new PureHandlerFailure(event.id, event.sequence); }
+        if(this.continuation)result=await this.continuation.continue(tx,event,result);
         return this.complete(tx, event, result, 'applied', event.payload.kind === 'voice' ? 'capability_unavailable' : null);
       });
     } catch (error) {

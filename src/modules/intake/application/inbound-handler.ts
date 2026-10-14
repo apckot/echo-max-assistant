@@ -6,7 +6,12 @@ export interface HandleInboundInput {
   readonly payload: InboundPayload;
 }
 
-export interface HandleInboundResult {
+export type HandleInboundResult = FoundationInboundResult | TaskInboundResult;
+export interface TaskInboundResult {
+ readonly receiptType: 'task_commands_v1'; readonly receiptVersion:1; readonly taskReceiptId:string;
+ readonly messages:readonly OutboundMessageDraft[];
+}
+export interface FoundationInboundResult {
   readonly receiptType: 'foundation_echo';
   readonly receiptVersion: 1;
   readonly messages: readonly OutboundMessageDraft[];
