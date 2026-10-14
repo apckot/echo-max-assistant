@@ -18,6 +18,10 @@ Base d33f73af076dbe5745b240d72f4ba6371c10d882; branch codex/stage-2-task-domain.
 
 Review, full gate, A24 and physical drill not started. No separate review-focus/functional rerun planned.
 
-|47|pending|real backend disconnect/COMMIT ACK loss and authority races7 PASS; alias snapshot regression RED → GREEN12 including processing4|typecheck/architecture PASS|
+|47|c6aa0d1|real backend disconnect/COMMIT ACK loss and authority races7 PASS; alias snapshot regression RED → GREEN12 including processing4|typecheck/architecture PASS|
 
 Iteration47 diagnosis: application canonicalises Asia/Kolkata to ICU Asia/Calcutta before the bound session; authority had compared against raw event timezone. Compare canonical temporal zone on both sides, while PostgreSQL-compatible storage still resolves the original snapshot. Regression covers actual typed inbound with a Kolkata profile. Other fault proofs passed immediately against46: evidence of existing guards, not invented RED. COMMIT failure fixture throws only after real transaction COMMIT; independent raw DB counts/immutable receipt and restarted connections prove durability.
+
+|48|pending|foreign imports/writes10 RED; additional concatenated literal RED → ownership12+architecture8 GREEN20|typecheck/architecture PASS|
+
+Iteration48 ruling: temporal adapter needs a public DTO-only TemporalPort but must not import TaskSession. Split temporal-port.ts from private ports.ts, preserving internal re-exports. Guard scans all production src for fixed Task adapter imports/writes; sole bound bridge allowed. Foreign .query requires a single literal (no interpolation/concatenation/nonliteral bypass); database/migration runner are explicit SQL infrastructure exceptions. This is bounded source enforcement, not a SQL parser/security proof; runtime RLS/grants/FK remain necessary.

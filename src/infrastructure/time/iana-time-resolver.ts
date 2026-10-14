@@ -1,4 +1,4 @@
-import type { LocalDateTime, TemporalPort, TemporalResult } from '../../modules/tasks/application/ports.js';
+import type { LocalDateTime, TemporalPort, TemporalResult } from '../../modules/tasks/application/temporal-port.js';
 import { normalizeInstant, validDate } from '../../modules/tasks/domain/validation.js';
 
 export class IanaTimeResolver implements TemporalPort {

@@ -87,6 +87,42 @@ function resolveTarget(specifier, importer, config) {
   return undefined;
 }
 
+const taskAdapterFiles=new Set(['task-row.ts','task-session.ts','task-store.ts','task-receipts.ts','task-read-model.ts'].map(name=>'src/infrastructure/postgres/tasks/'+name));
+const bridge='src/infrastructure/postgres/postgres-typed-task-processing.ts';
+const sqlInfrastructure=new Set(['src/infrastructure/postgres/database.ts','src/infrastructure/postgres/migrations.ts']);
+function taskOwnership(file,source,config){
+ const path=relative(root,file).split(sep).join('/');
+ const owned=taskAdapterFiles.has(path),withinTasks=path.startsWith('src/modules/tasks/');
+ const errors=[];
+ for(const dependency of dependencies(source)){
+  const target=resolveTarget(dependency,file,config);
+  const resolved=target?relative(root,target).split(sep).join('/').replace(/\.[cm]?js$/,'.ts'):'';
+  if((resolved.startsWith('src/infrastructure/postgres/tasks/')&&!owned&&path!==bridge)||
+    (resolved==='src/modules/tasks/application/ports.ts'&&!owned&&!withinTasks))
+   errors.push(`${path}: Task ownership forbids private import '${dependency}'`);
+ }
+ if(owned||sqlInfrastructure.has(path))return errors;
+ const scanner=createScanner(true,undefined,source),tokens=[];
+ for(let kind;(kind=scanner.scan())!==SyntaxKind.EndOfFile;)tokens.push({kind,value:scanner.getTokenValue()});
+ for(let i=0;i<tokens.length;i++){
+  const token=tokens[i];
+  // Bounded source guard, not a SQL parser: catch static writes even in assigned literals.
+  const sql=token.value?.replace(/"/g,'').replace(/\/\*[\s\S]*?\*\//g,' ').replace(/--[^\n]*/g,' ');
+  if([SyntaxKind.StringLiteral,SyntaxKind.NoSubstitutionTemplateLiteral,SyntaxKind.TemplateHead].includes(token.kind)&&
+   /\b(?:insert\s+into|update|delete\s+from|merge\s+into|truncate(?:\s+table)?)\s+(?:public\s*\.\s*)?(?:work_items|work_item_events|task_command_receipts)\b/i.test(sql??''))
+   errors.push(`${path}: Task ownership forbids SQL write outside the Tasks adapter`);
+  if(token.value!=='query'||tokens[i-1]?.kind!==SyntaxKind.DotToken)continue;
+  let j=i+1;
+  if(tokens[j]?.kind===SyntaxKind.LessThanToken){while(j<tokens.length&&tokens[j]?.kind!==SyntaxKind.OpenParenToken)j++;}
+  if(tokens[j]?.kind!==SyntaxKind.OpenParenToken)continue;
+  const first=tokens[j+1];
+  if(!first||![SyntaxKind.StringLiteral,SyntaxKind.NoSubstitutionTemplateLiteral].includes(first.kind)||
+    ![SyntaxKind.CommaToken,SyntaxKind.CloseParenToken].includes(tokens[j+2]?.kind))
+   errors.push(`${path}: Task ownership requires literal SQL in foreign query calls`);
+ }
+ return errors;
+}
+
 try {
   const configPath = join(root, 'tsconfig.json');
   const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, 'utf8')) : {};
@@ -108,6 +144,7 @@ try {
       }
     }
   }
+  for(const file of sourceFiles(join(root,'src')))errors.push(...taskOwnership(file,readFileSync(file,'utf8'),config));
   if (errors.length) {
     console.error(errors.join('\n'));
     process.exitCode = 1;
