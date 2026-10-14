@@ -15,8 +15,8 @@ Base: df6c13f90d110f95c9a538201c186b02226a5a73; branch codex/stage-2-task-domain
 |---|---|---|---|
 |41|c4791ad|single-create-only returns invalid_command → persistent mutations14 + concurrency1 PASS|typecheck/architecture PASS|
 |42|94092f0|missing group planner/single-command rejection → unit1 + atomic groups5 PASS|typecheck/architecture PASS|
-|43|pending|missing query API → queries5 PASS|typecheck/architecture PASS|
-|44|not started|||
+|43|11bf9bb|missing query API → queries5 PASS|typecheck/architecture PASS|
+|44|pending|missing history/changes API → history2 + affected queries5 PASS|typecheck/architecture PASS|
 |45|not started|||
 
 Checkpoint cumulative review/full clean-clone gate/push: not started. No separate functional rerun planned.
@@ -24,3 +24,5 @@ Checkpoint cumulative review/full clean-clone gate/push: not started. No separat
 Iteration43 ruling: calendar boundary policy is implemented now because day/overdue queries already require it; iteration49 adds further temporal/roundtrip/load evidence, not a temporary wrong midnight rule. Date-only overdue uses exact boundary facts for tenant due-date/timezone pairs; public Task pages remain capped100. Cursor includes normalised filters/tenant/limit/asOf plus sort tuple; continuation asOf is independent of new transactionNow. Literal search uses strpos, so wildcard characters have no SQL semantics.
 
 Iteration43 environment evidence: first setup hook timed out before tests; narrow Docker lifecycle and one get/list check proved recovery; then full targeted queries5PASS in2.49s. No full gate run and no source fix based on that setup timeout.
+
+Iteration44 ruling: since is inclusive (>=) to avoid dropping events sharing one timestamp; keyset recordedAt/id disambiguates pages. asOf upper bound is frozen from first cursor. sourceOccurredAt is separate evidence, never used as history recordedAt. History includes terminal tasks and emits no synthetic events for no_change/replay/rejection.
