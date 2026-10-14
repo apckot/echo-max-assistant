@@ -13,8 +13,8 @@ Base: df6c13f90d110f95c9a538201c186b02226a5a73; branch codex/stage-2-task-domain
 
 | Iteration | Commit | Targeted RED → GREEN | Static |
 |---|---|---|---|
-|41|pending|single-create-only returns invalid_command → persistent mutations14 + concurrency1 PASS|typecheck/architecture PASS|
-|42|not started|||
+|41|c4791ad|single-create-only returns invalid_command → persistent mutations14 + concurrency1 PASS|typecheck/architecture PASS|
+|42|pending|missing group planner/single-command rejection → unit1 + atomic groups5 PASS|typecheck/architecture PASS|
 |43|not started|||
 |44|not started|||
 |45|not started|||

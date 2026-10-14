@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { normalizeCommand, normalizeInstant } from '../domain/validation.js';
 import type { TaskCommand } from '../domain/commands.js';
 import { parseExecutionContext } from './evidence.js';
-import { planSingle } from './group-planner.js';
+import { planGroup } from './group-planner.js';
 import type { CanonicalTaskPayload, TaskExecutionResult, TaskReceipt, TaskSessionRunner, TemporalPort } from './ports.js';
 const envelope=z.object({contractVersion:z.literal(1),effectKey:z.string().regex(/^[A-Za-z0-9:_-]{1,200}$/),commands:z.array(z.unknown()).min(1).max(20)}).strict();
 export class TaskCommands {
@@ -12,7 +12,7 @@ export class TaskCommands {
   if(context.source.kind!=='typed')return {error:{code:'invalid_command'}};
   const occurred=normalizeInstant(context.sourceOccurredAt);if(typeof occurred!=='string')return {error:occurred};
   const timezoneSnapshot=this.temporal.canonicalTimezone(context.timezoneSnapshot);if(!timezoneSnapshot)return {error:{code:'invalid_timezone'}};
-  const shape=envelope.safeParse(groupInput);if(!shape.success)return {error:{code:'invalid_command'}};
+  const shape=envelope.safeParse(groupInput);if(!shape.success)return {error:{code:shape.error.issues.some(i=>i.path[0]==='commands'&&i.code==='too_big')?'group_limit_exceeded':'invalid_command'}};
   const commands:TaskCommand[]=[];
   for(const raw of shape.data.commands){const value=normalizeCommand(raw);if('code' in value)return {error:value};commands.push(value.kind==='create'?{...value,timezone:value.timezone??context.timezoneSnapshot}:value);}
   const group={...shape.data,commands};
@@ -45,7 +45,8 @@ export class TaskCommands {
    const receiptId=session.newId();
    const ids=storedCommands.flatMap(command=>command.kind!=='create'&&'taskId' in command.target?[command.target.taskId]:[]);
    const locked=await session.lockTasks(ids);
-   const plan=badTimezone??planSingle(resolvedContext,resolvedGroup,locked,session.newId(),receiptId,session.recordedAt,this.temporal);
+   const newIds=new Map(storedCommands.flatMap(command=>command.kind==='create'?[[command.localId,session.newId()] as const]:[]));
+   const plan=badTimezone??planGroup(resolvedContext,resolvedGroup,locked,newIds,receiptId,session.recordedAt,this.temporal);
    let receipt:TaskReceipt;
    if('code' in plan){receipt={receiptId,contractVersion:1,effectKey:group.effectKey,outcome:'rejected',commandResults:[],
     localIdMap:{},snapshots:[],error:plan};}
