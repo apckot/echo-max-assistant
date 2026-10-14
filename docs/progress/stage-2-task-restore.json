@@ -1,0 +1,21 @@
+{
+  "taskFixtureRestored": true,
+  "taskPostBaseWALMutationRecovered": true,
+  "taskSurvivingReceiptReplay": true,
+  "lostTaskNotReplayed": true,
+  "taskCounts": {
+    "tasks": 1,
+    "events": 2,
+    "receipts": 2
+  },
+  "postBaseAcknowledgedMarkerRecovered": true,
+  "recoverySource": "authenticated encrypted archived WAL",
+  "kind": "isolated_physical_restore",
+  "postgres": 17,
+  "authenticatedEncryption": true,
+  "pgVerifybackup": true,
+  "replayEligibleOldOutbound": 0,
+  "rpoMs": 0,
+  "rtoMs": 10611,
+  "productionStorageVerified": false
+}

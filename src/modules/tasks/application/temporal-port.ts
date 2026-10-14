@@ -8,4 +8,3 @@ export interface TemporalPort {
  localDate(at:string,timezone:string):string;
  dayBoundary(date:string,timezone:string):string;
 }
-

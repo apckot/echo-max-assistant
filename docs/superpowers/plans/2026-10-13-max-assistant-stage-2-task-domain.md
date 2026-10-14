@@ -10,7 +10,7 @@
 
 **Spec:** [Stage 2 design](../specs/2026-10-13-max-assistant-stage-2-task-domain-design.md).
 
-**Status:** Принято владельцем 2026-10-13. Отдельно разрешён только блок36–40, одно checkpoint40 review/gate, progress ledger и push с проверкой SHA. Checkpoint40 принят2026-10-14; теперь отдельно разрешён блок41–45 с review/gate/push, Блок41–45 выполнен и checkpoint45 проверен2026-10-14; остановлено перед46. См. [отчёт](../../progress/stage-2-checkpoint-45.md).
+**Status:** Принято владельцем 2026-10-13. Отдельно разрешён только блок36–40, одно checkpoint40 review/gate, progress ledger и push с проверкой SHA. Checkpoint40 принят2026-10-14; теперь отдельно разрешён блок41–45 с review/gate/push, Блок41–45 выполнен и checkpoint45 проверен2026-10-14; Checkpoint45 принят; разрешён блок46–50, выполнен с review/gate/restore, A24 пока не завершён. См. [отчёт](../../progress/stage-2-checkpoint-45.md).
 
 ## Global Constraints
 
@@ -327,13 +327,13 @@ postgres-fenced-conversation.ts и inbound-handler.ts result union (без но�
 **Produces:** schema26; awaited transaction continuation, task_commands_v1 processing result,
 one deterministic integration confirmation; production foundation behavior unchanged.
 
-- [ ] RED A20/A21: valid leased typed fixture commits task/event/taskReceipt/processingReceipt/outbox/sequence
+- [x] RED A20/A21: valid leased typed fixture commits task/event/taskReceipt/processingReceipt/outbox/sequence
   together; injected outbox failure → все rollback; production text echo не создаёт task.
-- [ ] RED user lock acquired before conversation; erasure begin vs bound/standalone writes завершает
+- [x] RED user lock acquired before conversation; erasure begin vs bound/standalone writes завершает
   без deadlock; deleting user denied; stale lease denies domain commit.
-- [ ] Implement session bound to existing DbTx; no DB writes inside pure handler Promise.race,
+- [x] Implement session bound to existing DbTx; no DB writes inside pure handler Promise.race,
   no duplicate transaction or sender; existing final lease guard remains last business check.
-- [ ] GREEN `npx vitest run tests/functional/tasks/processing-transaction.test.ts tests/functional/intake/processing-result.test.ts tests/functional/intake/queue-fencing.test.ts tests/functional/identity/account-deletion.test.ts`;
+- [x] GREEN `npx vitest run tests/functional/tasks/processing-transaction.test.ts tests/functional/intake/processing-result.test.ts tests/functional/intake/queue-fencing.test.ts tests/functional/identity/account-deletion.test.ts`;
   targeted worker foundation test; static; commit.
 
 ### 47. Crash, lease loss, restore fence и неопределённый commit
@@ -344,13 +344,13 @@ modify только подтверждённые defects в bound/session adapte
 
 **Produces:** restart/rollback proof A14/A20–A23, а не только mock green.
 
-- [ ] RED disconnect настоящей PG session до commit после state/event/receipt/outbox;
+- [x] RED disconnect настоящей PG session до commit после state/event/receipt/outbox;
   new session retry → exactly1 effect и outbox. После COMMIT drop acknowledgment proxy/fixture
   возвращает failure, retry возвращает тот же receipt; raw DB state доказывает original commit.
-- [ ] RED expired lease/fence-on before commit, independent renew session, erasure race;
+- [x] RED expired lease/fence-on before commit, independent renew session, erasure race;
   два conversation одной task с expectedVersion1; no resurrection после erase.
-- [ ] Implement минимальные найденные fixes; fake policy rollback всех writes. Не изменять delivery certainty.
-- [ ] GREEN `npx vitest run tests/functional/tasks/recovery.test.ts tests/functional/tasks/authority-races.test.ts`;
+- [x] Implement минимальные найденные fixes; fake policy rollback всех writes. Не изменять delivery certainty.
+- [x] GREEN `npx vitest run tests/functional/tasks/recovery.test.ts tests/functional/tasks/authority-races.test.ts`;
   relevant foundation fence/stop-races только если код затронут; static; commit.
 
 ### 48. Architecture guard: единственный владелец SQL и API
@@ -362,12 +362,12 @@ create unit/tasks/ownership-guard.test.ts; adjust exports only if proven necessa
 **Produces:** запрет foreign repository imports и task table SQL writes вне adapter/migrations;
 application/domain нейтральны, public API не отдаёт session.
 
-- [ ] RED synthetic violating module imports tasks adapter/session or provider; чужой SQL
+- [x] RED synthetic violating module imports tasks adapter/session or provider; чужой SQL
   INSERT/UPDATE/DELETE work_items/events/receipts, dynamic/reexport cases guard fails.
-- [ ] Implement bounded guard со списком разрешённых Tasks adapter файлов, migrations/privacy owner,
+- [x] Implement bounded guard со списком разрешённых Tasks adapter файлов, migrations/privacy owner,
   тестовые fixture sources вне production scan; reject nonliteral SQL bypass в foreign production writers.
   Не заявлять полноценный SQL parser/static security proof; RLS/FK/runtime grants покрыты отдельно.
-- [ ] GREEN `npx vitest run tests/architecture/dependency-boundaries.test.ts tests/unit/tasks/ownership-guard.test.ts`;
+- [x] GREEN `npx vitest run tests/architecture/dependency-boundaries.test.ts tests/unit/tasks/ownership-guard.test.ts`;
   static; commit.
 
 ### 49. Временные границы и воспроизводимый performance harness
@@ -377,21 +377,21 @@ modify только relevant temporal/query fixes. **Commit:** `test(tasks): cov
 
 **Produces:** A08–A10/A19 PostgreSQL roundtrip доказательства, A24 harness без преждевременного broad run.
 
-- [ ] RED Berlin23/25h local-day intervals, task snapshot zone vs read zone, midnight/end boundary,
+- [x] RED Berlin23/25h local-day intervals, task snapshot zone vs read zone, midnight/end boundary,
   date-only due not23:59, leap-range roundtrip, changed Identity timezone сохранённые tasks не меняет.
-- [ ] RED day_boundary_midnight_gap_or_fold: по IANA transition fixtures отсутствующая полночь
+- [x] RED day_boundary_midnight_gap_or_fold: по IANA transition fixtures отсутствующая полночь
   даёт первое существующее время дня, двойная — первое UTC-вхождение; обе полуночи включены,
   end boundary исключена. Strict resolveLocalTime встречи на тех же wall-clock значениях
   по-прежнему возвращает nonexistent/ambiguous без явного валидного offset.
-- [ ] RED skipped_local_day: Pacific/Apia 2011-12-30 start=end=начало2011-12-31;
+- [x] RED skipped_local_day: Pacific/Apia 2011-12-30 start=end=начало2011-12-31;
   instants не входят, targetDate/dueDate=2011-12-30 входят буквально; date-only deadline
   становится overdue на boundary следующей календарной даты. Никакого сдвига stored dates.
-- [ ] Implement `dayBoundary(date,timezone)` отдельно от strict meeting resolver по spec §11;
+- [x] Implement `dayBoundary(date,timezone)` отдельно от strict meeting resolver по spec §11;
   nextCalendarDate вычислять календарно, не instant+24h. Проверить asOf из cursor на переходе
   через такую boundary, сохраняя критерий A18.
-- [ ] Implement missing targeted fixes; add deterministic A24 seeded profile и report без task text.
+- [x] Implement missing targeted fixes; add deterministic A24 seeded profile и report без task text.
   Малый harness smoke (2 tenants, 10 ops) проверяет report schema, не full load.
-- [ ] GREEN `npx vitest run tests/functional/tasks/temporal-queries.test.ts` + small harness smoke;
+- [x] GREEN `npx vitest run tests/functional/tasks/temporal-queries.test.ts` + small harness smoke;
   static; commit. Full A24 run только checkpoint50.
 
 ### 50. Сквозная typed приёмка и restore compatibility
@@ -405,14 +405,14 @@ create docs/runbooks/task-domain-acceptance.md.
 **Produces:** acceptance mapping A01–A24, final typed flow и isolated restore fixture;
 явная инструкция последующим stages о callback exception и evidence boundary.
 
-- [ ] RED e2e typed create→move→complete→reopen→search→history; restart и repeated processing/delivery
+- [x] RED e2e typed create→move→complete→reopen→search→history; restart и repeated processing/delivery
   не меняют Task effect; two owners isolation; rejected group truthful processing confirmation.
-- [ ] RED isolated snapshot содержит Tasks current state/events/receipts; restored fence blocks all
+- [x] RED isolated snapshot содержит Tasks current state/events/receipts; restored fence blocks all
   writers до разрешённого reopen; replay surviving key не повторяет эффект; no automatic inbound replay
   для команд, потерянных за пределами RPO. Проверять новые таблицы, не запускать живой MAX.
-- [ ] Implement только integration gaps; runbook фиксирует Noop reminders, unsupported AI/voice,
+- [x] Implement только integration gaps; runbook фиксирует Noop reminders, unsupported AI/voice,
   date semantics, rejected/no_change/replay и rollback; architecture описывает одного writer.
-- [ ] GREEN targeted e2e/restore tests и static; commit. До review не запускать полный gate отдельно.
+- [x] GREEN targeted e2e/restore tests и static; commit. До review не запускать полный gate отдельно.
 - [ ] Checkpoint50: cumulative review46–50 плюс consistency spec A01–A24; final clean-clone full gate
   один раз, включая typed e2e и functional через `npm test`; review-focus config остаётся
   средством targeted проверки, отдельный повтор его набора на checkpoint не запускается;

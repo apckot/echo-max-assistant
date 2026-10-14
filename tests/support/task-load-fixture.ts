@@ -5,12 +5,13 @@ import type {UserId} from '../../src/shared/types/identity.js';
 export const loadSeed='echo-task-domain-v1';
 export function seedId(value:string){const hex=createHash('md5').update(loadSeed+':'+value).digest('hex').split('');hex[12]='4';hex[16]='8';const s=hex.join('');return `${s.slice(0,8)}-${s.slice(8,12)}-${s.slice(12,16)}-${s.slice(16,20)}-${s.slice(20)}`;}
 export async function seedTaskLoad(f:Awaited<ReturnType<typeof taskFixture>>,tenants:number,perTenant:number){
- const client=await f.migrator.connect();const users:UserId[]=[];
- try{
- // Set-based fixture seeding keeps real constraints/triggers enabled; no disabled invariants.
- await client.query(`CREATE TEMP TABLE load_seed(task_id uuid,receipt_id uuid,event_id uuid,user_id uuid,title text,payload jsonb,hash text)`);
- for(let n=0;n<tenants;n++){
-  const user=seedId('user:'+n) as UserId;users.push(user);
+ const users=Array.from({length:tenants},(_,n)=>seedId('user:'+n) as UserId);
+ // Independent tenants seed concurrently; each checked-out connection owns its temporary table.
+ // Set-based fixture seeding keeps every real constraint/trigger enabled.
+ async function seedTenant(n:number){
+  const client=await f.migrator.connect(),user=users[n];
+  try{
+  await client.query(`CREATE TEMP TABLE IF NOT EXISTS load_seed(task_id uuid,receipt_id uuid,event_id uuid,user_id uuid,title text,payload jsonb,hash text)`);
   await client.query('BEGIN');
   try{
    await client.query('INSERT INTO public.users(id) VALUES($1)',[user]);
@@ -32,8 +33,10 @@ export async function seedTaskLoad(f:Awaited<ReturnType<typeof taskFixture>>,ten
     SELECT s.event_id,s.user_id,s.task_id,s.receipt_id,0,'create',null,1,null,public.task_row_snapshot(w),w.updated_at FROM load_seed s JOIN public.work_items w ON w.id=s.task_id`);
    await client.query('COMMIT');
   }catch(error){await client.query('ROLLBACK');throw error;}
+  }finally{client.release();}
  }
- await client.query('ANALYZE public.work_items');await client.query('ANALYZE public.work_item_events');await client.query('ANALYZE public.task_command_receipts');
+ const preparationClients=Math.min(10,tenants);
+ for(let start=0;start<tenants;start+=preparationClients)await Promise.all(Array.from({length:Math.min(preparationClients,tenants-start)},(_,i)=>seedTenant(start+i)));
+ await f.migrator.query('ANALYZE public.work_items');await f.migrator.query('ANALYZE public.work_item_events');await f.migrator.query('ANALYZE public.task_command_receipts');
  return users;
- }finally{client.release();}
 }

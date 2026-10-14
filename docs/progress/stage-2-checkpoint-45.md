@@ -50,3 +50,6 @@ Typed Task API now persists modification/rescheduling, completion/cancellation/r
 This report/evidence commit is a documentation-only descendant of the tested code SHA. Owner-authorised next action: push codex/stage-2-task-domain to origin and compare publication HEAD with git ls-remote. Actual push/SHA outcome is reported in the final handoff; not preclaimed in this pre-push commit. No gate rerun for documentation-only publication.
 
 Stop before46. Transaction-bound inbound/outbox bridge46, real lost-COMMIT/fencing/races47, ownership enforcement48 and extended temporal/load/restore49–50 remain unimplemented. AI/STT/reminder delivery/billing/Mini App and deployment are outside this block. The accepted real MAX callback/duplicate replay exception remains open for the buttons stage.
+
+
+Owner accepted checkpoint45 on2026-10-14 and authorised46–50. See [checkpoint50 evidence](stage-2-checkpoint-50.md); Stage2 acceptance remains pending final A24 evidence.
