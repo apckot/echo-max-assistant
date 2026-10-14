@@ -22,6 +22,10 @@ Review, full gate, A24 and physical drill not started. No separate review-focus/
 
 Iteration47 diagnosis: application canonicalises Asia/Kolkata to ICU Asia/Calcutta before the bound session; authority had compared against raw event timezone. Compare canonical temporal zone on both sides, while PostgreSQL-compatible storage still resolves the original snapshot. Regression covers actual typed inbound with a Kolkata profile. Other fault proofs passed immediately against46: evidence of existing guards, not invented RED. COMMIT failure fixture throws only after real transaction COMMIT; independent raw DB counts/immutable receipt and restarted connections prove durability.
 
-|48|pending|foreign imports/writes10 RED; additional concatenated literal RED → ownership12+architecture8 GREEN20|typecheck/architecture PASS|
+|48|955548d|foreign imports/writes10 RED; additional concatenated literal RED → ownership12+architecture8 GREEN20|typecheck/architecture PASS|
 
 Iteration48 ruling: temporal adapter needs a public DTO-only TemporalPort but must not import TaskSession. Split temporal-port.ts from private ports.ts, preserving internal re-exports. Guard scans all production src for fixed Task adapter imports/writes; sole bound bridge allowed. Foreign .query requires a single literal (no interpolation/concatenation/nonliteral bypass); database/migration runner are explicit SQL infrastructure exceptions. This is bounded source enforcement, not a SQL parser/security proof; runtime RLS/grants/FK remain necessary.
+
+|49|pending|temporal PG6 PASS; small load smoke1 PASS, deterministic seed+replay/report validated|typecheck/architecture PASS|
+
+Iteration49 ruling: calendar policy already implemented43; new PostgreSQL temporal evidence passed without production changes. Range/leap, snapshot timezone, strict meeting distinction, gap/fold/skipped literal dates and overdue frozen cursor covered. A24 seed inserts via isolated migrator fixtures with all constraints/triggers enabled, real normalized canonical payload/hash and state/event/receipt; a seeded receipt replay is verified. Smoke2 tenants×5 tasks/10 measured ops; final profile1000×100/10 clients/100 warm-up/1000 measured/80:20 with query plan and environment report deferred checkpoint. Harness pool matches concurrency, production pools unchanged.
