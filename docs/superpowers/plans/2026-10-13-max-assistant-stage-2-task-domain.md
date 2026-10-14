@@ -10,7 +10,7 @@
 
 **Spec:** [Stage 2 design](../specs/2026-10-13-max-assistant-stage-2-task-domain-design.md).
 
-**Status:** Принято владельцем 2026-10-13. Отдельно разрешён только блок36–40, одно checkpoint40 review/gate, progress ledger и push с проверкой SHA. Checkpoint40 принят2026-10-14; теперь отдельно разрешён блок41–45 с review/gate/push, затем остановиться перед46.
+**Status:** Принято владельцем 2026-10-13. Отдельно разрешён только блок36–40, одно checkpoint40 review/gate, progress ledger и push с проверкой SHA. Checkpoint40 принят2026-10-14; теперь отдельно разрешён блок41–45 с review/gate/push, Блок41–45 выполнен и checkpoint45 проверен2026-10-14; остановлено перед46. См. [отчёт](../../progress/stage-2-checkpoint-45.md).
 
 ## Global Constraints
 
@@ -240,11 +240,11 @@ create functional/tasks/mutations.test.ts, concurrency.test.ts.
 
 **Produces:** весь набор commands для одной existing target, row lock + CAS + history.
 
-- [ ] RED A04–A07/A11: clear, equal patch, все status переходы, conflict до no-op;
+- [x] RED A04–A07/A11: clear, equal patch, все status переходы, conflict до no-op;
   две sessions с version1 → exactly1 applied,1 conflict; чужая цель not_found.
-- [ ] Implement pure transition results persistence + receipt и rollback invariants.
+- [x] Implement pure transition results persistence + receipt и rollback invariants.
   Rejected valid request сохраняет receipt, invalid context не сохраняет.
-- [ ] GREEN `npx vitest run tests/functional/tasks/mutations.test.ts tests/functional/tasks/concurrency.test.ts`;
+- [x] GREEN `npx vitest run tests/functional/tasks/mutations.test.ts tests/functional/tasks/concurrency.test.ts`;
   static; commit.
 
 ### 42. Атомарные группы и локальные ссылки
@@ -256,12 +256,12 @@ create functional/tasks/atomic-groups.test.ts, unit/tasks/group-planner.test.ts.
 **Produces:** 1–20 commands, sorted target locks, localId map, multiple effects same target
 with sequential expected versions, per-command results и final snapshots.
 
-- [ ] RED A12–A13: Create(a)+Update(created a,v1) → v2,2 events; Reopen(v2)+Update(v3);
+- [x] RED A12–A13: Create(a)+Update(created a,v1) → v2,2 events; Reopen(v2)+Update(v3);
   final invalid/stale target → no ранние effects, только rejected receipt; unknown/cyclic ref fail.
-- [ ] RED 20 pass/21 fail, duplicate localId fail, same-task no_change сохраняет следующую expectedVersion;
+- [x] RED 20 pass/21 fail, duplicate localId fail, same-task no_change сохраняет следующую expectedVersion;
   reverse target order two sessions не deadlock; fake policy throw rolls back whole group.
-- [ ] Implement staged in-memory plan перед writes; task locks UUID order; policy только applied effects.
-- [ ] GREEN `npx vitest run tests/unit/tasks/group-planner.test.ts tests/functional/tasks/atomic-groups.test.ts`;
+- [x] Implement staged in-memory plan перед writes; task locks UUID order; policy только applied effects.
+- [x] GREEN `npx vitest run tests/unit/tasks/group-planner.test.ts tests/functional/tasks/atomic-groups.test.ts`;
   static; commit.
 
 ### 43. Get/list/search/day/overdue без второго состояния
@@ -271,18 +271,18 @@ functional/tasks/queries.test.ts. **Commit:** `feat(tasks): add bounded task que
 
 **Produces:** TaskReadSession, TaskPage, ListTasksQuery и get/list signatures spec §§9,11.
 
-- [ ] RED A18–A19: open/default20/max100, explicit statuses, four day predicates OR без дублей;
+- [x] RED A18–A19: open/default20/max100, explicit statuses, four day predicates OR без дублей;
   undated exclusion; dueDate task-zone overdue vs dueAt exact; start inclusive/end exclusive.
-- [ ] RED literal `%`/`_`/backslash, Cyrillic mixed case, description match, чужой tenant null;
+- [x] RED literal `%`/`_`/backslash, Cyrillic mixed case, description match, чужой tenant null;
   keyset pages on equal timestamps/ids; changed filters/cursor deny; invalid timezone deny.
-- [ ] RED pagination_keeps_first_page_as_of: после первой overdue страницы часы новой DB-транзакции
+- [x] RED pagination_keeps_first_page_as_of: после первой overdue страницы часы новой DB-транзакции
   проходят dueAt и конец dueDate без изменения строк; cursor страницы2/3 и ответы сохраняют первый
   asOf, membership/order и fingerprint, без новых overdue/пропусков/дублей. Новый запрос без cursor
   получает новое asOf и включает ставшие просроченными задачи. Отдельно проверить отсутствие
   version/time подмены: transactionNow участвует в authority, но не временных фильтрах.
-- [ ] Implement parameterized queries, stable sorting и fingerprinted typed cursors;
+- [x] Implement parameterized queries, stable sorting и fingerprinted typed cursors;
   first-page asOf из DB, continuation asOf из валидированного cursor; no cache/full scan export.
-- [ ] GREEN `npx vitest run tests/functional/tasks/queries.test.ts`; static; commit.
+- [x] GREEN `npx vitest run tests/functional/tasks/queries.test.ts`; static; commit.
 
 ### 44. История и последние committed изменения
 
@@ -291,12 +291,12 @@ create functional/tasks/history.test.ts. **Commit:** `feat(tasks): expose immuta
 
 **Produces:** history/changes signatures, TaskEventPage; useful future Context Pack read API.
 
-- [ ] RED create/update/complete/reopen версии непрерывны, before/after и actor/source правильны;
+- [x] RED create/update/complete/reopen версии непрерывны, before/after и actor/source правильны;
   no_change/replay/rejected не добавляют событий; terminal task доступна в changes/history.
-- [ ] RED pagination version DESC и changes recordedAt/id DESC, equal clock, tenant isolation;
+- [x] RED pagination version DESC и changes recordedAt/id DESC, equal clock, tenant isolation;
   recordedAt не подменяется sourceOccurredAt; cap100 и since filter.
-- [ ] Implement SQL reads существующего журнала, не второй журнал и не delivery history.
-- [ ] GREEN `npx vitest run tests/functional/tasks/history.test.ts`; static; commit.
+- [x] Implement SQL reads существующего журнала, не второй журнал и не delivery history.
+- [x] GREEN `npx vitest run tests/functional/tasks/history.test.ts`; static; commit.
 
 ### 45. Privacy erasure и retention нового домена
 
@@ -306,14 +306,14 @@ modify targeted account-deletion/retention schema assertions и runbooks/account
 
 **Produces:** schema25; updated narrow erasure function/counts, owner-only immutable deletion.
 
-- [ ] RED A16/A22: preview counts tasks/events/receipts, begin блокирует new writer, finish removes all;
+- [x] RED A16/A22: preview counts tasks/events/receipts, begin блокирует new writer, finish removes all;
   finish replay safe; anonymous audit не содержит title/task/source IDs; ordinary worker GUC deny.
-- [ ] RED technical retention оставляет completed/cancelled tasks, историю и effect keys;
+- [x] RED technical retention оставляет completed/cancelled tasks, историю и effect keys;
   deleted account key не позволяет resurrect данные; migrating FK deletion order correct.
-- [ ] Implement additive function replacement и privilege/trigger exception; readiness bump.
-- [ ] GREEN `npx vitest run tests/functional/tasks/privacy.test.ts tests/functional/identity/account-deletion.test.ts tests/functional/operations/retention.test.ts`;
+- [x] Implement additive function replacement и privilege/trigger exception; readiness bump.
+- [x] GREEN `npx vitest run tests/functional/tasks/privacy.test.ts tests/functional/identity/account-deletion.test.ts tests/functional/operations/retention.test.ts`;
   targeted migration readiness; static; commit.
-- [ ] Checkpoint45: demo typed lifecycle/date/search/history/erase, cumulative review и один full gate.
+- [x] Checkpoint45: demo typed lifecycle/date/search/history/erase, cumulative review и один full gate.
 
 ## Блок 3 — итерации46–50, checkpoint50
 

@@ -1,0 +1,216 @@
+FROZEN_SHA 1fc103e65a5570a6192e78d88f117b9c3ca44f44
+v22.23.3
+11.16.0
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 284 packages, and audited 285 packages in 4s
+
+61 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm warn allow-scripts 4 packages have install scripts not yet covered by allowScripts:
+npm warn allow-scripts   cpu-features@0.0.10 (install: node buildcheck.js > buildcheck.gypi && node-gyp rebuild)
+npm warn allow-scripts   fsevents@2.3.3 (install: (install scripts present))
+npm warn allow-scripts   protobufjs@7.6.6 (postinstall: node scripts/postinstall)
+npm warn allow-scripts   ssh2@1.17.0 (install: node install.js)
+npm warn allow-scripts
+npm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow.
+
+> echo-max-assistant@0.1.0 typecheck
+> tsc --noEmit
+
+
+> echo-max-assistant@0.1.0 lint:architecture
+> node scripts/check-architecture.mjs
+
+Architecture boundaries: OK
+
+> echo-max-assistant@0.1.0 build
+> tsc -p tsconfig.json
+
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 703B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:22-bookworm-slim@sha256:43ac6c60b8f89723f746e8a92ce91abd5017e627ce1ddfe4238355d3a30b772c
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 151B done
+#3 DONE 0.0s
+
+#4 [build 1/7] FROM docker.io/library/node:22-bookworm-slim@sha256:43ac6c60b8f89723f746e8a92ce91abd5017e627ce1ddfe4238355d3a30b772c
+#4 resolve docker.io/library/node:22-bookworm-slim@sha256:43ac6c60b8f89723f746e8a92ce91abd5017e627ce1ddfe4238355d3a30b772c 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 444.22kB 0.0s done
+#5 DONE 0.0s
+
+#6 [build 2/7] WORKDIR /app
+#6 CACHED
+
+#7 [build 3/7] COPY package.json package-lock.json ./
+#7 CACHED
+
+#8 [build 4/7] RUN npm ci
+#8 CACHED
+
+#9 [build 5/7] COPY tsconfig.json ./
+#9 CACHED
+
+#10 [build 6/7] COPY src ./src
+#10 DONE 0.0s
+
+#11 [build 7/7] RUN npm run build && npm prune --omit=dev
+#11 0.349 
+#11 0.349 > echo-max-assistant@0.1.0 build
+#11 0.349 > tsc -p tsconfig.json
+#11 0.349 
+#11 1.403 
+#11 1.403 up to date, audited 64 packages in 676ms
+#11 1.403 
+#11 1.403 20 packages are looking for funding
+#11 1.403   run `npm fund` for details
+#11 1.404 
+#11 1.404 found 0 vulnerabilities
+#11 DONE 1.4s
+
+#6 [build 2/7] WORKDIR /app
+#6 CACHED
+
+#12 [stage-1 3/6] COPY --from=build /app/dist ./dist
+#12 DONE 0.0s
+
+#13 [stage-1 4/6] COPY --from=build /app/node_modules ./node_modules
+#13 DONE 0.1s
+
+#14 [stage-1 5/6] COPY package.json ./
+#14 DONE 0.0s
+
+#15 [stage-1 6/6] COPY migrations ./migrations
+#15 DONE 0.0s
+
+#16 exporting to image
+#16 exporting layers
+#16 exporting layers 0.2s done
+#16 exporting manifest sha256:146c8e133ec4671704e7d28ee667e90ef6fc400490b82c415196d36b0c1f4761 done
+#16 exporting config sha256:a4da98012c0a4a5b1aff5f6deefe15eed79c8c537fa22b5f712bc52fb364788d done
+#16 exporting attestation manifest sha256:573bdf755da9d6b6163eaec59cb40df6afd8c79314ee8da4df8d27d6b61bee1b done
+#16 exporting manifest list sha256:e772b61f16041af3417ad49bb350a1397973ba59d05478d502ee04d5cc0987ac done
+#16 naming to docker.io/library/echo-max:checkpoint45-1fc103e65a5570a6192e78d88f117b9c3ca44f44 done
+#16 unpacking to docker.io/library/echo-max:checkpoint45-1fc103e65a5570a6192e78d88f117b9c3ca44f44 0.1s done
+#16 DONE 0.3s
+
+> echo-max-assistant@0.1.0 test
+> vitest run --reporter=default --reporter=json --outputFile=/tmp/echo-stage2-checkpoint45-evidence/gate-tests.json
+
+
+ RUN  v4.1.11 /private/tmp/echo-max-stage2-checkpoint45.e5NuPF/repo
+
+ ✓ tests/functional/intake/processing-result.test.ts (28 tests) 2914ms
+     ✓ preparing deferrals and database lock contention never charge the head  1035ms
+ ✓ tests/functional/postgres/roles-and-transactions.test.ts (31 tests) 2465ms
+ ✓ tests/functional/delivery/stop-races.test.ts (14 tests) 2514ms
+     ✓ stop and restart cannot resurrect future-due retry or block a fresh reply  570ms
+     ✓ an admitted pre-stop predecessor still blocks new work after restart until actual completion  556ms
+ ✓ tests/integration/http/durable-ingress.test.ts (27 tests) 2325ms
+     ✓ deadline returns 503 without late effects, then the pool accepts retry  328ms
+ ✓ tests/functional/delivery/completion.test.ts (29 tests) 1592ms
+ ✓ tests/functional/intake/ordered-head.test.ts (10 tests) 1280ms
+ ✓ tests/functional/runtime/checkpoint.test.ts (5 tests) 5431ms
+   ✓ shared-secret authentication has zero effects; duplicate text/callback survive all runtime restarts  1709ms
+   ✓ consumed body timeout never resends after restart; completion fenced=false  719ms
+   ✓ consumed body timeout never resends after restart; completion fenced=true  712ms
+   ✓ public stop/start cancels an old pending reply and admits a fresh event  404ms
+   ✓ a blocked tenant permits another tenant to progress; replies stay ordered and API stop drains actual certainty  876ms
+ ✓ tests/functional/delivery/admission.test.ts (13 tests) 1291ms
+ ✓ tests/functional/intake/intake-idempotency.test.ts (16 tests) 1228ms
+ ✓ tests/unit/max/max-client-hardening.test.ts (71 tests) 228ms
+ ✓ tests/functional/intake/queue-fencing.test.ts (19 tests) 1455ms
+ ✓ tests/functional/delivery/delivery-worker.test.ts (9 tests) 1283ms
+ ✓ tests/functional/intake/queue-claim.test.ts (8 tests) 1826ms
+     ✓ does not renew a lease that expires while waiting for an unchanged row lock  694ms
+ ✓ tests/functional/intake/inbound-schema.test.ts (24 tests) 1191ms
+ ✓ tests/functional/identity/identity-schema.test.ts (8 tests) 1234ms
+ ✓ tests/functional/delivery/fenced-delivery.test.ts (13 tests) 1280ms
+ ✓ tests/unit/max/update-mapper.test.ts (27 tests) 9ms
+ ✓ tests/functional/runtime/worker.test.ts (4 tests) 3082ms
+   ✓ runtime honors config fence and production opt-in; database guard is worker-only and fails closed  446ms
+   ✓ same database restart preserves committed ordered drafts and reclaims precommit abandonment without duplicates  1492ms
+ ✓ tests/functional/delivery/queue-claim.test.ts (8 tests) 1209ms
+ ✓ tests/functional/tasks/create-idempotency.test.ts (10 tests) 1598ms
+ ✓ tests/functional/postgres/system-state.test.ts (10 tests) 1089ms
+ ✓ tests/functional/identity/identity-resolution.test.ts (16 tests) 1147ms
+ ✓ tests/unit/runtime/delivery.test.ts (12 tests) 21ms
+ ✓ tests/functional/intake/conversation-wake.test.ts (4 tests) 1043ms
+ ✓ tests/functional/tasks/schema-rls.test.ts (6 tests) 1144ms
+ ✓ tests/functional/identity/rls-isolation.test.ts (7 tests) 1040ms
+ ✓ tests/functional/tasks/atomic-groups.test.ts (10 tests) 2082ms
+   ✓ local references are group-local, backward-only and labels unique;20 allowed21 rejected  372ms
+ ✓ tests/functional/delivery/attempt-schema.test.ts (6 tests) 1239ms
+ ✓ tests/integration/http/max-webhook-auth.test.ts (8 tests) 55ms
+stdout | tests/functional/operations/isolated-restore-drill.test.ts > isolated physical encrypted restore: verified WAL/data, fenced replay, measured RPO/RTO
+RESTORE_DRILL {"postBaseAcknowledgedMarkerRecovered":true,"recoverySource":"authenticated encrypted archived WAL","kind":"isolated_physical_restore","postgres":17,"authenticatedEncryption":true,"pgVerifybackup":true,"replayEligibleOldOutbound":0,"rpoMs":0,"rtoMs":5929,"productionStorageVerified":false}
+
+ ✓ tests/functional/operations/isolated-restore-drill.test.ts (1 test) 6311ms
+   ✓ isolated physical encrypted restore: verified WAL/data, fenced replay, measured RPO/RTO  6310ms
+ ✓ tests/functional/runtime/delivery.test.ts (4 tests) 3337ms
+   ✓ environment and enabled or missing database fence prevent claims; reopening resumes polling  654ms
+   ✓ stop drains admitted send and renewal; completion fence=false  668ms
+   ✓ stop drains admitted send and renewal; completion fence=true  674ms
+   ✓ stop bounds a blocked admission by the configured transaction budget  320ms
+ ✓ tests/unit/max/max-client.test.ts (15 tests) 241ms
+ ✓ tests/functional/tasks/queries.test.ts (5 tests) 1943ms
+   ✓ keyset pages are bounded and fingerprint rejects changed queries or invalid cursors  366ms
+ ✓ tests/functional/operations/retention.test.ts (3 tests) 1117ms
+ ✓ tests/unit/operations/backup.test.mjs (5 tests) 1441ms
+   ✓ backup script publishes only encrypted verified artifacts and cleans up failed plaintext  828ms
+   ✓ WAL archive accepts segments and timeline/backup history, rejects traversal, and verifies retry identity  527ms
+ ✓ tests/functional/identity/account-deletion.test.ts (3 tests) 1168ms
+ ✓ tests/unit/config.test.ts (19 tests) 7ms
+ ✓ tests/functional/intake/outbox-upgrade.test.ts (1 test) 1001ms
+ ✓ tests/unit/delivery/delivery-worker.test.ts (16 tests) 4ms
+ ✓ tests/functional/operations/subscription.test.ts (2 tests) 1144ms
+ ✓ tests/functional/operations/checkpoint.test.ts (2 tests) 1162ms
+ ✓ tests/unit/runtime/worker.test.ts (4 tests) 10ms
+ ✓ tests/functional/tasks/mutations.test.ts (14 tests) 2196ms
+ ✓ tests/functional/postgres/migrations.test.ts (4 tests) 1185ms
+ ✓ tests/unit/tasks/transitions.test.ts (15 tests) 7ms
+ ✓ tests/functional/operations/restore-fence.test.ts (1 test) 1091ms
+ ✓ tests/functional/operations/subscription-deadline.test.ts (2 tests) 2915ms
+   ✓ shared HTTP budget ends reconciliation under leadership and never installs an old secret after timeout  728ms
+   ✓ database authority cancellation settles old reconciliation before takeover and new secret installation  1135ms
+ ✓ tests/architecture/dependency-boundaries.test.ts (8 tests) 263ms
+ ✓ tests/functional/tasks/history.test.ts (2 tests) 1314ms
+ ✓ tests/unit/tasks/time.test.ts (4 tests) 16ms
+ ✓ tests/functional/tasks/privacy.test.ts (3 tests) 1235ms
+ ✓ tests/unit/tasks/command-contract.test.ts (5 tests) 6ms
+ ✓ tests/e2e/foundation-flow.test.ts (1 test) 1188ms
+   ✓ real HTTP foundation voice: durable capability_unavailable, post-commit worker restart, one confirmed reply after replay  1188ms
+ ✓ tests/unit/intake/inbound-event.test.ts (7 tests) 5ms
+ ✓ tests/unit/intake/foundation-inbound-handler.test.ts (7 tests) 2ms
+ ✓ tests/unit/intake/process-inbound.test.ts (11 tests) 4ms
+ ✓ tests/unit/max/max-client-http-date.test.ts (11 tests) 30ms
+ ✓ tests/integration/http/health.test.ts (1 test) 1114ms
+ ✓ tests/smoke/container-startup.test.ts (5 tests) 1018ms
+ ✓ tests/functional/operations/retention-fencing.test.ts (1 test) 1025ms
+ ✓ tests/unit/operations/canary.test.mjs (3 tests) 30ms
+ ✓ tests/functional/tasks/concurrency.test.ts (1 test) 1146ms
+ ✓ tests/unit/tasks/group-planner.test.ts (1 test) 11ms
+ ✓ tests/unit/gitignore.test.mjs (1 test) 73ms
+ ✓ tests/unit/operations/performance.test.mjs (2 tests) 13ms
+ ✓ tests/unit/delivery/outbound-message.test.ts (5 tests) 2ms
+ ✓ tests/unit/scaffold.test.mjs (1 test) 465ms
+   ✓ the package builds an importable ESM entrypoint  465ms
+
+ Test Files  67 passed (67)
+      Tests  649 passed (649)
+   Start at  12:35:47
+   Duration  90.07s (transform 388ms, setup 0ms, import 6.66s, tests 79.54s, environment 2ms)
+
+JSON report written to /tmp/echo-stage2-checkpoint45-evidence/gate-tests.json
+CHECKPOINT45_GATE_PASS 1fc103e65a5570a6192e78d88f117b9c3ca44f44
