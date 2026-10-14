@@ -20,6 +20,9 @@ test.each([
  "tx.query('DELETE FROM task_command_receipts');",
  "const table='work_items';tx.query(`UPDATE ${table} SET title=$1`);",
  "const sql='INSERT INTO '+ 'work_items';tx.query(sql);",
+ "tx.query('UPDATE ONLY public.work_items SET title=$1');",
+ "tx['query']('UPDATE '+table+' SET title=$1');",
+ "tx?.query('UPDATE '+table+' SET title=$1');",
  "tx.query(buildSql());", "tx.query('UPDATE ' + 'work_items SET title=$1');",
 ])('foreign SQL cannot write Task tables or hide a query: %s',source=>{
  const result=guard({'src/infrastructure/postgres/foreign.ts':source});expect(result.status).toBe(1);expect(result.stderr).toContain('Task ownership');

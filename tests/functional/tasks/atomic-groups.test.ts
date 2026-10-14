@@ -70,3 +70,18 @@ test('malformed envelopes and unauthorized contexts remain receipt-free',async()
  expect(await h.execute(request.context,{...request.group,commands:[{kind:'create',localId:'a',title:undefined}]})).toEqual({error:{code:'invalid_command'}});
  expect(await counts()).toEqual(before);
 });
+test('transactional policy observes exactly applied events, including terminal/reopen, never replay/no_change/rejection',async()=>{
+ const observed=[];const runner=new PostgresTaskSessionRunner(f.database);
+ const capturing={run:(ctx,fn)=>runner.run(ctx,s=>fn({...s,effectsPolicy:{apply:async change=>{observed.push(change);}}}))};
+ const commands=new TaskCommands(capturing,new IanaTimeResolver());
+ const request=taskRequest(f.a,[{kind:'create',localId:'a',title:'Policy proof'},{kind:'update',target:{created:'a'},expectedVersion:1,patch:{title:'Policy changed'}}]);
+ const receipt=await execute(commands,request),task=receipt.snapshots[0];expect(observed.map(c=>c.kind)).toEqual(['create','update']);
+ const eventIds=(await f.migrator.query('SELECT id FROM work_item_events WHERE receipt_id=$1 ORDER BY command_index',[receipt.receiptId])).rows.map(r=>r.id);expect(observed.map(c=>c.eventId)).toEqual(eventIds);
+ expect(await commands.execute(request.context,request.group)).toEqual({receipt,replayed:true});expect(observed).toHaveLength(2);
+ const same=await execute(commands,taskRequest(f.a,[{kind:'update',target:{taskId:task.id},expectedVersion:2,patch:{title:'Policy changed'}}]));expect(same.outcome).toBe('no_change');expect(observed).toHaveLength(2);
+ const rejected=await execute(commands,taskRequest(f.a,[{kind:'complete',target:{taskId:task.id},expectedVersion:2},{kind:'update',target:{taskId:task.id},expectedVersion:2,patch:{title:'Unsaved'}}]));expect(rejected.outcome).toBe('rejected');expect(observed).toHaveLength(2);
+ for(const [kind,version] of [['complete',2],['reopen',3],['cancel',4],['reopen',5]])await execute(commands,taskRequest(f.a,[{kind,target:{taskId:task.id},expectedVersion:version}]));
+ expect(observed.map(c=>c.kind)).toEqual(['create','update','complete','reopen','cancel','reopen']);
+ expect(observed.map(c=>c.after.version)).toEqual([1,2,3,4,5,6]);
+ expect((await f.migrator.query('SELECT count(*)::int n FROM work_item_events WHERE task_id=$1',[task.id])).rows[0].n).toBe(observed.length);
+});

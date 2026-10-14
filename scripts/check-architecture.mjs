@@ -109,10 +109,12 @@ function taskOwnership(file,source,config){
   // Bounded source guard, not a SQL parser: catch static writes even in assigned literals.
   const sql=token.value?.replace(/"/g,'').replace(/\/\*[\s\S]*?\*\//g,' ').replace(/--[^\n]*/g,' ');
   if([SyntaxKind.StringLiteral,SyntaxKind.NoSubstitutionTemplateLiteral,SyntaxKind.TemplateHead].includes(token.kind)&&
-   /\b(?:insert\s+into|update|delete\s+from|merge\s+into|truncate(?:\s+table)?)\s+(?:public\s*\.\s*)?(?:work_items|work_item_events|task_command_receipts)\b/i.test(sql??''))
+   /\b(?:insert\s+into|update|delete\s+from|merge\s+into|truncate(?:\s+table)?)\s+(?:only\s+)?(?:\(\s*)?(?:public\s*\.\s*)?(?:work_items|work_item_events|task_command_receipts)\b/i.test(sql??''))
    errors.push(`${path}: Task ownership forbids SQL write outside the Tasks adapter`);
-  if(token.value!=='query'||tokens[i-1]?.kind!==SyntaxKind.DotToken)continue;
-  let j=i+1;
+  const dot=[SyntaxKind.DotToken,SyntaxKind.QuestionDotToken].includes(tokens[i-1]?.kind);
+  const computed=tokens[i-1]?.kind===SyntaxKind.OpenBracketToken&&tokens[i+1]?.kind===SyntaxKind.CloseBracketToken;
+  if(token.value!=='query'||(!dot&&!computed))continue;
+  let j=i+(computed?2:1);
   if(tokens[j]?.kind===SyntaxKind.LessThanToken){while(j<tokens.length&&tokens[j]?.kind!==SyntaxKind.OpenParenToken)j++;}
   if(tokens[j]?.kind!==SyntaxKind.OpenParenToken)continue;
   const first=tokens[j+1];

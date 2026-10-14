@@ -23,7 +23,7 @@ Noop TaskEffectsPolicy creates no reminder work. AI/STT, reminders/delivery, pay
 |A18–A19|functional/tasks/queries.test.ts; temporal-queries.test.ts; history.test.ts|
 |A20–A21|functional/tasks/processing-transaction.test.ts; recovery.test.ts; authority-races.test.ts; e2e/task-domain-flow.test.ts|
 |A22|functional/tasks/privacy.test.ts; restore-consistency.test.ts; operations/isolated-restore-drill.test.ts|
-|A23|functional/tasks/atomic-groups.test.ts policy failure and no_change; no production reminder policy|
+|A23|functional/tasks/atomic-groups.test.ts capturing per-effect/terminal/reopen policy, absence on replay/no_change/rejection and throw rollback; no production reminder policy|
 |A24|performance/task-domain.run.ts fixed seed1000×100,10 clients,100 warm-up,1000 measured80/20; local p95 typed command<1s|
 
 Checkpoint protocol: one cumulative review46–50; one clean-clone gate with npm ci/typecheck/architecture/build/image and npm test (functional, typed e2e, image smoke and physical restore included once). Review-focus config is a targeted convenience, not a second gate run. Full A24 runs once separately on frozen code, preserving environment/index/query-plan report without task text. Publish [checkpoint50 evidence](../progress/stage-2-checkpoint-50.md), push/SHA comparison, stop for Stage2 acceptance. Green tests alone do not authorize Stage3 or deployment.
