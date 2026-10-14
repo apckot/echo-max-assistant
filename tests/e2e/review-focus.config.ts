@@ -2,6 +2,7 @@ import {defineConfig} from 'vitest/config';
 // Reuse the actual regression suites; avoid wrappers that run the same tests twice in the full gate.
 export default defineConfig({test:{maxWorkers:1,include:[
  'tests/e2e/foundation-flow.test.ts',
+ 'tests/e2e/task-domain-flow.test.ts',
  'tests/functional/runtime/checkpoint.test.ts', // duplicate, post-commit durability, uncertain timeout
  'tests/functional/runtime/worker.test.ts', // worker restart and fence
  'tests/functional/intake/ordered-head.test.ts', // unready head -> terminal continuation, independent conversation

@@ -31,3 +31,10 @@ test('user lock precedes conversation; deleting user and stale lease cannot comm
  await f.postgres.pool.query("UPDATE users SET status='active' WHERE id=$1",[denied.lease.userId]);
  await expect(p.runner(denied).run({...denied.lease,leaseGeneration:denied.lease.leaseGeneration+1n})).rejects.toThrow();expect(await p.counts()).toEqual(before);
 });
+test('task processing result is closed and composite receipt FK denies foreign-tenant confirmation',async()=>{
+ const task=await create(taskHarness(f),f.b);const foreign=(await f.postgres.pool.query('SELECT receipt_id FROM work_item_events WHERE task_id=$1',[task.id])).rows[0].receipt_id;
+ const input=await p.admit([{kind:'create',localId:'a',title:'FK fixture'}]);
+ const result={receiptType:'task_commands_v1',receiptVersion:1,taskReceiptId:foreign,messages:[{version:1,kind:'text',text:'fixture'}]};
+ for(const bad of [{...result,taskReceiptId:null},{...result,taskReceiptId:'00000000-0000-0000-0000-000000000000'},{...result,extra:true},{...result,messages:[]},{...result,receiptVersion:2}])expect((await f.migrator.query('SELECT public.valid_processing_result($1::jsonb) valid',[JSON.stringify(bad)])).rows[0].valid).toBe(false);
+ await expect(f.database.tenantTransaction('worker',input.lease.userId,tx=>tx.query(`INSERT INTO public.processing_receipts(user_id,conversation_id,inbound_event_id,receipt_type,receipt_version,result) VALUES($1,$2,$3,'task_commands_v1',1,$4)`,[input.lease.userId,input.lease.conversationId,input.event.id,JSON.stringify(result)]))).rejects.toMatchObject({code:'DB_FAILURE'});
+});
