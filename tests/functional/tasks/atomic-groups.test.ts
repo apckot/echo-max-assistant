@@ -43,3 +43,30 @@ test('policy failure rolls back whole group, reverse target order has no deadloc
  const receipts=await Promise.all([[a,b],[b,a]].map(tasks=>execute(h,taskRequest(f.a,tasks.map(t=>({kind:'cancel',target:{taskId:t.id},expectedVersion:1}))))));
  expect(receipts.map(r=>r.outcome).sort()).toEqual(['applied','rejected']);
 });
+
+test('mixed-case UUID targets and evidence normalize before mutation and replay',async()=>{
+ const task=await create(h,f.a);const request=taskRequest(f.a,[{kind:'complete',target:{taskId:task.id.toUpperCase()},expectedVersion:1}]);
+ const first=await h.execute(request.context,request.group);expect(first).toMatchObject({receipt:{outcome:'applied',snapshots:[{id:task.id,status:'completed'}]},replayed:false});
+ const lower=structuredClone(request);lower.group.commands[0].target.taskId=task.id;
+ lower.context.intents[0].binding.taskId=task.id;
+ expect(await h.execute(lower.context,lower.group)).toEqual({...first,replayed:true});
+});
+test.each([
+ [{title:''},'invalid_title'],[{targetDate:'2026-02-30'},'invalid_time'],[{},'invalid_command'],
+])('semantic refusal %j is indexed, atomic and durably replayable',async(patch,code)=>{
+ const task=await create(h,f.a),before=await counts();
+ const request=taskRequest(f.a,[{kind:'create',localId:'draft',title:'Unsaved'},{kind:'update',target:{taskId:task.id},expectedVersion:1,patch}]);
+ const first=await h.execute(request.context,request.group);
+ expect(first).toMatchObject({receipt:{outcome:'rejected',error:{code,index:1},snapshots:[],commandResults:[],localIdMap:{}},replayed:false});
+ expect(await h.execute(request.context,request.group)).toEqual({...first,replayed:true});
+ const corrected=structuredClone(request);corrected.group.commands[1].patch={title:'Corrected'};
+ expect(await h.execute(corrected.context,corrected.group)).toEqual({error:{code:'idempotency_conflict'}});
+ expect(await counts()).toEqual({tasks:before.tasks,events:before.events,receipts:before.receipts+1});
+});
+test('malformed envelopes and unauthorized contexts remain receipt-free',async()=>{
+ const request=taskRequest(f.a,[{kind:'create',localId:'a',title:''}]),before=await counts();
+ expect(await h.execute({...request.context,actor:'operator'},request.group)).toEqual({error:{code:'unsupported_actor'}});
+ expect(await h.execute(request.context,{...request.group,commands:[]})).toEqual({error:{code:'invalid_command'}});
+ expect(await h.execute(request.context,{...request.group,commands:[{kind:'create',localId:'a',title:undefined}]})).toEqual({error:{code:'invalid_command'}});
+ expect(await counts()).toEqual(before);
+});

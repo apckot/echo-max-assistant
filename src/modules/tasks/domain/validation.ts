@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { TaskCommand } from './commands.js';
 import { MAX_TASK_VERSION, type TaskError } from './task.js';
-export const internalUuid = z.uuid().refine(v => !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(v));
+export const internalUuid = z.uuid().refine(v => !/^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(v)).transform(v=>v.toLowerCase());
 const localId=z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
 const title=z.string().refine(v=>!/[\p{Cc}\u2028\u2029]/u.test(v)).transform(v=>v.trim())
  .refine(v=>[...v].length>=1&&[...v].length<=500);
@@ -72,4 +72,16 @@ function hasUndefinedOrCycle(value:unknown,path=new Set<object>()):boolean {
 export function nextCalendarDate(date:string):string {
  const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+1);
  return `${String(d.getUTCFullYear()).padStart(4,'0')}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+
+// Only JSON DTOs can bind an immutable receipt; reject cycles, undefined and exotic objects.
+export function isJsonDto(value:unknown,path=new Set<object>()):boolean {
+ if(value===null||typeof value==='string'||typeof value==='boolean')return true;
+ if(typeof value==='number')return Number.isFinite(value);
+ if(typeof value!=='object'||path.has(value))return false;
+ if(!Array.isArray(value)&&Object.getPrototypeOf(value)!==Object.prototype&&Object.getPrototypeOf(value)!==null)return false;
+ if(Reflect.ownKeys(value).some(key=>typeof key==='symbol'))return false;
+ path.add(value);
+ const valid=Array.isArray(value)?Array.from(value).every(child=>isJsonDto(child,path)):Object.values(value).every(child=>isJsonDto(child,path));
+ path.delete(value);return valid;
 }

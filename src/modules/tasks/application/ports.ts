@@ -9,7 +9,7 @@ export interface TemporalPort {
  dayBoundary(date:string,timezone:string):string;
 }
 
-import type { TaskCommandGroup, TaskCommand } from '../domain/commands.js';
+import type { TaskCommand } from '../domain/commands.js';
 import type { Task } from '../domain/task.js';
 import type { TaskChange } from '../domain/transitions.js';
 import type { TaskExecutionContext } from './context.js';
@@ -20,7 +20,8 @@ export interface TaskReceipt {readonly receiptId:string;readonly contractVersion
  readonly outcome:'applied'|'no_change'|'rejected';readonly commandResults:readonly TaskCommandResult[];
  readonly localIdMap:Readonly<Record<string,string>>;readonly snapshots:readonly Task[];readonly error:TaskError|null}
 export type TaskExecutionResult = {readonly receipt:TaskReceipt;readonly replayed:boolean}|{readonly error:TaskError};
-export interface CanonicalTaskPayload {readonly contractVersion:1;readonly commands:TaskCommandGroup['commands'];
+// Successful commands are normalized DTOs; rejected commands retain their JSON input for replay.
+export interface CanonicalTaskPayload {readonly contractVersion:1;readonly commands:readonly unknown[];
  readonly actor:TaskExecutionContext['actor'];readonly source:TaskExecutionContext['source'];
  readonly sourceOccurredAt:string;readonly timezoneSnapshot:string;readonly intents:TaskExecutionContext['intents']}
 export interface StoredTaskReceipt {readonly payloadHash:string;readonly canonicalPayload:CanonicalTaskPayload;readonly receipt:TaskReceipt}
