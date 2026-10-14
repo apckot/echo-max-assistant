@@ -10,7 +10,7 @@
 
 **Spec:** [Stage 2 design](../specs/2026-10-13-max-assistant-stage-2-task-domain-design.md).
 
-**Status:** Принято владельцем 2026-10-13. Отдельно разрешён только блок36–40, одно checkpoint40 review/gate, progress ledger и push с проверкой SHA. После checkpoint40 остановиться перед41.
+**Status:** Принято владельцем 2026-10-13. Отдельно разрешён только блок36–40, одно checkpoint40 review/gate, progress ledger и push с проверкой SHA. Checkpoint40 принят2026-10-14; теперь отдельно разрешён блок41–45 с review/gate/push, затем остановиться перед46.
 
 ## Global Constraints
 

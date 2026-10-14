@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { normalizeCommand, normalizeInstant } from '../domain/validation.js';
 import type { TaskCommand } from '../domain/commands.js';
 import { parseExecutionContext } from './evidence.js';
-import { planCreate } from './group-planner.js';
+import { planSingle } from './group-planner.js';
 import type { CanonicalTaskPayload, TaskExecutionResult, TaskReceipt, TaskSessionRunner, TemporalPort } from './ports.js';
 const envelope=z.object({contractVersion:z.literal(1),effectKey:z.string().regex(/^[A-Za-z0-9:_-]{1,200}$/),commands:z.array(z.unknown()).min(1).max(20)}).strict();
 export class TaskCommands {
@@ -25,11 +25,11 @@ export class TaskCommands {
    if(!resolvedSnapshot)return {error:{code:'invalid_timezone'}};
    const storedCommands:TaskCommand[]=[];let badTimezone:import('../domain/task.js').TaskError|null=null;
    for(const [index,command] of group.commands.entries()){
-    if(command.kind!=='create'){storedCommands.push(command);continue;}
-    const candidate=command.timezone!;const canonical=this.temporal.canonicalTimezone(candidate);
+    if(command.kind!=='create'&&(command.kind!=='update'||!command.patch.timezone)){storedCommands.push(command);continue;}
+    const candidate=command.kind==='create'?command.timezone!:command.kind==='update'?command.patch.timezone!:'';const canonical=this.temporal.canonicalTimezone(candidate);
     const stored=canonical?await session.storageTimezone(candidate,canonical):null;
     if(!stored)badTimezone={code:'invalid_timezone',index};
-    storedCommands.push({...command,timezone:stored??candidate});
+    storedCommands.push(command.kind==='create'?{...command,timezone:stored??candidate}:command.kind==='update'?{...command,patch:{...command.patch,timezone:stored??candidate}}:command);
    }
    const payload={...initialPayload,commands:storedCommands,timezoneSnapshot:resolvedSnapshot};
    const resolvedContext={...stableContext,timezoneSnapshot:resolvedSnapshot};
@@ -43,7 +43,9 @@ export class TaskCommands {
     return {receipt:previous.receipt,replayed:true};
    }
    const receiptId=session.newId();
-   const plan=badTimezone??planCreate(resolvedContext,resolvedGroup,session.newId(),receiptId,session.recordedAt,this.temporal);
+   const ids=storedCommands.flatMap(command=>command.kind!=='create'&&'taskId' in command.target?[command.target.taskId]:[]);
+   const locked=await session.lockTasks(ids);
+   const plan=badTimezone??planSingle(resolvedContext,resolvedGroup,locked,session.newId(),receiptId,session.recordedAt,this.temporal);
    let receipt:TaskReceipt;
    if('code' in plan){receipt={receiptId,contractVersion:1,effectKey:group.effectKey,outcome:'rejected',commandResults:[],
     localIdMap:{},snapshots:[],error:plan};}

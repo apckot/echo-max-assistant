@@ -58,3 +58,7 @@ Scoped confirmation closed SQL-null and undefined findings; timezone finding rem
 Typed single-create harness now proves optional dates, timezone snapshots, persisted current state/event/receipt, exact payload replay, concurrent-key serialization, closed rejection and precommit rollback. Pure lifecycle/date contracts are tested but persistent existing-target commands are not exposed until41. Multi-command groups42, queries43/49, privacy integration45 and transactional inbound bridge46 remain deferred. No production deployment, AI/STT/reminders/billing/Mini App, extra executor or full-gate repeat. The real MAX callback/duplicate replay exception remains open for the buttons stage.
 
 Owner acceptance of checkpoint40 and authorisation of the next block are required before41.
+
+## Owner acceptance —2026-10-14
+
+Checkpoint40 accepted; owner authorised only iterations41–45 and checkpoint45 review/gate/push. No server deployment. See [checkpoint45 ledger](stage-2-checkpoint-45.md).

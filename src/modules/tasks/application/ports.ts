@@ -28,9 +28,10 @@ export interface TaskCommandSession {
  newId():string;
  fingerprint(payload:CanonicalTaskPayload):{hash:string;canonicalPayload:CanonicalTaskPayload};
  storageTimezone(input:string,canonical:string):Promise<string|null>;
+ lockTasks(ids:readonly string[]):Promise<readonly Task[]>;
  lockEffect(effectKey:string):Promise<void>;
  findReceipt(effectKey:string):Promise<StoredTaskReceipt|null>;
- persistChanges(changes:readonly (TaskChange&{readonly eventId:string})[],receiptId:string):Promise<void>;
+ persistChanges(changes:readonly (TaskChange&{readonly eventId:string;readonly commandIndex:number})[],receiptId:string):Promise<void>;
  persistReceipt(receipt:TaskReceipt,payload:CanonicalTaskPayload,hash:string):Promise<void>;
 }
 export interface TaskSessionRunner {
