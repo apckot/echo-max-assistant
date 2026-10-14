@@ -10,7 +10,7 @@
 
 **Spec:** [Stage 2 design](../specs/2026-10-13-max-assistant-stage-2-task-domain-design.md).
 
-**Status:** Принято владельцем 2026-10-13. Отдельно разрешён только блок36–40, одно checkpoint40 review/gate, progress ledger и push с проверкой SHA. Checkpoint40 принят2026-10-14; теперь отдельно разрешён блок41–45 с review/gate/push, Блок41–45 выполнен и checkpoint45 проверен2026-10-14; Checkpoint45 принят; разрешён блок46–50, выполнен с review/gate/restore, A24 пока не завершён. См. [отчёт](../../progress/stage-2-checkpoint-45.md).
+**Status:** Документы приняты2026-10-13; checkpoints40/45 приняты владельцем. Разрешённый блок46–50 выполнен, checkpoint50 review/gate/restore и согласованный повтор A24 прошли2026-10-14. Stage2 ожидает принятия владельцем; Stage3 и deployment не разрешены. [Итоговый отчёт](../../progress/stage-2-checkpoint-50.md).
 
 ## Global Constraints
 
@@ -153,13 +153,13 @@ unit/tasks/command-contract.test.ts. **Commit:** `feat(tasks): define typed task
 **Produces:** Task, TaskCommand, TaskCommandGroup, TaskError, TaskExecutionContext/ExplicitTaskIntent;
 `normalizeCommand(command: unknown): TaskCommand | TaskError`, `validateEvidence(context,command): TaskError | null`.
 
-- [ ] RED `create_without_dates_is_valid`: normalized dates null; `title='  Позвонить  '` → `Позвонить`.
+- [x] RED `create_without_dates_is_valid`: normalized dates null; `title='  Позвонить  '` → `Позвонить`.
   Table tests boundary500/501 Unicode code points, surrogate pair, empty title, invalid controls,
   unknown field, null clearing vs absent; taskId/tenant не переопределяется patch.
-- [ ] RED `non_owner_or_nonaffirmative_intent_rejected`: missing/quoted/negative/uncertain/target mismatch
+- [x] RED `non_owner_or_nonaffirmative_intent_rejected`: missing/quoted/negative/uncertain/target mismatch
   → invalid_evidence; operator/import → unsupported_actor; rejected update никогда не превращается Create.
-- [ ] Implement закрытые DTO, normalizer и trusted context boundary по spec §§3,5–6.
-- [ ] GREEN `npx vitest run tests/unit/tasks/command-contract.test.ts`; static checks; commit.
+- [x] Implement закрытые DTO, normalizer и trusted context boundary по spec §§3,5–6.
+- [x] GREEN `npx vitest run tests/unit/tasks/command-contract.test.ts`; static checks; commit.
 
 ### 37. Даты и точное локальное время
 
@@ -169,13 +169,13 @@ modify domain/validation.ts, application/ports.ts. **Commit:** `feat(tasks): def
 **Produces:** `resolveLocalTime(input: LocalDateTime): TemporalResult`, validation temporal facts;
 deadline union date/instant/null; strict UTC result и stable timezone snapshot.
 
-- [ ] RED A08–A10: leap2028-02-29 pass, 2026-02-29/31-Feb fail; no-offset instant fail;
+- [x] RED A08–A10: leap2028-02-29 pass, 2026-02-29/31-Feb fail; no-offset instant fail;
   dueDate/dueAt union cannot coexist; milliseconds roundtrip; unsupported/infinite dates fail.
-- [ ] RED Berlin gap/fold из A09, выбранный неверный offset fail; schedule after deadline fail;
+- [x] RED Berlin gap/fold из A09, выбранный неверный offset fail; schedule after deadline fail;
   смена profile timezone не изменяет уже разрешённую команду.
-- [ ] Implement strict date/instant parsing, IANA resolver и projection local-date facts;
+- [x] Implement strict date/instant parsing, IANA resolver и projection local-date facts;
   duration/relative NLP не добавлять.
-- [ ] GREEN `npx vitest run tests/unit/tasks/time.test.ts tests/unit/tasks/command-contract.test.ts`; static; commit.
+- [x] GREEN `npx vitest run tests/unit/tasks/time.test.ts tests/unit/tasks/command-contract.test.ts`; static; commit.
 
 ### 38. Чистый lifecycle и перенос
 
@@ -185,12 +185,12 @@ application/task-effects-policy.ts. **Commit:** `feat(tasks): implement task lif
 **Produces:** `transition(task: Task,command: ExistingTaskCommand,facts: TransitionFacts): TransitionResult`;
 TaskChange, NoopTaskEffectsPolicy. Create construction принимает назначенный UUID/DB timestamp.
 
-- [ ] RED таблица всех15 status/command combinations, same-version no-op, stale-version conflict,
+- [x] RED таблица всех15 status/command combinations, same-version no-op, stale-version conflict,
   terminal timestamp rules, reopen same UUID/dates, version_exhausted.
-- [ ] RED targetDate-only move preserves scheduledAt; clear deadline independent of schedule;
+- [x] RED targetDate-only move preserves scheduledAt; clear deadline independent of schedule;
   timezone-only change сохраняет instant и проверяет итоговый schedule.
-- [ ] Implement spec §§4–5; applied +1/event candidate, no_change без event candidate.
-- [ ] GREEN `npx vitest run tests/unit/tasks/transitions.test.ts`; static; commit.
+- [x] Implement spec §§4–5; applied +1/event candidate, no_change без event candidate.
+- [x] GREEN `npx vitest run tests/unit/tasks/transitions.test.ts`; static; commit.
 
 ### 39. PostgreSQL schema и FORCE RLS
 
@@ -201,12 +201,12 @@ functional/tasks/schema-rls.test.ts; targeted existing readiness/migration asser
 **Produces:** schema24, три таблицы/индексы/FK/validators/immutable/deferred triggers spec §8;
 runtime-role fixture, без временного writer другого модуля.
 
-- [ ] RED fresh migration, composite cross-tenant FK deny; no tenant yields empty/denied;
+- [x] RED fresh migration, composite cross-tenant FK deny; no tenant yields empty/denied;
   worker A не видит B, gateway/delivery/scheduler denied; invalid row/calendar/snapshot deny;
   UPDATE/DELETE history/receipt deny включая spoof GUC.
-- [ ] Implement migration with explicit grants/policies and current/version event consistency;
+- [x] Implement migration with explicit grants/policies and current/version event consistency;
   deferred trigger позволяет атомарно state+event+receipt, не отдельный несогласованный commit.
-- [ ] GREEN `npx vitest run tests/functional/tasks/schema-rls.test.ts tests/functional/postgres/migrations.test.ts`;
+- [x] GREEN `npx vitest run tests/functional/tasks/schema-rls.test.ts tests/functional/postgres/migrations.test.ts`;
   targeted readiness tests по найденным версиям; static; commit.
 
 ### 40. Надёжное создание через единственный executor
@@ -221,14 +221,14 @@ runtime-role fixture, без временного writer другого моду
 не публикуются вызывающим поверхностям до41, pure правила уже готовы. До45 только изолированная
 тестовая БД: privacy erasure для новых таблиц пока не подключён.
 
-- [ ] RED A01–A03: same key same payload same UUID/receipt; distinct keys identical title create2;
+- [x] RED A01–A03: same key same payload same UUID/receipt; distinct keys identical title create2;
   changed payload/source conflicts; concurrent same key only1 task/event/receipt.
-- [ ] RED failure после create event до receipt всё rollback; ключ включает actor/evidence/time snapshot;
+- [x] RED failure после create event до receipt всё rollback; ключ включает actor/evidence/time snapshot;
   exact canonical comparison; deleting user/fence не создаёт task.
-- [ ] Implement canonical payload port, receipt lock/replay и CREATE persistence; generated UUID
+- [x] Implement canonical payload port, receipt lock/replay и CREATE persistence; generated UUID
   присутствует только committed receipt; user lock до task rows; no nested transactions.
-- [ ] GREEN `npx vitest run tests/functional/tasks/create-idempotency.test.ts`; static; commit.
-- [ ] Провести checkpoint40 по общему протоколу; demo typed Create и replay, данные/event/receipt.
+- [x] GREEN `npx vitest run tests/functional/tasks/create-idempotency.test.ts`; static; commit.
+- [x] Провести checkpoint40 по общему протоколу; demo typed Create и replay, данные/event/receipt.
 
 ## Блок 2 — итерации41–45, checkpoint45
 
@@ -413,13 +413,13 @@ create docs/runbooks/task-domain-acceptance.md.
 - [x] Implement только integration gaps; runbook фиксирует Noop reminders, unsupported AI/voice,
   date semantics, rejected/no_change/replay и rollback; architecture описывает одного writer.
 - [x] GREEN targeted e2e/restore tests и static; commit. До review не запускать полный gate отдельно.
-- [ ] Checkpoint50: cumulative review46–50 плюс consistency spec A01–A24; final clean-clone full gate
+- [x] Checkpoint50: cumulative review46–50 плюс consistency spec A01–A24; final clean-clone full gate
   один раз, включая typed e2e и functional через `npm test`; review-focus config остаётся
   средством targeted проверки, отдельный повтор его набора на checkpoint не запускается;
   A24 по `npx vitest run --config tests/performance/vitest.config.ts tests/performance/task-domain.run.ts`,
   один isolated backup/restore drill с Tasks fixture, broad scans. Не дублировать targeted restore
   как второй полный drill: targeted test моделирует row consistency, drill проверяет реальный backup.
-- [ ] Опубликовать stage-2-checkpoint-50.md с реальными результатами/ограничениями; остановиться
+- [x] Опубликовать stage-2-checkpoint-50.md с реальными результатами/ограничениями; остановиться
   для acceptance Stage2. Stage3, providers, кнопки и production deployment не начинаются автоматически.
 
 ## Самопроверка покрытия перед передачей

@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /private/tmp/echo-max-stage2-checkpoint50.QPn2DA/repo
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  13:58:50
+   Duration  582.23s (transform 95ms, setup 0ms, import 497ms, tests 581.62s, environment 0ms)
+

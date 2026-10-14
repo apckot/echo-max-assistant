@@ -1,6 +1,6 @@
 # Stage2 checkpoint50 ledger — plan: docs/superpowers/plans/2026-10-13-max-assistant-stage-2-task-domain.md
 
-Date2026-10-14 Europe/Moscow. Gate/review/physical restore verified; A24 interrupted before measurement, not verified. Checkpoint45 accepted; owner authorised only46–50, one cumulative review, one clean-clone gate including functional/review-focus cases once, A24 load and one isolated physical restore drill. No Stage3/deployment. One primary executor, no implementation delegation.
+Date2026-10-14 Europe/Moscow. **Stage2 implementation and checkpoint50 verified; ready for owner acceptance.** Checkpoint45 accepted; owner authorised only46–50, one cumulative review, one clean-clone gate including functional/review-focus cases once, A24 load and one isolated physical restore drill. No Stage3/deployment. One primary executor, no implementation delegation.
 Base d33f73af076dbe5745b240d72f4ba6371c10d882; branch codex/stage-2-task-domain. Preserve unrelated network diagnostic.
 
 ## Pre-flight / rulings
@@ -20,7 +20,7 @@ Base d33f73af076dbe5745b240d72f4ba6371c10d882; branch codex/stage-2-task-domain.
 |49|d2d8d6c51b020f8774950560586f5f615225da24|temporal PG6 PASS; small load smoke1 PASS, deterministic seed+replay/report validated|typecheck/architecture PASS|
 |50|8cb094a1fbf1665dc1098d58a4a695550b30379a|typed e2e1 + row restore1 PASS; closed processing format/composite foreign receipt FK5 PASS|typecheck/architecture PASS|
 
-Review and full gate including physical drill complete; A24 pending explicit retry approval. No separate review-focus/functional rerun.
+Review and full gate including physical drill complete; A24 passed on the explicitly approved retry; see final evidence below. No separate review-focus/functional rerun.
 
 
 Iteration47 diagnosis: application canonicalises Asia/Kolkata to ICU Asia/Calcutta before the bound session; authority had compared against raw event timezone. Compare canonical temporal zone on both sides, while PostgreSQL-compatible storage still resolves the original snapshot. Regression covers actual typed inbound with a Kolkata profile. Other fault proofs passed immediately against46: evidence of existing guards, not invented RED. COMMIT failure fixture throws only after real transaction COMMIT; independent raw DB counts/immutable receipt and restarted connections prove durability.
@@ -35,7 +35,7 @@ Iteration49 ruling: calendar policy already implemented43; new PostgreSQL tempor
 Iteration50 rulings: targeted row snapshot restore checks state/history/receipt, fence and surviving-key replay without executing physical backup; physical drill executes once in checkpoint gate. Extended the existing WAL drill (no second drill). Source Task created pre-base, update post-base/pre-target, extra task post-target; target must restore update/history/receipts and exclude extra task, block writes under fence and replay originals after explicit isolated reopen. New e2e uses real PG processing/delivery ports with deterministic sender outcomes, not live MAX/NLP. Test setup first assumed queue wake bypassed conversation send spacing, then expected not_admitted for an already completed lease; corrected to real due/spacing and existing DeliveryLeaseLostError, without changing delivery behavior. Targeted final2 PASS; physical drill subsequently passed once in the gate. Temporal/fault/restore proof tests of existing guards passed without new feature edits; only actual alias defect47 needed production repair.
 
 
-Cumulative review: two P2 findings confirmed. Same executor closed straightforward ONLY/computed/optional query-call guard bypasses (three RED regressions) and supplied successful policy contract evidence. Capturing real-PG policy proves one call per create/update/complete/cancel/reopen event with the persisted eventId and none on replay/equal patch/rejected group. Policy code already correct, so coverage test was immediately GREEN; no invented production fix. Targeted ownership/architecture/groups34 PASS; typecheck/architecture PASS. Both findings closed by scoped confirmation on ec682a868c767ebba842432980d68f415499b4e3. Gate and physical drill passed; A24 pending explicit retry approval. See [review](stage-2-checkpoint-50-review.md).
+Cumulative review: two P2 findings confirmed. Same executor closed straightforward ONLY/computed/optional query-call guard bypasses (three RED regressions) and supplied successful policy contract evidence. Capturing real-PG policy proves one call per create/update/complete/cancel/reopen event with the persisted eventId and none on replay/equal patch/rejected group. Policy code already correct, so coverage test was immediately GREEN; no invented production fix. Targeted ownership/architecture/groups34 PASS; typecheck/architecture PASS. Both findings closed by scoped confirmation on ec682a868c767ebba842432980d68f415499b4e3. Gate and physical drill passed; A24 passed on the explicitly approved retry; see final evidence below. See [review](stage-2-checkpoint-50-review.md).
 
 
 ## Frozen checkpoint evidence
@@ -49,10 +49,31 @@ One physical backup/WAL restore drill inside that gate: authenticated encryption
 Broad scans on frozen SHA: pinned Gitleaks8.30.1 digest c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f,109 reachable commits and tracked archive, both0leaks/exit0. No TODO/FIXME/TBD in src/migrations; Task INSERT/UPDATE sites confined to sole Tasks PostgreSQL adapter, source guard enforces ownership. Cumulative diff-check found only an extra EOF blank line in temporal-port.ts; publication removes that line (format only) and narrow diff-check passes. Meaningful source remains identical to frozen tested code, so no second full gate.
 
 
-## A24 stop evidence — incomplete, not PASS
+## Initial A24 attempt — interrupted, not counted as PASS
 
 Owner flagged elapsed time. One full A24 attempt was interrupted before warm-up/measured operations: serial fixture preparation had committed20400/100000 Tasks (206 users including the two base fixtures). No p95/SLO result was produced. Partial counts are retained in /tmp/echo-stage2-checkpoint50-evidence/load-aborted-counts.txt; process exit143, isolated container cleaned up. Full gate/review-focus/functional/physical restore were not repeated.
 
 Cause: one seeding connection executes1000 tenant transactions sequentially, including expensive real snapshot/timezone/receipt constraints. Corrected the isolated harness to seed independent tenants through up to10 connections, with separate temporary tables and all constraints/triggers enabled. Added preparationMs/preparationClients to report and a20-minute safety timeout; measured profile remains exactly1000 tenants×100 Tasks/10 clients/100 warm-up/1000 measured/80:20. A single small smoke (2 tenants×5 Tasks/10 ops),3.04s/PASS, verifies corrected setup and receipt replay. This change affects only the performance fixture, which is not executed by the default gate; business code/default tests remain the frozen verified version (except an EOF whitespace removal). No second full gate is required.
 
-Stage2 acceptance remains pending A24. No final push/SHA publication claim; no Stage3 or deployment. Retry full A24 only after owner approval; do not repeat gate/functional/review-focus/physical drill.
+Owner explicitly approved one A24 retry with a20-minute limit. Completed below; gate/functional/review-focus/physical drill were not repeated.
+
+
+## Approved A24 retry — PASS
+
+Benchmark SHA `4b1b09560a44d1aa2b98fe7845fc50eca50fa03f`, same clean clone after checkout of corrected performance fixtures. One owner-approved retry, exit0/1PASS;582.23s total (9min42s), preparation572772.96ms (9min33s),10 independent seeding connections. All constraints/triggers remain enabled, seeded canonical payload/hash and receipt replay verified. No disabled integrity checks or dataset reduction.
+
+Exact profile: fixed seed echo-task-domain-v1,1000 tenants×100 Tasks,10 clients,100 warm-up,1000 measured operations,80/20 reads/writes,200 measured typed updates. **p95 typed command59.054ms <1000ms**, p95 all operations55.311ms. Final state100000 Tasks/100220 events/100220 receipts includes20 warm-up+200 measured effects. Tenant membership and current/latest event version invariants passed. Node22.23.3,PG17.11,Apple M5/10 logical CPUs/16GiB RAM, isolated local Docker; indexes and tenant-worker EXPLAIN ANALYZE/BUFFERS preserved in [performance report](stage-2-task-performance.json), [run log](stage-2-task-performance.log). This controlled regression is not a production capacity/SLO claim.
+
+Default gate's tested business source remains unchanged except EOF whitespace. Benchmark-only correction is verified by its small smoke and approved full A24; no default gate or independent review was restarted. Publication below changes documentation/evidence only.
+
+## Stage2 result, acceptance and publication
+
+Iterations36–50 provide the shared provider-neutral Task API: lifecycle/rescheduling, version/evidence rules, atomic groups, persistent current state/history/receipts, key replay/conflicts, tenant-scoped lists/search/date boundaries/frozen-asOf pagination, privacy erasure/retention, guarded processing/outbox integration and Noop reminder policy. [A01–A24 evidence mapping and typed acceptance boundary](../runbooks/task-domain-acceptance.md). Checkpoints40/45 accepted by owner; checkpoint50 and Stage2 now await owner acceptance.
+
+Atomicity proof: Tasks/current state/events/Task receipt/processing receipt/outbox/pointer persist in the same guarded DbTx; injected failure and actual PG termination roll all back. Actual COMMIT followed by lost acknowledgement fixture plus independent restarted connections preserves original receipts and exactly one effect/outbox. Two conversations/version1, independent renew, erasure and restore-fence races deny unauthorized commits. Delivery retry and stale processing tokens never execute a second Task effect. This is typed/real-PG integration proof, not NLP/live MAX task proof.
+
+One cumulative reviewer, both P2 findings closed; one full clean-clone gate; one physical WAL restore drill inside that gate; one approved A24 retry after an aborted preparation, no extra executor/reviewer or functional/review-focus/full-gate rerun. Read-only progress counts were observed during A24 preparation; these were not additional test runs. Initial expensive serial preparation and correction are retained above, not hidden.
+
+All authorised checks passed. This documentation/evidence commit is a descendant of the verified gate and benchmark SHAs. Next authorised action: push codex/stage-2-task-domain to origin and compare local publication HEAD with git ls-remote; actual result reported in final handoff, not preclaimed in this pre-push commit. Untracked network diagnostic unchanged, original SHA256 d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade verified.
+
+Stop for Stage2 acceptance. Stage3, deployment, providers/AI/STT, reminder delivery, payments, buttons and Mini App have not started. Production MAX still uses FoundationInboundHandler. Accepted real callback/duplicate replay exception remains open for the buttons stage; local restore does not prove deployed second-storage availability.
