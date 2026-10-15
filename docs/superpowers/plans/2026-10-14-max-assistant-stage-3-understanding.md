@@ -51,40 +51,40 @@ Review focus: (1) отрицание в цитируемом title против 
 ### 51. Meaning contract и замороженные сценарии
 **Файлы:** src/modules/semantic/domain/meaning-decision.ts, src/modules/semantic/application/provider-port.ts; tests/unit/semantic/meaning-contract.test.ts; tests/fixtures/stage3/{regressions.json,probe-manifest.json}; docs/runbooks/stage-3-provider-admission.md.
 **Результат:** strict внешний MeaningDraftV2 (sourceLabel+quote) и внутренний MeaningDecisionV1 (диапазоны только приложения), ProviderContext/ProviderResult и registry, C001–C101 regression oracle. Контроль H001–H020 отдельно, frozen hash до настройки, без доступа prompt tuning; независимый источник/владелец и приватный oracle фиксируются в manifest, не выдаются за готовые фактические данные.
-- [ ] RED S01/S20: unknown keys/refs, quote-only wire/unique literal grounding/code-point spans внутри,21 actions, negative/quoted units, local labels и relation scope.
-- [ ] Материализовать12 probe cases из корпуса; зафиксировать source/anchors/pending context, exact oracles, версии/hash и лимиты12 calls/USD2/12000input/2000output. Контроль не используется для разработки; отсутствие H отмечается как незавершённая независимая приёмка.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/semantic/meaning-contract.test.ts`; static; commit `feat(semantic): define meaning contract and regression oracles`.
+- [x] RED S01/S20: unknown keys/refs, quote-only wire/unique literal grounding/code-point spans внутри,21 actions, negative/quoted units, local labels и relation scope.
+- [x] Материализовать12 probe cases из корпуса; зафиксировать source/anchors/pending context, exact oracles, версии/hash и лимиты12 calls/USD2/12000input/2000output. Контроль не используется для разработки; отсутствие H отмечается как незавершённая независимая приёмка.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/semantic/meaning-contract.test.ts`; static; commit `feat(semantic): define meaning contract and regression oracles`.
 
 ### 52. Privacy boundary и заменяемый OpenAI adapter
 **Файлы:** src/modules/privacy/application/{privacy-gateway.ts,source-map.ts}; src/infrastructure/ai/{openai-decision-provider.ts,provider-config.ts}; migrations/0027_privacy_routes.sql; tests/unit/ai/openai-contract.test.ts; tests/functional/privacy/token-map.test.ts.
 **Результат:** `prepare(pack): PrivacyResult` и `decide(ProviderContext,...): ProviderResult`; external_allowed/tokenized/denied; будущий provider подключается портом, без его реализации.
-- [ ] RED S09/S10/S14: fake HTTP strict output/error/usage/deadline, retriesoff,0network on denied, IDs/secret/context exclusion, unknown/cross-run token, сохранение scope и SourceMap. Проверять payload текущего input и candidates, а не только один текст.
-- [ ] Реализовать allowlist/templates/known-value masking, encrypted mapping/RLS/erase. Перед настоящим API на53 проверить актуальные официальные schema/model/pricing/processing настройки, секрет читать напрямую из существующего файла в памяти; tests используют FakeHTTP, ключ не нужен.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/ai/openai-contract.test.ts tests/functional/privacy/token-map.test.ts`; static; commit `feat(ai): gate OpenAI requests through privacy boundary`.
+- [x] RED S09/S10/S14: fake HTTP strict output/error/usage/deadline, retriesoff,0network on denied, IDs/secret/context exclusion, unknown/cross-run token, сохранение scope и SourceMap. Проверять payload текущего input и candidates, а не только один текст.
+- [x] Реализовать allowlist/templates/known-value masking, encrypted mapping/RLS/erase. Перед настоящим API на53 проверить актуальные официальные schema/model/pricing/processing настройки, секрет читать напрямую из существующего файла в памяти; tests используют FakeHTTP, ключ не нужен.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/ai/openai-contract.test.ts tests/functional/privacy/token-map.test.ts`; static; commit `feat(ai): gate OpenAI requests through privacy boundary`.
 
 ### 53. Небольшая настоящая проверка OpenAI до конвейера
 **Файлы:** tests/semantic/stage3-probe.ts; tests/unit/semantic/probe-budget.test.ts; docs/progress/stage-3-openai-probe.md.
 **Результат:** наблюдаемое понимание12 синтетических cases до основной интеграции; не production и не STT proof.
-- [ ] RED budget proof: reject call13, token overflow/cost>USD2, retries/real input/audio/control sample; collector audit обязателен, missing output не PASS. Credential loader выводит только readiness и не сериализует Authorization даже при ошибке.
-- [ ] Перед запуском записать frozen manifest/profile/current unit prices, worst-case12-call estimate≤USD2 и monetary stop counter. Использовать существующий ключ из файла секретов проекта; не создавать новый, не печатать значения или полное env, не копировать ключ в repo/argv. Если файла нет/ключ недоступен или профиль недопустим — reported blocker, не provisioning нового ключа.
-- [ ] После принятия документов выполнить **один** проход C003/C024/C025/C013/C015/C016/C034/C020/C041/C043/C005/C064:≤12 dispatches,≤USD2, только синтетические pack. Вызов STT/реальный MAX/пользовательские данные запрещены. SDK retryoff; после uncertainty не повторять call.
-- [ ] Gate:100% safety assertions,≥11/12 full oracle; один semantic request/case. Публиковать все counts/failures/latency/usage/cost без ключа. При fail остановиться до54; дополнительный probe/настройка с внешними вызовами требует согласования, автоматический подбор модели не разрешён.
-- [ ] GREEN budget test `node node_modules/vitest/vitest.mjs run tests/unit/semantic/probe-budget.test.ts`; static; commit `test(ai): record bounded synthetic OpenAI feasibility probe`.
+- [x] RED budget proof: reject call13, token overflow/cost>USD2, retries/real input/audio/control sample; collector audit обязателен, missing output не PASS. Credential loader выводит только readiness и не сериализует Authorization даже при ошибке.
+- [x] Перед запуском записать frozen manifest/profile/current unit prices, worst-case12-call estimate≤USD2 и monetary stop counter. Использовать существующий ключ из файла секретов проекта; не создавать новый, не печатать значения или полное env, не копировать ключ в repo/argv. Если файла нет/ключ недоступен или профиль недопустим — reported blocker, не provisioning нового ключа.
+- [x] После принятия документов выполнить **один** проход C003/C024/C025/C013/C015/C016/C034/C020/C041/C043/C005/C064:≤12 dispatches,≤USD2, только синтетические pack. Вызов STT/реальный MAX/пользовательские данные запрещены. SDK retryoff; после uncertainty не повторять call.
+- [x] Gate:100% safety assertions,≥11/12 full oracle; один semantic request/case. Публиковать все counts/failures/latency/usage/cost без ключа. При fail остановиться до54; дополнительный probe/настройка с внешними вызовами требует согласования, автоматический подбор модели не разрешён.
+- [x] GREEN budget test `node node_modules/vitest/vitest.mjs run tests/unit/semantic/probe-budget.test.ts`; static; commit `test(ai): record bounded synthetic OpenAI feasibility probe`.
 
 ### 54. Source snapshot, delivered context и dedup tombstone
 **Файлы:** src/modules/context/application/{context-pack.ts,context-builder.ts}; src/infrastructure/postgres/context/context-reader.ts; src/infrastructure/postgres/agent/turn-store.ts; migrations/0028_stage3_turns.sql; tests/functional/context/context-pack.test.ts.
 **Результат:** immutable source/timezone/context/turn source binding; delivered-only exact reply/list anchors, bounded candidates, tombstone до provider call.
-- [ ] RED S04/S07/S19: C021/C028/C086/C099, missing/foreign reply, history48h, auxiliary budget, full current source, dedup после technical retention, erasure/RLS/key rotation.
-- [ ] Построить через public TaskQueries:3prequeries,50candidates incl terminal, description512CP; не использовать недоставленный ответ/пересортированный SQL список. Tombstone HMAC source key без текста; unlink source FK не удаляет dedup.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/context/context-pack.test.ts`; static; commit `feat(context): preserve source and delivered task anchors`.
+- [x] RED S04/S07/S19: C021/C028/C086/C099, missing/foreign reply, history48h, auxiliary budget, full current source, dedup после technical retention, erasure/RLS/key rotation.
+- [x] Построить через public TaskQueries:3prequeries,50candidates incl terminal, description512CP; не использовать недоставленный ответ/пересортированный SQL список. Tombstone HMAC source key без текста; unlink source FK не удаляет dedup.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/context/context-pack.test.ts`; static; commit `feat(context): preserve source and delivered task anchors`.
 
 ### 55. Единственный validator, resolver и source-time semantics
 **Файлы:** src/modules/semantic/application/{decision-validator.ts,target-resolver.ts,temporal-normalizer.ts}; tests/functional/semantic/{action-boundary.test.ts,task-resolver.test.ts,temporal-intent.test.ts}.
 **Результат:** ValidatedDecision/resolved targets/time DTO для будущего runner, без Task writes или второго AI.
-- [ ] RED S01–S06: C003/C018/C024/C025/C028/C036–C040/C061–C070/C097–C098; «к девяти» deadline, «в девять» schedule, «перенеси на завтра» targetDate; никакой автозамены ошибочного deadline; C016/C034 exact changed/unchanged fields, own temporal scope и independent groups; reply/list target authorization, copy-completion, no mutation→Create.
-- [ ] QuoteGrounder принимает только sourceLabel/quote: unique exact match и SourceMap,0/2+matches closed refusal, без fuzzy/первого совпадения; validator принимает grounded evidence/graph/ownership; resolver0/1/2–5/>5 и≤3postqueries; связанные actions объединяются; Stage2 time port разрешает gap/fold/day отдельно, source clock не retry clock. Разрешать неопределённость только в связанном компоненте, structural bad frame целиком reject.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/semantic/action-boundary.test.ts tests/functional/semantic/task-resolver.test.ts tests/functional/semantic/temporal-intent.test.ts`; static; commit `feat(semantic): validate intent targets and source-time scopes`.
-- [ ] Checkpoint55: одно review/gate, отчёт с отдельным probe53 evidence, push/SHA, остановка перед56. Никакого повторного probe в gate.
+- [x] RED S01–S06: C003/C018/C024/C025/C028/C036–C040/C061–C070/C097–C098; «к девяти» deadline, «в девять» schedule, «перенеси на завтра» targetDate; никакой автозамены ошибочного deadline; C016/C034 exact changed/unchanged fields, own temporal scope и independent groups; reply/list target authorization, copy-completion, no mutation→Create.
+- [x] QuoteGrounder принимает только sourceLabel/quote: unique exact match и SourceMap,0/2+matches closed refusal, без fuzzy/первого совпадения; validator принимает grounded evidence/graph/ownership; resolver0/1/2–5/>5 и≤3postqueries; связанные actions объединяются; Stage2 time port разрешает gap/fold/day отдельно, source clock не retry clock. Разрешать неопределённость только в связанном компоненте, structural bad frame целиком reject.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/semantic/action-boundary.test.ts tests/functional/semantic/task-resolver.test.ts tests/functional/semantic/temporal-intent.test.ts`; static; commit `feat(semantic): validate intent targets and source-time scopes`.
+- [x] Checkpoint55: одно review/gate, отчёт с отдельным probe53 evidence, push/SHA, остановка перед56. Никакого повторного probe в gate.
 
 ## Блок56–60 — durable текстовый конвейер и OpenAI STT
 
