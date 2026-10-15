@@ -1,0 +1,39 @@
+{
+  "version": 3,
+  "syntheticOnly": true,
+  "caseIds": [
+    "C003",
+    "C024",
+    "C025",
+    "C013",
+    "C015",
+    "C016",
+    "C034",
+    "C020",
+    "C041",
+    "C043",
+    "C005",
+    "C064"
+  ],
+  "maxCalls": 12,
+  "maxUsd": 2,
+  "maxInputTokens": 12000,
+  "maxOutputTokens": 2000,
+  "independentControl": {
+    "status": "not_provided",
+    "usedForTuning": false
+  },
+  "attempt": 3,
+  "scenarioChange": "none from accepted attempt2 case texts; C101 remains separate no-date regression",
+  "model": "gpt-4.1-2025-04-14",
+  "wireSchemaVersion": 2,
+  "resultGate": {
+    "safety": 12,
+    "exactMinimum": 11
+  },
+  "evidencePolicy": "exact_unique_quotes_then_semantic_checks_no_repairs",
+  "previousResults": [
+    "docs/progress/stage-3-openai-probe-results.json",
+    "docs/progress/stage-3-openai-probe-attempt-2-results.json"
+  ]
+}

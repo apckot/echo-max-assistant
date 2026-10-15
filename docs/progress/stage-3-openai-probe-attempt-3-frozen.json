@@ -1,0 +1,105 @@
+{
+  "attempt": 3,
+  "model": "gpt-4.1-2025-04-14",
+  "caseIds": [
+    "C003",
+    "C024",
+    "C025",
+    "C013",
+    "C015",
+    "C016",
+    "C034",
+    "C020",
+    "C041",
+    "C043",
+    "C005",
+    "C064"
+  ],
+  "maxCalls": 12,
+  "maxUsd": 2,
+  "maxInputTokens": 12000,
+  "maxOutputTokens": 2000,
+  "deadlineMs": 45000,
+  "gate": {
+    "safety": 12,
+    "exactMinimum": 11
+  },
+  "promptHash": "00981f8e03598b474ad6da89f5b77b00755f0a12595345760326b130981d4312",
+  "schemaHash": "7e1ebadcf62cbcc5e92cc6512435f310a475a9155b47bba977016071f07bcb9a",
+  "runnerHash": "ba80dee44c10c16eb0ccdb289e7fb0e2dae8a708edf4cea9a0fb570ae7215cca",
+  "oracleHash": "fcf6a4f171b31e7affec30ac9d0b90db9133de2d8f77d4cfa3e70fbb366d53a3",
+  "sourceHashes": {
+    "tests/semantic/probe-attempt-3.ts": "ba80dee44c10c16eb0ccdb289e7fb0e2dae8a708edf4cea9a0fb570ae7215cca",
+    "tests/semantic/stage3-probe.ts": "59599562e294ead4b7cfc5bd66ca97c1ed12e43392b55d320e8bf28ba198d618",
+    "tests/semantic/temporal-oracle.ts": "fcf6a4f171b31e7affec30ac9d0b90db9133de2d8f77d4cfa3e70fbb366d53a3",
+    "src/modules/semantic/domain/meaning-decision.ts": "4ba1e67b75291984e4e62d0f664ded9d1b37acc19fafd2d04c1bb6f1405b9951",
+    "src/modules/semantic/application/provider-port.ts": "94b0d35e317669628ecfe1da4416e1467a447a9c64e21d198082fe1efed38e69",
+    "src/modules/semantic/application/quote-grounding.ts": "eaffc0b8daa37dcdce0b81346243da4c5ab02b002841088974cdabb62bfad7a5",
+    "src/modules/semantic/application/temporal-intent.ts": "0b047b63beec254406c3bc5205b76986e9e1866b98369257ae50f9f44453ec62",
+    "src/modules/privacy/application/privacy-gateway.ts": "1a320c5924f1ec836f843e5050e868687da2347f09d33d00e2b2769b6e4011d1",
+    "src/modules/privacy/application/source-map.ts": "ca13e43f4a272bbf49e5ff2a43d297e55aba8bf0d0f59a454c4384912573d31a",
+    "src/infrastructure/ai/openai-decision-provider.ts": "d21819d07625813da0b92934f00c684ce08138709bce8f5b6052a3d0ac36724c",
+    "src/infrastructure/ai/provider-config.ts": "882bdf66da5a6dd801856c133164cd305a1422b202209e6c35c522d7f48e7c04"
+  },
+  "manifestHash": "d6de3748405bd3d2e38c99508cd164a51f577dcd21595d3af4977af2711a470b",
+  "casesHash": "1494c06a77fcb901f3e38f625dd3827910b6c4124514ced4aea340dd25863d90",
+  "registryHash": "4434be4150c979ef700b8ef862a6c8cf5755cf65c7fd347a5e4be6b23dd153e3",
+  "inputBounds": [
+    {
+      "id": "C003",
+      "tokensUpper": 10952
+    },
+    {
+      "id": "C024",
+      "tokensUpper": 10949
+    },
+    {
+      "id": "C025",
+      "tokensUpper": 10967
+    },
+    {
+      "id": "C013",
+      "tokensUpper": 10801
+    },
+    {
+      "id": "C015",
+      "tokensUpper": 11005
+    },
+    {
+      "id": "C016",
+      "tokensUpper": 11184
+    },
+    {
+      "id": "C034",
+      "tokensUpper": 11148
+    },
+    {
+      "id": "C020",
+      "tokensUpper": 10977
+    },
+    {
+      "id": "C041",
+      "tokensUpper": 11187
+    },
+    {
+      "id": "C043",
+      "tokensUpper": 11170
+    },
+    {
+      "id": "C005",
+      "tokensUpper": 10782
+    },
+    {
+      "id": "C064",
+      "tokensUpper": 10807
+    }
+  ],
+  "worstCaseUsd": 0.455858,
+  "prices": {
+    "inputPerMillionUsd": 2,
+    "outputPerMillionUsd": 8,
+    "checkedAt": "2026-10-15",
+    "source": "https://developers.openai.com/api/docs/pricing"
+  },
+  "note": "Quote-only wire grounded exactly through SourceMap before unchanged semantic/field/scope/target/independence checks; no repairs; no production latency claim"
+}
