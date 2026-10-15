@@ -41,3 +41,11 @@ Local saved-response replay:3/3range recoveries, C015semanticPASS, C016/C034stil
 ## Authorised attempt3 — PASS,54–55 now authorised
 
 Owner accepted quote-only contract and authorised exactly one third pass of12same synthetic cases on same model≤USD2. Separate manifest/directory/exclusive start+per-case markers. Frozen prompt/schema/runner/oracles plus dependent source hashes; unchanged semantic guards. Preparation RED missing runner then targeted2/2PASS. Exactly12new calls, safety12/12/exact12/12 after unique quote grounding, usage estimateUSD0.069156. [Report](stage-3-openai-probe-attempt-3.md). Old markers/reports preserved. No retries/repair/fourth pass; provider work now finished. Conditional authorisation permits54–55, then one cumulative review/clean-clone gate, push/SHA and stop before56.
+
+### Итерация54
+
+Реализованы immutable source/context snapshot, delivered-only reply/list anchors (показанный UUID/version/порядок), чтение кандидатов через публичный TaskQueries и HMAC tombstone со стабильным turnId. Повтор/ротация с сохранёнными старыми HMAC keys возвращает прежний snapshot; завершённый turn не теряется после30-дневной очистки контента. Ключи старых версий должны оставаться доступными до удаления соответствующих аккаунтов; их выбрасывание не является поддерживаемой ротацией. SQL28 сразу включает FORCE RLS, composite tenant FK, erasure counts/cascade и bounded/fenced retention. Текст/внешний source key в tombstone не сохраняются.
+
+Целевая проверка: `vitest run tests/functional/context/context-pack.test.ts` —3 PASS (до реализации RED: отсутствующий ContextBuilder); typecheck и architecture PASS. Полный gate не запускался.
+
+Ruling54: token-budget пока проверяется консервативной верхней границей UTF-8 bytes (один byte не меньше одного возможного token), вместо приближённого деления по символам. Это сохраняет жёсткие пределы, но может раньше отказать на длинном контексте. Полный current source не обрезается. Exact anchors, не помещающиеся в50 candidates/3 TaskQueries requests, дают явный отказ; список не заменяется текущим SQL порядком. Runtime/coordinator подключается только в56.
