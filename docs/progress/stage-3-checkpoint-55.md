@@ -23,3 +23,11 @@ Budget/credential/oracle harness RED missing runner; GREEN3/3 budget/collector/c
 Credential-format preparation failed before exclusive marker/any requests, then was fixed against prefixed fake-file fixture and manifest re-frozen. Real pass then sent8 requests, no retries:6passed, C034 missing unresolved action payload, C020 duplicate unit/action label rejected locally. Remaining4not dispatched. Cost by complete returned usageUSD0.049978; conservative uncertain-attempt accountingUSD0.082140. All synthetic outputs/statuses retained.
 
 Owner stop condition applies: **stop before54**, no model/prompt/schema tuning or new requests. No independent review, full gate, push or claim checkpoint55 complete. Future work needs explicit owner decision.
+
+## Authorised repair cycle and probe attempt2 — FAIL
+
+Owner authorised one repair cycle and12new requests≤USD2 on the same model. Namespaced u/a/q/g labels and exact typed references; transport/stream failure separated from received invalid JSON/schema/refs, with safe reason/usage/duration. C034 now explicitly says «на завтра»; C101 retains original no-date regression (target choice alone cannot authorize empty/guessed-date move). Old first-attempt report/freeze/results unchanged.
+
+Focused RED:3failed/1passed (prefix/reference baseline already partly enforced); GREEN15/15 across saved-response replay/contract/budget/transport tests, typecheck/architecture passed. No external requests during local repair; second profile frozen before dispatch, conservative maximumUSD0.44184.
+
+Attempt2: exactly12new requests, safety9/12/exact9/12, actual usage estimateUSD0.068972. C020fixed; C015/C016/C034 span failures, and C016/C034 wrong temporal field. [Second report/results](stage-3-openai-probe-attempt-2.md). No hidden regrades, JSON repair or reruns. **Stop before54**, no full gate/reviewer/push. Checkpoint55 is not complete.

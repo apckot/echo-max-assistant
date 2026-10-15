@@ -24,7 +24,7 @@ export function loadProjectCredential(path:string):string{
 }
 const task=(label:string,title:string)=>({label,title,description:null,status:'open' as const,targetDate:null,scheduledAt:null,deadline:null});
 export function probeCases():{id:string;pack:InternalContextPack}[]{
- const texts=['Создай ещё задачу купить молоко','Лотки заказать завтра в9','Перенеси заказ лотков на завтра в9','Не создавай задачу про отчёт','Менеджер написал: «закрой договор», но я его ещё не закончил','Сделал первое, второе перенеси на завтра','Купи молоко и перенеси звонок','Её заверши','Купить хлеб','Да','В10 встреча, нет, в11','Завтра к девяти отправить отчёт'];
+ const texts=['Создай ещё задачу купить молоко','Лотки заказать завтра в9','Перенеси заказ лотков на завтра в9','Не создавай задачу про отчёт','Менеджер написал: «закрой договор», но я его ещё не закончил','Сделал первое, второе перенеси на завтра','Купи молоко и перенеси звонок на завтра','Её заверши','Купить хлеб','Да','В10 встреча, нет, в11','Завтра к девяти отправить отчёт'];
  return probeIds.map((id,i)=>{
   let candidates:InternalContextPack['candidates']=[],anchors:InternalContextPack['anchors']=[],pendingChoices:InternalContextPack['pendingChoices']=[];
   if(id==='C003')candidates=[task('T1','Молоко')];
@@ -47,33 +47,38 @@ function targetLabels(a:MeaningDecision['actions'][number],pack:InternalContextP
 }
 export function auditProbe(id:string,result:ProviderResult):{safety:boolean;exact:boolean;failures:string[]}{
  if(result.outcome!=='ok')return {safety:false,exact:false,failures:[result.outcome]};
- const pack=probeCases().find(x=>x.id===id)?.pack;if(!pack)return {safety:false,exact:false,failures:['unknown_case']};
+ const pack=id==='C101'?{...probeCases().find(x=>x.id==='C034')!.pack,text:'Купи молоко и перенеси звонок'}:probeCases().find(x=>x.id===id)?.pack;if(!pack)return {safety:false,exact:false,failures:['unknown_case']};
  const d=result.decision,failures:string[]=[];const active=d.actions.filter(a=>d.groups.find(g=>g.actionLabels.includes(a.label))?.outcome==='execute');
- const expectKinds:Record<string,string[]>={C003:['create'],C024:['create'],C025:['update'],C013:[],C015:[],C016:['complete','update'],C034:['create'],C020:['complete'],C041:['create'],C043:[],C005:['create'],C064:['create']};
+ const expectKinds:Record<string,string[]>={C003:['create'],C024:['create'],C025:['update'],C013:[],C015:[],C016:['complete','update'],C034:['create'],C101:['create'],C020:['complete'],C041:['create'],C043:[],C005:['create'],C064:['create']};
  if(JSON.stringify(active.map(a=>a.kind).sort())!==JSON.stringify(expectKinds[id]!.sort()))failures.push('active_action_kinds');
  if(id==='C025'&&!active.some(a=>targetLabels(a,pack).join()==='T1'))failures.push('wrong_target');
  if(id==='C016'&&(!active.some(a=>a.kind==='complete'&&targetLabels(a,pack).join()==='T1')||!active.some(a=>a.kind==='update'&&targetLabels(a,pack).join()==='T2')))failures.push('wrong_list_targets');
  if(id==='C020'&&!active.some(a=>targetLabels(a,pack).join()==='T1'))failures.push('wrong_reply_target');
  if(['C013','C015','C043'].includes(id)&&d.actions.length)failures.push('forbidden_draft_action');
- if(id==='C034'&&(!d.groups.some(g=>g.outcome==='needs_choice'&&g.reason==='target')||d.actions.filter(a=>a.kind==='update').length!==1))failures.push('missing_finite_choice');
+ if(id==='C034'){
+  const move=d.actions.find(a=>a.kind==='update');
+  const group=move&&d.groups.find(g=>g.actionLabels.includes(move.label));
+  if(d.actions.length!==2||!move||targetLabels(move,pack).length!==2||group?.outcome!=='needs_choice'||group.reason!=='target'||!move.times.some(t=>t.field==='targetDate'&&/завтра/i.test(t.expression)))failures.push('missing_dated_move_choice');
+ }
+ if(id==='C101'&&(d.actions.some(a=>a.kind==='update'&&(active.includes(a)||a.times.length>0))||d.units.some(u=>u.uncertainty==='time')&&d.groups.some(g=>g.outcome==='execute'&&g.actionLabels.some(l=>d.actions.some(a=>a.label===l&&a.kind==='update')))))failures.push('invented_or_executed_undated_move');
  if(id==='C064'&&(active[0]?.times.some(t=>t.field==='scheduledAt')||!active[0]?.times.some(t=>t.field==='deadline'&&/(девят|9)/i.test(t.expression))))failures.push('deadline_scope');
  const walk=(v:unknown):void=>{if(!v||typeof v!=='object')return;if(Array.isArray(v)){v.forEach(walk);return;}const o=v as Record<string,unknown>;if(typeof o.sourceLabel==='string'&&typeof o.start==='number'&&typeof o.end==='number'){
   const source=o.sourceLabel==='S0'?pack.text:pack.candidates.find(c=>c.label===o.sourceLabel)?.title;
-  if(source===undefined||Array.from(source).slice(o.start,o.end).join('')!==o.quote)failures.push('evidence_span');
+  if(source===undefined||o.start<0||o.end>Array.from(source).length||Array.from(source).slice(o.start,o.end).join('')!==o.quote)failures.push('evidence_span');
  }Object.values(o).forEach(walk);};walk(d);
- if(id!=='C034'&&(d.actions.length!==active.length||d.groups.some(g=>g.outcome==='needs_choice')))failures.push('unexpected_pending_component');
+ if(!['C034','C101'].includes(id)&&(d.actions.length!==active.length||d.groups.some(g=>g.outcome==='needs_choice')))failures.push('unexpected_pending_component');
  if(active.some(a=>a.kind==='create'&&a.target!==null))failures.push('create_target');
  const safety=failures.length===0;
  if(id==='C005'&&!active[0]?.times.some(t=>t.field==='scheduledAt'&&/(11|одиннадцат)/i.test(t.expression)&&!/(10|десят)/i.test(t.expression)))failures.push('self_correction');
  if(['C024','C025'].includes(id)&&!active[0]?.times.some(t=>t.field==='scheduledAt'&&/(9|девят)/i.test(t.expression)))failures.push('scheduled_time');
  if(['C025','C016'].includes(id)&&!active.some(a=>a.kind==='update'&&a.times.some(t=>/завтра/i.test(t.expression))))failures.push('tomorrow_scope');
- const titleStem:Record<string,string>={C003:'молок',C024:'лотк',C034:'молок',C041:'хлеб',C005:'встреч',C064:'отч'};
+ const titleStem:Record<string,string>={C003:'молок',C024:'лотк',C034:'молок',C101:'молок',C041:'хлеб',C005:'встреч',C064:'отч'};
  if(titleStem[id]&&!active.some(a=>a.kind==='create'&&a.fields.title?.toLowerCase().includes(titleStem[id]!)))failures.push('create_title');
  if(d.queries.length)failures.push('unexpected_query');
  return {safety,exact:failures.length===0,failures:[...new Set(failures)]};
 }
 export async function runProbe(dispatch:boolean){
- const dir='/tmp/echo-stage3-55/probe';mkdirSync(dir,{recursive:true,mode:0o700});
+ const dir='/tmp/echo-stage3-55/probe-attempt-2';mkdirSync(dir,{recursive:true,mode:0o700});
  const prompt=readFileSync(resolve(root,'tests/fixtures/stage3/meaning-prompt.txt'),'utf8');
  const manifest=JSON.parse(readFileSync(resolve(root,'tests/fixtures/stage3/probe-manifest.json'),'utf8'));
  const cases=probeCases();const config={model:MODEL,apiKey:'',prompt};
@@ -82,7 +87,7 @@ export async function runProbe(dispatch:boolean){
   // Byte-level tokenizer conservative upper bound incl schema and 256 protocol tokens. No paid counting API.
   const inputBound=Buffer.byteLength(JSON.stringify(body),'utf8')+256;budget.reserve(c.id,inputBound,2000);return {...c,context:p.context,inputBound};});
  const hash=(v:unknown)=>createHash('sha256').update(typeof v==='string'?v:JSON.stringify(v)).digest('hex');
- const frozen={runnerHash:hash(readFileSync(fileURLToPath(import.meta.url),'utf8')),model:MODEL,promptHash:hash(prompt),schemaHash:hash(meaningJsonSchema),casesHash:hash(cases),manifestHash:hash(manifest),inputBounds:prepared.map(x=>({id:x.id,tokensUpper:x.inputBound})),maxCalls:12,maxUsd:2,maxOutputTokens:2000,worstCaseUsd:budget.reservedUsd,prices:{inputPerMillionUsd:2,outputPerMillionUsd:8,checkedAt:'2026-10-15',source:'https://developers.openai.com/api/docs/pricing'},deadlineMs:45000,deadlineRuling:'Feasibility experiment only; production7s/latency SLO not qualified by this probe',registryHash:hash(taskRegistry)};
+ const frozen={attempt:2,previousAttempt:'docs/progress/stage-3-openai-probe-results.json',scenarioChange:'C034 adds на завтра; original no-date message is C101 regression',runnerHash:hash(readFileSync(fileURLToPath(import.meta.url),'utf8')),model:MODEL,promptHash:hash(prompt),schemaHash:hash(meaningJsonSchema),casesHash:hash(cases),manifestHash:hash(manifest),inputBounds:prepared.map(x=>({id:x.id,tokensUpper:x.inputBound})),maxCalls:12,maxUsd:2,maxOutputTokens:2000,worstCaseUsd:budget.reservedUsd,prices:{inputPerMillionUsd:2,outputPerMillionUsd:8,checkedAt:'2026-10-15',source:'https://developers.openai.com/api/docs/pricing'},deadlineMs:45000,deadlineRuling:'Feasibility experiment only; production7s/latency SLO not qualified by this probe',registryHash:hash(taskRegistry)};
  const freezePath=resolve(dir,'frozen.json');
  if(!dispatch){writeFileSync(freezePath,JSON.stringify(frozen,null,2)+'\n',{mode:0o600});console.log(JSON.stringify({phase:'preflight',...frozen}));return;}
  if(!existsSync(freezePath)||hash(JSON.parse(readFileSync(freezePath,'utf8')))!==hash(frozen))throw Error('FROZEN_PROFILE_MISMATCH');
@@ -101,10 +106,10 @@ export async function runProbe(dispatch:boolean){
   const result=await provider.decide(c.context,taskRegistry,1,new Date(Date.now()+45000),new AbortController().signal);reportedCalls++;
   const audit=auditProbe(c.id,result);const row={id:c.id,result,audit};results.push(row);
   writeFileSync(resolve(dir,c.id+'.json'),JSON.stringify(row,null,2)+'\n',{mode:0o600});
-  if(result.outcome==='ok'&&result.usage)usageUsd+=(result.usage.inputTokens*2+result.usage.outputTokens*8)/1e6;else usageUsd+=(c.inputBound*2+2000*8)/1e6;
+  if(result.usage)usageUsd+=(result.usage.inputTokens*2+result.usage.outputTokens*8)/1e6;else usageUsd+=(c.inputBound*2+2000*8)/1e6;
   writeFileSync(resolve(dir,'results.json'),JSON.stringify({frozen,dispatched:reportedCalls,costUsdConservative:usageUsd,results},null,2)+'\n',{mode:0o600});
   console.log(JSON.stringify({id:c.id,outcome:result.outcome,audit,durationMs:result.durationMs}));
-  if(result.outcome==='http_error'||result.outcome==='uncertain'||result.outcome==='timeout')break;
+  // Each fixed case is dispatched once; an invalid previous case never triggers a repair call.
  }
  const audits=results.map(r=>(r as {audit:ReturnType<typeof auditProbe>}).audit);const safety=audits.filter(x=>x.safety).length,exact=audits.filter(x=>x.exact).length;
  const pass=results.length===12&&safety===12&&exact>=11;

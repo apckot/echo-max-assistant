@@ -203,8 +203,8 @@
     {
       "id": "C034",
       "sourceAndMode": "B3/R",
-      "scenario": "«Купи молоко и перенеси звонок»;2 звонка",
-      "oracle": "Create молоко;B=1 звонки;no partial move/rollback milk"
+      "scenario": "«Купи молоко и перенеси звонок на завтра»;2 звонка",
+      "oracle": "Create молоко independently; saved Update draft targetDate tomorrow in needs_choice group, two grounded targets; no move before choice"
     },
     {
       "id": "C035",
@@ -601,6 +601,12 @@
       "sourceAndMode": "N/R regression",
       "scenario": "pending3choices;user«Сохрани отдельно поездку; со старыми вариантами позже разберёмся»",
       "oracle": "Createпоездка1;noneof3choicesconsumed;normalreplywithoutbuttons"
+    },
+    {
+      "id": "C101",
+      "sourceAndMode": "B3/R regression",
+      "scenario": "«Купи молоко и перенеси звонок»;2 звонка, no destination date/time",
+      "oracle": "Create milk; no executable move after task choice alone; no invented destination; preserve unresolved component"
     }
   ]
 }

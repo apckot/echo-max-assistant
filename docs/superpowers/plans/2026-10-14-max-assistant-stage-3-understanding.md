@@ -50,7 +50,7 @@ Review focus: (1) отрицание в цитируемом title против 
 
 ### 51. Meaning contract и замороженные сценарии
 **Файлы:** src/modules/semantic/domain/meaning-decision.ts, src/modules/semantic/application/provider-port.ts; tests/unit/semantic/meaning-contract.test.ts; tests/fixtures/stage3/{regressions.json,probe-manifest.json}; docs/runbooks/stage-3-provider-admission.md.
-**Результат:** strict MeaningDecisionV1, ProviderContext/ProviderResult и registry, C001–C100 regression oracle. Контроль H001–H020 отдельно, frozen hash до настройки, без доступа prompt tuning; независимый источник/владелец и приватный oracle фиксируются в manifest, не выдаются за готовые фактические данные.
+**Результат:** strict MeaningDecisionV1, ProviderContext/ProviderResult и registry, C001–C101 regression oracle. Контроль H001–H020 отдельно, frozen hash до настройки, без доступа prompt tuning; независимый источник/владелец и приватный oracle фиксируются в manifest, не выдаются за готовые фактические данные.
 - [ ] RED S01/S20: unknown keys/refs, evidence code points,21 actions, negative/quoted units, local labels и relation scope.
 - [ ] Материализовать12 probe cases из корпуса; зафиксировать source/anchors/pending context, exact oracles, версии/hash и лимиты12 calls/USD2/12000input/2000output. Контроль не используется для разработки; отсутствие H отмечается как незавершённая независимая приёмка.
 - [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/semantic/meaning-contract.test.ts`; static; commit `feat(semantic): define meaning contract and regression oracles`.
@@ -211,3 +211,5 @@ S01→51/55/66; S02→53/55; S03→55/57/66; S04→54/55; S05→55/57/66; S06→
 Результат этого изменения — документы для принятия. Ни API probe, ни код, ни review agents сейчас не запускаются. Уточнённые указания владельца имеют приоритет над прежними обязательными local-model gates и рекомендациями skills о дополнительных агентах/прогонах.
 
 Принято владельцем2026-10-15. Разрешён только блок51–55, включая один ограниченный probe53; остальные блоки требуют отдельного разрешения.
+
+Дополнение к53 (разрешение владельца2026-10-15): один repair cycle (dated C034 плюс C101 без даты, prefix labels, invalid vs transport); replay сохранённых синтетических ответов/targeted tests; freeze attempt2; один полный проход12 на той же модели≤USD2. Первая попытка сохраняется FAIL. При втором FAIL остановка до54, без gate/новой модели/дополнительного probe.

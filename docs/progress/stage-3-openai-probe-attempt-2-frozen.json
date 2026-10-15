@@ -1,0 +1,74 @@
+{
+  "attempt": 2,
+  "previousAttempt": "docs/progress/stage-3-openai-probe-results.json",
+  "scenarioChange": "C034 adds на завтра; original no-date message is C101 regression",
+  "runnerHash": "0bd7831c6c034ddf69826dfdca639426129ba1663086a60d34c1a88d11ea03dc",
+  "model": "gpt-4.1-2025-04-14",
+  "promptHash": "8bc1d6ce56f95ecea974647dd1818bb71c37c329f1233282e133b7c78f869e6c",
+  "schemaHash": "73dea296996f45651836e68990ecffbfd62f5fbb68969de1c0a6f0d39e97cebe",
+  "casesHash": "1494c06a77fcb901f3e38f625dd3827910b6c4124514ced4aea340dd25863d90",
+  "manifestHash": "b8a84341954ff7f2bbb30c34496e41924684688ee108ac2cf51338dd5de9c578",
+  "inputBounds": [
+    {
+      "id": "C003",
+      "tokensUpper": 10368
+    },
+    {
+      "id": "C024",
+      "tokensUpper": 10365
+    },
+    {
+      "id": "C025",
+      "tokensUpper": 10383
+    },
+    {
+      "id": "C013",
+      "tokensUpper": 10217
+    },
+    {
+      "id": "C015",
+      "tokensUpper": 10421
+    },
+    {
+      "id": "C016",
+      "tokensUpper": 10600
+    },
+    {
+      "id": "C034",
+      "tokensUpper": 10564
+    },
+    {
+      "id": "C020",
+      "tokensUpper": 10393
+    },
+    {
+      "id": "C041",
+      "tokensUpper": 10603
+    },
+    {
+      "id": "C043",
+      "tokensUpper": 10585
+    },
+    {
+      "id": "C005",
+      "tokensUpper": 10198
+    },
+    {
+      "id": "C064",
+      "tokensUpper": 10223
+    }
+  ],
+  "maxCalls": 12,
+  "maxUsd": 2,
+  "maxOutputTokens": 2000,
+  "worstCaseUsd": 0.44183999999999996,
+  "prices": {
+    "inputPerMillionUsd": 2,
+    "outputPerMillionUsd": 8,
+    "checkedAt": "2026-10-15",
+    "source": "https://developers.openai.com/api/docs/pricing"
+  },
+  "deadlineMs": 45000,
+  "deadlineRuling": "Feasibility experiment only; production7s/latency SLO not qualified by this probe",
+  "registryHash": "4434be4150c979ef700b8ef862a6c8cf5755cf65c7fd347a5e4be6b23dd153e3"
+}

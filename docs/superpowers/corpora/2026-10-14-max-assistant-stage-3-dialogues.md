@@ -1,6 +1,6 @@
 # Stage3 — корпус диалогов и голосовой manifest
 
-Дата2026-10-14. Это обезличенные oracle-сценарии для реализации/eval, **не результаты проверок**. Нет private production payloads или audio files. C001–C100 — регрессионные сценарии, доступные разработчику и допускаемые для настройки. C081–C100 также регрессионные: прежнее название holdout снято. Независимая контрольная выборка H001–H020 хранится отдельно от regression/prompt fixtures; её примеры и результаты не используются для настройки, порядок определён ниже. Fixtures в будущем материализуются из этих описаний в изолированной PG, с hash/version manifest. Исходные natural-language cases отдельно от injected provider/fault/privacy assertions; знаменатели не смешивать.
+Дата2026-10-14. Это обезличенные oracle-сценарии для реализации/eval, **не результаты проверок**. Нет private production payloads или audio files. C001–C101 — регрессионные сценарии, доступные разработчику и допускаемые для настройки. C081–C100 также регрессионные: прежнее название holdout снято. Независимая контрольная выборка H001–H020 хранится отдельно от regression/prompt fixtures; её примеры и результаты не используются для настройки, порядок определён ниже. Fixtures в будущем материализуются из этих описаний в изолированной PG, с hash/version manifest. Исходные natural-language cases отдельно от injected provider/fault/privacy assertions; знаменатели не смешивать.
 
 ## Источники и адаптация
 
@@ -12,7 +12,7 @@
 
 Общее: user A, conversation A; source2026-09-11T12:48:33Z, Europe/Moscow (local15:48 Friday), unless overridden. T1/T2 — fixture aliases для разных Task UUID, open/v1 по умолчанию. «Создать N» означает ровно N Tasks/create events; «изменить Ti» — только тот UUID,+1/event; no_change/replay —0 events. Остальные Tasks неизменны. B=число choice components (не кнопок); если B не указан, B=0. Любой ответ о применении строится из committed receipts. Многошаговая строка проверяется после **каждой** реплики; не только итог.
 
-Режимы: R — реальный OpenAI semantic provider (no injected result); V — fake validated provider output/validator adversary; F — fault/concurrency integration; P — local privacy assertion. Real-text full corpus проходит R cases, остальные фиксированные guards идут default tests без внешних calls. Полный corpus manifest содержит все100; отсутствие обязательного guard означает corpus gate incomplete. Precision/recall/first-turn score считается только по R supported task cases; unsupported/quote/query имеют отдельные знаменатели. Safety assertions обязательны во всех режимах.
+Режимы: R — реальный OpenAI semantic provider (no injected result); V — fake validated provider output/validator adversary; F — fault/concurrency integration; P — local privacy assertion. Real-text full corpus проходит R cases, остальные фиксированные guards идут default tests без внешних calls. Полный corpus manifest содержит все101; отсутствие обязательного guard означает corpus gate incomplete. Precision/recall/first-turn score считается только по R supported task cases; unsupported/quote/query имеют отдельные знаменатели. Safety assertions обязательны во всех режимах.
 
 |ID|Источник/режим|Предусловие и последовательность|Точный oracle|
 |---|---|---|---|
@@ -49,7 +49,7 @@
 |C031|B3/R|T1 completed/v2; «Исправь название завершённого отчёта»|invalid_transition, no silent Reopen|
 |C032|B3/R|T1 completed/v2; «Верни отчёт и переименуй в Финальный»|One atomic Reopen+UpdateT1 ->v4/2events|
 |C033|B3/R|«Создай подготовку вопросов и переименуй её в Вопросы интервью»|One Create+local Update ->oneTaskv2|
-|C034|B3/R|«Купи молоко и перенеси звонок»;2 звонка|Create молоко;B=1 звонки;no partial move/rollback milk|
+|C034|B3/R|«Купи молоко и перенеси звонок на завтра»;2 звонка|Независимый Create молоко; Update draft с targetDate завтра в needs_choice группе, actionLabels ссылается на draft, варианты двух звонков;0 фактических переносов до выбора|
 |C035|B3/R|«Заверши отчёт и создай отправку документа»; exactT1|CompleteT1+Create1 independent groups; truthful both outcomes|
 |C036|N/V|sameTask Update+Cancel split into allegedly independent groups|Combine related component or reject before writes;no half-effect|
 |C037|N/V|Create+unknown created label/cycle in samegroup|Reject component, no earlier Create|
@@ -116,6 +116,7 @@
 |C098|N/R regression|«Позвонить завтра. Нет, это я цитирую старое сообщение, ничего не сохраняй»|0Tasks;finalselfcorrection applieswholequotedaction|
 |C099|N/R regression|«Перенеси встречу из ответа неделю назад»; exactreplyTaskT1outside48h|ResolveexactreplyT1;no broadhistorydump/secondAI|
 |C100|N/R regression|pending3choices;user«Сохрани отдельно поездку; со старыми вариантами позже разберёмся»|Createпоездка1;noneof3choicesconsumed;normalreplywithoutbuttons|
+|C101|B3/R regression|«Купи молоко и перенеси звонок»;2 звонка, дата/время назначения отсутствуют|Create молоко независимо; перенос остаётся неисполненным. Выбора звонка недостаточно: нельзя выдумывать дату или выполнять пустой Update. Нужно новое явное указание времени/даты; не ambient capture нового ввода|
 
 C084 deliberately ambiguous, correct unresolved component is the oracle; first-turn success denominator excludes its ambiguous component but requires saving independent analysis. C085 absolute date is2026-09-16. C095 refers to assigned Task dates, not completion timestamp: use existing Stage2 day/status query, never foreign SQL.
 
@@ -131,7 +132,7 @@ Privacy suite expands C071–C078 детерминированными пров�
 
 ## Независимая контрольная выборка H001–H020
 
-Контроль не составляется из переименованных C001–C100, их перефразирования после просмотра ошибок или probe outputs. До настройки на51 фиксируется отдельный приватный manifest20 случаев независимого источника (владелец или заранее неиспользованные обезличенные диалоги), hash/input/oracle/source timestamp/context fixtures и provenance; snippets не входят в prompt examples/development fixtures. Реальных private production payloads в OpenAI control быть не должно. Состав:4create,4update,4lifecycle,4query/negative/quote и4multi-action; среди них есть previous-task reference и new input/old choice. Categories overlap для safety flags, но основной знаменатель20 unique cases.
+Контроль не составляется из переименованных C001–C101, их перефразирования после просмотра ошибок или probe outputs. До настройки на51 фиксируется отдельный приватный manifest20 случаев независимого источника (владелец или заранее неиспользованные обезличенные диалоги), hash/input/oracle/source timestamp/context fixtures и provenance; snippets не входят в prompt examples/development fixtures. Реальных private production payloads в OpenAI control быть не должно. Состав:4create,4update,4lifecycle,4query/negative/quote и4multi-action; среди них есть previous-task reference и new input/old choice. Categories overlap для safety flags, но основной знаменатель20 unique cases.
 
 Executor не использует H inputs/outputs для настройки модели/prompt/Privacy/порогов. Corpus runner открывает их только на финальном checkpoint70 после freeze, один запрос/case, сохраняет report отдельно от регрессий. Safety100%, exact-effect≥90% (≥18/20); малый размер и category counts публикуются, это не precision estimate с высокой статистической достоверностью. Если независимые fixtures отсутствуют, отметить quality evidence incomplete, не считать C081–C100 заменой. Результаты не используются для выбора лучшего из нескольких профилей. После раскрытия ошибки для ремонта случай становится регрессионным; повторный независимый gate требует новой контрольной выборки и согласованного бюджета.
 
@@ -163,3 +164,5 @@ Audio manifest (private outside Git): opaque Axxx ID, recording consent/allowed 
 Clean STT WER denominator excludes deliberately corrupted A27/A28 и policy-denied A26; A23/A29 не входят в standard≤120s latency percentile; critical-span safety включает их. Разрешённые записи идут в OpenAI STT без предварительного local ASR; audio policy/consent проверяются до передачи файла. Собственное содержание и голоса не гарантированно классифицируются до отправки. Затем common text Privacy/semantic/Tasks pipeline. Неразрешённая запись не отправляется даже для теста; автоматического повторного голосового уточнения нет. Успешный external transcript не отменяет local text Privacy Gateway.
 
 Принято владельцем2026-10-15. Разрешён только блок51–55, включая один ограниченный probe53; остальные блоки требуют отдельного разрешения.
+
+Уточнение владельца2026-10-15: probe attempt2 меняет только C034 на фразу с «на завтра»; исходная фраза сохранена как C101. Первая попытка и её FAIL не переоцениваются задним числом. Модель прежняя, один новый проход12/≤USD2, без повторов.

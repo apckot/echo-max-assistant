@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "syntheticOnly": true,
   "caseIds": [
     "C003",
@@ -22,5 +22,7 @@
   "independentControl": {
     "status": "not_provided",
     "usedForTuning": false
-  }
+  },
+  "attempt": 2,
+  "scenarioChange": "C034 adds на завтра; original retained as regression C101"
 }

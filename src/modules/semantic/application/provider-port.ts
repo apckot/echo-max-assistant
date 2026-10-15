@@ -10,5 +10,10 @@ export interface InternalContextPack {
 export interface ProviderContext {readonly kind:'privacy_approved_v1';readonly pack:InternalContextPack;readonly route:'external_allowed'|'tokenized'}
 export interface ToolRegistryV1 {readonly version:1;readonly commands:readonly ['create','update','complete','cancel','reopen'];readonly queries:readonly ['open','day','find','history','capabilities']}
 export const taskRegistry:ToolRegistryV1={version:1,commands:['create','update','complete','cancel','reopen'],queries:['open','day','find','history','capabilities']};
-export type ProviderResult={readonly outcome:'ok';readonly decision:MeaningDecision;readonly model:string;readonly durationMs:number;readonly usage:{readonly inputTokens:number;readonly outputTokens:number}|null}|{readonly outcome:'denied'|'timeout'|'uncertain'|'http_error'|'invalid'|'refusal';readonly durationMs:number;readonly status?:number};
+export interface ProviderUsage {readonly inputTokens:number;readonly outputTokens:number}
+export type InvalidReason='response_size'|'response_json'|'response_shape'|'incomplete'|'missing_output'|'decision_json'|'meaning_schema'|'meaning_references';
+export type ProviderResult={readonly outcome:'ok';readonly decision:MeaningDecision;readonly model:string;readonly durationMs:number;readonly usage:ProviderUsage|null}
+ |{readonly outcome:'invalid';readonly reason:InvalidReason;readonly durationMs:number;readonly usage:ProviderUsage|null;readonly model?:string}
+ |{readonly outcome:'denied'|'timeout'|'uncertain'|'http_error'|'refusal';readonly durationMs:number;readonly status?:number;readonly usage?:ProviderUsage|null};
+
 export interface AiDecisionProvider {decide(context:ProviderContext,registry:ToolRegistryV1,schemaVersion:1,deadline:Date,signal:AbortSignal):Promise<ProviderResult>}
