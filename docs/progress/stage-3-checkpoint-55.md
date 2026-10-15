@@ -9,3 +9,9 @@ Preflight interfaces:51 MeaningDecision/ProviderContext→52 Privacy/OpenAI→53
 Strict MeaningDecisionV1 schema, graph references/group assignment/labels and Unicode span ranges; provider-neutral ports; materialised100 regression descriptions and12-case manifest. Ruling: wire optional scalar values use required nullable keys, collections empty arrays, to match OpenAI strict JSON Schema; equivalent absence semantics, no arbitrary extra fields. Independent H control not provided: explicitly incomplete, not invented or used for tuning; required only at final Stage3 quality acceptance.
 
 Targeted RED: missing meaning module. GREEN4/4; typecheck/architecture pass. Initial local Node24.18.0; checkpoint gate must use required Node22. No live provider calls. Evidence logs private /tmp/echo-stage3-55/51-*.log.
+
+## Iteration52
+
+Privacy allowlist rebuilds whole pack, known-value/email/phone/document/UUID masking and per-run SourceMap; policy/secret/check failure denies. Issued contexts use an in-memory capability and deep freeze; raw/forged contexts cannot invoke adapter. OpenAI Responses transport fixed official origin, redirects forbidden, store=false/strict schema, no retry; safe error codes. AES-GCM map envelope authenticates expiry; migration27 adds forced RLS, counts/cascade account erasure and bounded fenced expiration cleanup. No claim exhaustive PII detection. Schema-head expectations advance27.
+
+RED missing privacy/transport modules; GREEN6/6 (real isolated PG included), typecheck/architecture pass. Local Docker started only for tests. Node22.23.3 runtime installed through npm exec for checkpoint tooling; no server/deployment. Live provider calls0.
