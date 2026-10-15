@@ -1,0 +1,606 @@
+{
+  "version": 1,
+  "kind": "regression",
+  "cases": [
+    {
+      "id": "C001",
+      "sourceAndMode": "B2c01/R",
+      "scenario": "«Приготовить обед, забрать ребёнка из садика в три часа дня, отвезти его на кружок»",
+      "oracle": "Create3; pickup15:00 local (past допустим); время не переносится на остальные"
+    },
+    {
+      "id": "C002",
+      "sourceAndMode": "B1/R",
+      "scenario": "«Купить молоко»",
+      "oracle": "Create1 без дат; никаких choice"
+    },
+    {
+      "id": "C003",
+      "sourceAndMode": "B2/R",
+      "scenario": "T1 «Молоко»; «Создай ещё задачу купить молоко»",
+      "oracle": "Create1 distinct UUID; T1 unchanged; no semantic dedup choice"
+    },
+    {
+      "id": "C004",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Завтра отчёт, сегодня позвонить бухгалтеру, в воскресенье парикмахер в19»",
+      "oracle": "Create3 с11/12/13 сентября согласно собственным scopes;19:00 только у парикмахера"
+    },
+    {
+      "id": "C005",
+      "sourceAndMode": "B3/R",
+      "scenario": "«В10 встреча, нет, в11»",
+      "oracle": "Create1 scheduled11:00, не2 Tasks"
+    },
+    {
+      "id": "C006",
+      "sourceAndMode": "B4/R",
+      "scenario": "«Сегодня в16 часов сдать отчёт, в течение завтра сдать показания счётчиков, в воскресенье на19 записался к парикмахеру. Зафиксируй»",
+      "oracle": "Create3: scheduled13:00Z/target11; date-only12; scheduled16:00Z/target13; no missing-hour choice"
+    },
+    {
+      "id": "C007",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Вчера встреча закончилась; сегодня в10 интервью и в19 вокал; основные задачи напишу позже»; T1 «Встреча» yesterday",
+      "oracle": "CompleteT1; Create2 с собственными times; meta fragment не Task"
+    },
+    {
+      "id": "C008",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Сейчас9:30, задачи напишу позже»",
+      "oracle": "0 Tasks/choices, короткий context acknowledgement"
+    },
+    {
+      "id": "C009",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Фокус пока не определил»",
+      "oracle": "0 Tasks; не назначать focus"
+    },
+    {
+      "id": "C010",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Может, схожу на вокал; пока не планируй»",
+      "oracle": "0 Tasks; не inferred schedule"
+    },
+    {
+      "id": "C011",
+      "sourceAndMode": "B1/R",
+      "scenario": "«Если принял — ставь сердечко» (чужая цитата)",
+      "oracle": "0 Tasks; CTA не command"
+    },
+    {
+      "id": "C012",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Идею сохрани, делать пока не надо»",
+      "oracle": "0 Tasks; source retained, честно без memory-item обещания"
+    },
+    {
+      "id": "C013",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Не создавай задачу про отчёт»",
+      "oracle": "0 Tasks"
+    },
+    {
+      "id": "C014",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Не могу подтвердить, что договор готов»; T1 договор",
+      "oracle": "T1 unchanged; no complete"
+    },
+    {
+      "id": "C015",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Менеджер написал: “закрой договор”, но я его ещё не закончил»; T1 договор",
+      "oracle": "T1 unchanged; чужая цитата/отрицание не mutation"
+    },
+    {
+      "id": "C016",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Сделал первое, второе перенеси на завтра»; delivered anchor[T1 отчёт,T2 звонок]",
+      "oracle": "CompleteT1; moveT2 date12, own instant если есть переносится с сохранёнными local hours; чужой порядок не пересчитывать"
+    },
+    {
+      "id": "C017",
+      "sourceAndMode": "B1/R",
+      "scenario": "delivered text «1. Отчёт;2. Счётчики» mapsT1/T2; user копирует и добавляет «сделано»",
+      "oracle": "Complete2existing;0 Creates"
+    },
+    {
+      "id": "C018",
+      "sourceAndMode": "B1/V",
+      "scenario": "current «Отчёт сделан»; fake Create «Отчёт — пометить выполнено»",
+      "oracle": "Validator rejects completion artifact;0 Tasks/effects"
+    },
+    {
+      "id": "C019",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Всё сделано»;10 несвязанных открытыхTasks без bounded anchor",
+      "oracle": "0 complete; объяснить отсутствие ограниченной цели, не10 choices"
+    },
+    {
+      "id": "C020",
+      "sourceAndMode": "B3/R",
+      "scenario": "delivered anchor толькоT1; «Её заверши»",
+      "oracle": "CompleteT1; no confirmation"
+    },
+    {
+      "id": "C021",
+      "sourceAndMode": "B3/R",
+      "scenario": "previous outboxT1 pending/not_sent; «Её перенеси»",
+      "oracle": "Не использовать недоставленный anchor;0 mutation при отсутствии другого basis"
+    },
+    {
+      "id": "C022",
+      "sourceAndMode": "B3/R",
+      "scenario": "delivered previous[T1,T2]; «Её перенеси на завтра»",
+      "oracle": "B=1, optionsT1/T2;0 mutations"
+    },
+    {
+      "id": "C023",
+      "sourceAndMode": "B2c03/R",
+      "scenario": "T1 «Вокал» exact reply; «Перенеси вокал сегодня на19:30»",
+      "oracle": "UpdateT1 to16:30Z/source-day;0 Create"
+    },
+    {
+      "id": "C024",
+      "sourceAndMode": "B2c12/R",
+      "scenario": "T1 «Заказ лотков» существует; «Лотки заказать завтра в9» без mutation/ref",
+      "oracle": "Create1 scheduledAt2026-09-12T06:00:00Z/targetDate12; deadline отсутствует; T1 unchanged; legacy auto-update не переносить"
+    },
+    {
+      "id": "C025",
+      "sourceAndMode": "B2/R",
+      "scenario": "T1 «Лотки»; «Перенеси заказ лотков на завтра в9»",
+      "oracle": "UpdateT1 scheduled06:00Z/12 сентября;0 Create"
+    },
+    {
+      "id": "C026",
+      "sourceAndMode": "B2/R",
+      "scenario": "T1/T2 «Звонок» с разными адресатами; «Перенеси звонок на понедельник»",
+      "oracle": "B=1 options2withqualifiers, no guessed target"
+    },
+    {
+      "id": "C027",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Перенеси встречу с архитектором»;0matches",
+      "oracle": "not_found explanation;0 Create/choice"
+    },
+    {
+      "id": "C028",
+      "sourceAndMode": "B3/R",
+      "scenario": "Task outside initial50 pack, title+date exact query; «Заверши договор за10 сентября»",
+      "oracle": "Bounded resolver finds exactTi, Complete;1AI max"
+    },
+    {
+      "id": "C029",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Отмени звонок»; T1 cancelled/v2",
+      "oracle": "no_changeT1;0 event; no Create"
+    },
+    {
+      "id": "C030",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Верни отменённый созвон»; T1 cancelled/v2 single",
+      "oracle": "ReopenT1/v3 sameUUID/dates"
+    },
+    {
+      "id": "C031",
+      "sourceAndMode": "B3/R",
+      "scenario": "T1 completed/v2; «Исправь название завершённого отчёта»",
+      "oracle": "invalid_transition, no silent Reopen"
+    },
+    {
+      "id": "C032",
+      "sourceAndMode": "B3/R",
+      "scenario": "T1 completed/v2; «Верни отчёт и переименуй в Финальный»",
+      "oracle": "One atomic Reopen+UpdateT1 ->v4/2events"
+    },
+    {
+      "id": "C033",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Создай подготовку вопросов и переименуй её в Вопросы интервью»",
+      "oracle": "One Create+local Update ->oneTaskv2"
+    },
+    {
+      "id": "C034",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Купи молоко и перенеси звонок»;2 звонка",
+      "oracle": "Create молоко;B=1 звонки;no partial move/rollback milk"
+    },
+    {
+      "id": "C035",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Заверши отчёт и создай отправку документа»; exactT1",
+      "oracle": "CompleteT1+Create1 independent groups; truthful both outcomes"
+    },
+    {
+      "id": "C036",
+      "sourceAndMode": "N/V",
+      "scenario": "sameTask Update+Cancel split into allegedly independent groups",
+      "oracle": "Combine related component or reject before writes;no half-effect"
+    },
+    {
+      "id": "C037",
+      "sourceAndMode": "N/V",
+      "scenario": "Create+unknown created label/cycle in samegroup",
+      "oracle": "Reject component, no earlier Create"
+    },
+    {
+      "id": "C038",
+      "sourceAndMode": "N/V",
+      "scenario": "invalid overall JSON/unknown node label, one apparently valid Create",
+      "oracle": "0 domain effects;no salvage/repairAI"
+    },
+    {
+      "id": "C039",
+      "sourceAndMode": "N/V",
+      "scenario": "valid frame: independentCreate plus uncertain mutation",
+      "oracle": "Create persists; uncertaincomponentno effect/B iffinite"
+    },
+    {
+      "id": "C040",
+      "sourceAndMode": "N/V",
+      "scenario": "21 actions in input/model frame",
+      "oracle": "bounded limit refusal; no first20 apply or silent truncation"
+    },
+    {
+      "id": "C041",
+      "sourceAndMode": "B3/R",
+      "scenario": "pendingChoice звонок; new «Купить хлеб»",
+      "oracle": "Create хлеб independently; old choice not consumed"
+    },
+    {
+      "id": "C042",
+      "sourceAndMode": "B3/R",
+      "scenario": "pendingChoice звонок; new voice transcript «В19 вокал»",
+      "oracle": "Create vocal; old choice unchanged"
+    },
+    {
+      "id": "C043",
+      "sourceAndMode": "B3/R",
+      "scenario": "pendingChoice2; new unbound «Да»",
+      "oracle": "0 mutation; not accept old choice"
+    },
+    {
+      "id": "C044",
+      "sourceAndMode": "B3/R",
+      "scenario": "pendingChoice2; new unbound «Второй»",
+      "oracle": "0 mutation; not choose old option"
+    },
+    {
+      "id": "C045",
+      "sourceAndMode": "B3/R",
+      "scenario": "pendingChoice2; explicit reply to choice «Нет, перенеси только звонок Илье»",
+      "oracle": "New turn explicit mutation/groundedtarget; supersede old component after commit; no ambient capture"
+    },
+    {
+      "id": "C046",
+      "sourceAndMode": "N/F",
+      "scenario": "Choice revision1 superseded by2; callbacktokenrev1",
+      "oracle": "0 effect, stale choice response"
+    },
+    {
+      "id": "C047",
+      "sourceAndMode": "N/F",
+      "scenario": "callbacksamebody replay after successfuloption",
+      "oracle": "same consumption outcome,0newTaskevent/outboxbusinessintent"
+    },
+    {
+      "id": "C048",
+      "sourceAndMode": "N/F",
+      "scenario": "sameoption token clicked with newcallbackId",
+      "oracle": "0second effect, bound already-consumed receipt"
+    },
+    {
+      "id": "C049",
+      "sourceAndMode": "N/F",
+      "scenario": "B user/conversation submitsA token",
+      "oracle": "deny,0cross-tenant read/mutation"
+    },
+    {
+      "id": "C050",
+      "sourceAndMode": "N/F",
+      "scenario": "choiceTask changed version beforeclick",
+      "oracle": "version_conflict;no latest-version overwrite"
+    },
+    {
+      "id": "C051",
+      "sourceAndMode": "N/F",
+      "scenario": "expired24h choice",
+      "oracle": "no effect;clear expiry answer"
+    },
+    {
+      "id": "C052",
+      "sourceAndMode": "N/R",
+      "scenario": "«Покажи открытые задачи»",
+      "oracle": "TaskQueries.open actualstate/read only, deterministic reply"
+    },
+    {
+      "id": "C053",
+      "sourceAndMode": "N/R",
+      "scenario": "«Что у меня сегодня?»",
+      "oracle": "Stage2 day source-local date, open default;no Task/AI style call"
+    },
+    {
+      "id": "C054",
+      "sourceAndMode": "B2c08/R",
+      "scenario": "«Привет, что ты умеешь?»",
+      "oracle": "Capabilities,0 Tasks;no forced clarification"
+    },
+    {
+      "id": "C055",
+      "sourceAndMode": "N/R",
+      "scenario": "«Какая завтра погода?»",
+      "oracle": "capability_unavailable;0 Tasks/buttons"
+    },
+    {
+      "id": "C056",
+      "sourceAndMode": "B2c10/R",
+      "scenario": "«Напоминай каждый вторник в18»",
+      "oracle": "reminders unavailable, noTask/recurrence promise"
+    },
+    {
+      "id": "C057",
+      "sourceAndMode": "N/R",
+      "scenario": "«Создай звонок завтра и напомни зачас»",
+      "oracle": "Create звонок; separate unavailable reminder; answer distinguishes"
+    },
+    {
+      "id": "C058",
+      "sourceAndMode": "B2c07/R",
+      "scenario": "«Объедини два звонка и перенеси»",
+      "oracle": "merge unsupported;dependent move blocked;0 guessing/delete"
+    },
+    {
+      "id": "C059",
+      "sourceAndMode": "N/R",
+      "scenario": "«Перенеси всё из календаря»",
+      "oracle": "calendar unsupported;0 Tasks"
+    },
+    {
+      "id": "C060",
+      "sourceAndMode": "B2c11/R",
+      "scenario": "foreign quoted assignment+table/subpoints, no owner command",
+      "oracle": "0 owner mutations; not extract all imperatives"
+    },
+    {
+      "id": "C061",
+      "sourceAndMode": "B3/R",
+      "scenario": "Friday source «Во вторник в10 интервью»",
+      "oracle": "nextTuesday15 сентября07:00Z, no exact-date guessing fromretry"
+    },
+    {
+      "id": "C062",
+      "sourceAndMode": "N/F",
+      "scenario": "source23:59 local11сентября; retry12сентября; «Завтра звонок»",
+      "oracle": "targetDate12, same accepteddecision replay; not13"
+    },
+    {
+      "id": "C063",
+      "sourceAndMode": "N/R",
+      "scenario": "«До16 сентября сдать отчёт»",
+      "oracle": "Create dueDate16;no scheduledAt23:59"
+    },
+    {
+      "id": "C064",
+      "sourceAndMode": "N/R",
+      "scenario": "«Завтра к девяти отправить отчёт»; равнозначный вариант «завтра к9»",
+      "oracle": "Create deadline.at2026-09-12T06:00:00Z (09:00 Moscow); scheduledAt отсутствует, targetDate12 из явного завтра; B=0"
+    },
+    {
+      "id": "C065",
+      "sourceAndMode": "N/R",
+      "scenario": "sourceBerlin2026-03-28; «Завтра встреча в2:30»",
+      "oracle": "nonexistent local time;0 instant effect;not3:30silent"
+    },
+    {
+      "id": "C066",
+      "sourceAndMode": "N/R",
+      "scenario": "sourceBerlin2026-10-24; «Завтра встреча в2:30»",
+      "oracle": "B=1 twovalid offsets;0 guessed time"
+    },
+    {
+      "id": "C067",
+      "sourceAndMode": "N/R",
+      "scenario": "«29 февраля2028 позвонить»",
+      "oracle": "Create validdate;«31 февраля2028» variant rejected0effect"
+    },
+    {
+      "id": "C068",
+      "sourceAndMode": "N/R",
+      "scenario": "T1 scheduled10:00 today; «Поменяй только дату списка на завтра, время встречи не трогай»",
+      "oracle": "targetDate12 only, scheduledAt unchanged"
+    },
+    {
+      "id": "C069",
+      "sourceAndMode": "B3/R",
+      "scenario": "«Встреча была вчера, не переноси»; exactT1",
+      "oracle": "No schedule mutation/automatic rollover"
+    },
+    {
+      "id": "C070",
+      "sourceAndMode": "N/R",
+      "scenario": "«Купить хлеб завтра; отчёт до пятницы»",
+      "oracle": "Shared scope not borrowed: bread12; dueDate nearestFriday11 by sourceweekdayrule"
+    },
+    {
+      "id": "C071",
+      "sourceAndMode": "N/P",
+      "scenario": "known local profile name «Анна»; owner «Позвонить Анне по+70000000000»",
+      "oracle": "Names/phone tokenized before external; actual local Task restored;0mapping/IDleaks"
+    },
+    {
+      "id": "C072",
+      "sourceAndMode": "N/P",
+      "scenario": "Task candidate contains email user@example.test; currentquery neutral",
+      "oracle": "Classify/minimizecandidate too, not only current input"
+    },
+    {
+      "id": "C073",
+      "sourceAndMode": "N/P",
+      "scenario": "Current source явно помечен sensitive/health policy либо содержит запрещённый configured marker",
+      "oracle": "denied до OpenAI;0dispatch/0effect, понятный отказ; не универсальный detector здоровья"
+    },
+    {
+      "id": "C074",
+      "sourceAndMode": "N/P",
+      "scenario": "Два snippets содержат известные локально person/employer/address identifiers; policy запрещает передачу сочетания",
+      "oracle": "Общий pack минимизируется/known values заменяются метками либо denied; raw сочетание не передаётся. Для неизвестной косвенной реидентификации гарантия detection не заявляется"
+    },
+    {
+      "id": "C075",
+      "sourceAndMode": "N/P",
+      "scenario": "Детерминированная проверка/SourceMap падает либо policy требует отсутствующего полного content analysis",
+      "oracle": "denied/безопасный отказ;0network classify/semantic effect; отсутствие локальной модели не блокирует другие разрешённые маршруты"
+    },
+    {
+      "id": "C076",
+      "sourceAndMode": "N/V",
+      "scenario": "provider returnsunknownTOKEN/tasklabel orpreviousrunlabel",
+      "oracle": "reject rehydration;0effect;no raw errorfeedbacksecondcall"
+    },
+    {
+      "id": "C077",
+      "sourceAndMode": "N/P",
+      "scenario": "Proper names masked; negation/date/reference relationship lost duringminimization",
+      "oracle": "denied,0AI/effect, не weakmaskedmutation"
+    },
+    {
+      "id": "C078",
+      "sourceAndMode": "N/P",
+      "scenario": "Нет audio opt-in/разрешённого profile, metadata looks harmless; вариант declared prohibited content",
+      "oracle": "denied до STT;0externalSTT; текстовое разрешение/codec не заменяют audio policy"
+    },
+    {
+      "id": "C079",
+      "sourceAndMode": "N/F",
+      "scenario": "alreadydurable transcript, workerrestart",
+      "oracle": "reuseexacttranscript;0secondSTT;oneeffect"
+    },
+    {
+      "id": "C080",
+      "sourceAndMode": "N/F",
+      "scenario": "precommitdisconnect, postcommitlostACK, finalizercrash three variants",
+      "oracle": "rollback/replayoriginal/groupcontinuation;no duplicateeffects/finaloutbox"
+    },
+    {
+      "id": "C081",
+      "sourceAndMode": "B3/R regression",
+      "scenario": "«Подготовить смету, договор не закрывай, а у звонка завтра поменяй время на11»;T1договор/T2звонок",
+      "oracle": "Createсмета;T1unchanged;UpdateT2explicit11;negative span notlost"
+    },
+    {
+      "id": "C082",
+      "sourceAndMode": "B3/R regression",
+      "scenario": "delivered replyT1 счёт;«Тот, что прислал, оплачен; теперь нужно скачать чек»",
+      "oracle": "CompleteT1+Createчек;notmoneytransfer/billingoperation"
+    },
+    {
+      "id": "C083",
+      "sourceAndMode": "B3/R regression",
+      "scenario": "«Пока не нужно ничего заводить. Я думаю между выставкой и поездкой»",
+      "oracle": "0Tasks/buttons;notfinitechoicebecause noaction intent"
+    },
+    {
+      "id": "C084",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Создай: анализ рынка и звонок. Если звонок нельзя перенести, анализ всё равно сохрани»;existing2звонка",
+      "oracle": "Whole utterance conflicting create/move звонок => unresolved звонок component;Createанализ1, no guessed secondCreate/move"
+    },
+    {
+      "id": "C085",
+      "sourceAndMode": "B3/R regression",
+      "scenario": "exactreplyT1;«На следующую среду, а название оставь»",
+      "oracle": "UpdateT1schedule/date2026-09-16;titleunchanged;noCreate"
+    },
+    {
+      "id": "C086",
+      "sourceAndMode": "B3/R regression",
+      "scenario": "Deliveredlist[T1,T2], thennewTaskT3changescurrentSQLsort; «Закрой второй из присланного списка»",
+      "oracle": "CompleteT2 fromfrozenanchor;T1/T3unchanged"
+    },
+    {
+      "id": "C087",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Встречу с инженером отменяем, на вторник новую с дизайнером»;T1engineer",
+      "oracle": "CancelT1+Createindependentdesigner15сентября; preservedifferent participants"
+    },
+    {
+      "id": "C088",
+      "sourceAndMode": "B3/R regression",
+      "scenario": "T1cancelled;«Эту отмену пока не откатывай; скажи, когда мы её отменили»",
+      "oracle": "ReadhistoryT1;noReopen"
+    },
+    {
+      "id": "C089",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Оба отчёта готовы»;qualified deliveredanchorT1/T2twoownedreports",
+      "oracle": "Completeboth;no genericconfirmation"
+    },
+    {
+      "id": "C090",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Встреча не закончена, закончена только подготовка»;T1meeting/T2prep",
+      "oracle": "CompleteT2;T1unchanged"
+    },
+    {
+      "id": "C091",
+      "sourceAndMode": "N/R regression",
+      "scenario": "T1deadline14;«Убери срок, само дело оставь»",
+      "oracle": "Clear deadline only, sameUUID/title/status"
+    },
+    {
+      "id": "C092",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Завтра дел не добавляй, покажи уже назначенные»",
+      "oracle": "Queryday12 only;noCreate"
+    },
+    {
+      "id": "C093",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Не напоминай — просто запиши купить батарейки»",
+      "oracle": "Create1;no reminder cap message/choice unless asked"
+    },
+    {
+      "id": "C094",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Удалить задачу Звонок клиенту»;exactT1",
+      "oracle": "Cancel recoverable, not hardDELETE"
+    },
+    {
+      "id": "C095",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Покажи завершённые дела, назначенные на сегодня»",
+      "oracle": "ReadDay/statuscompleted/source-day predicates;0 mutations"
+    },
+    {
+      "id": "C096",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«В четверг нужно сдать акт, а встреча в четверг уже состоялась»;T1sameentitydatepriorThursday",
+      "oracle": "Createact nearest17; CompleteT1pastThursday10 fromassertedexistingmeeting result; scopes notborrowed"
+    },
+    {
+      "id": "C097",
+      "sourceAndMode": "N/R regression",
+      "scenario": "exactTasktitle contains«не закрывать отчёт»;user«Отмени задачу “не закрывать отчёт”»",
+      "oracle": "Cancel exactTask;negation insidequotedtitle notnegationofownercommand"
+    },
+    {
+      "id": "C098",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Позвонить завтра. Нет, это я цитирую старое сообщение, ничего не сохраняй»",
+      "oracle": "0Tasks;finalselfcorrection applieswholequotedaction"
+    },
+    {
+      "id": "C099",
+      "sourceAndMode": "N/R regression",
+      "scenario": "«Перенеси встречу из ответа неделю назад»; exactreplyTaskT1outside48h",
+      "oracle": "ResolveexactreplyT1;no broadhistorydump/secondAI"
+    },
+    {
+      "id": "C100",
+      "sourceAndMode": "N/R regression",
+      "scenario": "pending3choices;user«Сохрани отдельно поездку; со старыми вариантами позже разберёмся»",
+      "oracle": "Createпоездка1;noneof3choicesconsumed;normalreplywithoutbuttons"
+    }
+  ]
+}

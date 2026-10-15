@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "syntheticOnly": true,
+  "caseIds": [
+    "C003",
+    "C024",
+    "C025",
+    "C013",
+    "C015",
+    "C016",
+    "C034",
+    "C020",
+    "C041",
+    "C043",
+    "C005",
+    "C064"
+  ],
+  "maxCalls": 12,
+  "maxUsd": 2,
+  "maxInputTokens": 12000,
+  "maxOutputTokens": 2000,
+  "independentControl": {
+    "status": "not_provided",
+    "usedForTuning": false
+  }
+}
