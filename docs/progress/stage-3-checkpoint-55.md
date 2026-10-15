@@ -49,3 +49,13 @@ Owner accepted quote-only contract and authorised exactly one third pass of12sam
 Целевая проверка: `vitest run tests/functional/context/context-pack.test.ts` —3 PASS (до реализации RED: отсутствующий ContextBuilder); typecheck и architecture PASS. Полный gate не запускался.
 
 Ruling54: token-budget пока проверяется консервативной верхней границей UTF-8 bytes (один byte не меньше одного возможного token), вместо приближённого деления по символам. Это сохраняет жёсткие пределы, но может раньше отказать на длинном контексте. Полный current source не обрезается. Exact anchors, не помещающиеся в50 candidates/3 TaskQueries requests, дают явный отказ; список не заменяется текущим SQL порядком. Runtime/coordinator подключается только в56.
+
+### Итерация55
+
+Добавлен один структурный/evidence/intent validator с локальным блокированием связанного компонента; ошибочный общий frame отклоняется целиком. Проверяются реальные code-point диапазоны, owner/polarity/modality, цитата/отрицание/отзыв, Create против mutation, тип mutation, пустое изменение, lifecycle fields, ссылки created/циклы и группы одной цели. Валидированный объект выдаётся только validator; дальнейшее разрешение принимает его capability. Тавтология same_target(u1,u1) не выдаёт полномочий и не связывает независимые действия.
+
+TargetResolver использует frozen labels/UUID/version и доставленный порядок, bounded public TaskQueries search:0/1/2–5/>5, до3 запросов/turn и1/component (повтор того же поиска использует локальный результат). Разные основания одной фактической цели объединяются перед будущими effects. TemporalNormalizer возвращает DTO полей, не пишет Tasks: source-local today/tomorrow/weekday, русские календарные даты/leap validity, deadline date/instant отдельно от schedule; gap отказ, fold конечный выбор реальных offsets. «К девяти» остаётся сроком на source day, даже если он прошёл. Неизвестная форма отказывает, не переносит время автоматически. Даты/поля не исправляются за модель.
+
+RED: отсутствующие validator/resolver/normalizer; дополнительные RED доказывают mutation-kind mismatch, выдуманную дату, completion artifact и русскую явную дату. GREEN:3 functional semantic files14PASS плюс3 существующих temporal assertions =17PASS; typecheck/architecture PASS. Все эти проверки локальные, без AI. Расширение календарных выражений сделано после probe; frozen copies и результаты попытки3 остаются историческим evidence, новый probe не выполняется.
+
+Остаются отдельные этапы56+: runtime coordinator/groups/finalization, STT/audio policy, choices/buttons и реальный callback-canary+replay, live MAX, итоговый независимый quality corpus/latency. Сейчас worker остаётся foundation handler.

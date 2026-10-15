@@ -15,9 +15,9 @@ export function validateTemporalIntent(grounded:GroundedMeaning):TemporalCheck{
   // These are internally grounded exact quotes, never the model's computed offsets or field name as authority.
   const quotes=time.evidence.map(e=>e.quote),own=d.units.find(u=>u.label===action.unitLabel)?.evidence.map(e=>e.quote)??[];
   if(!quotes.length){issues.push({code:'TIME_INTENT_UNPROVEN',actionLabel:action.label});continue;}
-  const expressionDeadline=deadlineCue.test(time.expression),expressionClock=clockCue.test(time.expression),expressionDate=dateCue.test(time.expression);
+  const expressionDeadline=deadlineCue.test(time.expression),expressionClock=clockCue.test(time.expression),expressionDate=dateCue.test(time.expression)||/[0-9]{1,2}\s*(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/iu.test(time.expression);
   const namedDeadline=own.some(q=>/срок|дедлайн/iu.test(q));
-  const sourceDeadline=namedDeadline||quotes.some(q=>deadlineCue.test(q)),sourceClock=quotes.some(q=>clockCue.test(q)),sourceDate=quotes.some(q=>dateCue.test(q));
+  const sourceDeadline=namedDeadline||quotes.some(q=>deadlineCue.test(q)),sourceClock=quotes.some(q=>clockCue.test(q)),sourceDate=quotes.some(q=>dateCue.test(q)||/[0-9]{1,2}\s*(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/iu.test(q));
   let expected:'deadline'|'scheduledAt'|'targetDate'|null=null;
   // Expressions select the temporal slot; literal, grounded source quotes must independently justify its category.
   // This is date-language parsing, never fuzzy quote search or rewriting a wrongly declared field.
