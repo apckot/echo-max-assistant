@@ -32,3 +32,12 @@ test('C061/C063/C067/C070 weekdays, explicit Russian dates and leap validity use
  expect(normalize('Перенеси звонок на 31 февраля2028','targetDate','на 31 февраля2028').status).toBe('invalid');
  expect(normalize('Измени срок до пятницы','deadline','до пятницы')).toEqual({status:'resolved',values:[{field:'deadline',date:'2026-09-11'}]});
 });
+test('review: quoted deadline task title does not change date-move intent',()=>{
+ expect(normalize('Перенеси задачу «Дедлайн отчёта» на завтра','deadline','на завтра').status).toBe('invalid');
+ expect(normalize('Перенеси задачу «Дедлайн отчёта» на завтра','targetDate','на завтра')).toMatchObject({status:'resolved',values:[{field:'targetDate',date:'2026-09-12'}]});
+});
+test('review: full Russian hour words and malformed minutes never degrade to another clock',()=>{
+ expect(normalize('Назначь звонок завтра в двадцать','scheduledAt','завтра в двадцать')).toMatchObject({values:[{at:'2026-09-12T17:00:00.000Z'}]});
+ expect(normalize('Назначь звонок завтра в тринадцать','scheduledAt','завтра в тринадцать')).toMatchObject({values:[{at:'2026-09-12T10:00:00.000Z'}]});
+ for(const clock of ['9:999','9:7','29:00'])expect(normalize('Назначь звонок завтра в '+clock,'scheduledAt','завтра в '+clock).status).toBe('invalid');
+});

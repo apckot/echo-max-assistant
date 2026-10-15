@@ -17,7 +17,7 @@ export class ContextBuilder {
   selected.sort((a,b)=>Number(!!anchor?.tasks.some(t=>t.id===b.id))-Number(!!anchor?.tasks.some(t=>t.id===a.id)));
   if(selected.length>50)selected.length=50;
   const bindings:Record<string,TaskBinding>={};
-  const candidates=selected.map((t,i)=>{const label='T'+(i+1);bindings[label]={id:t.id,version:t.version};return {label,title:t.title,description:t.description?[...t.description].slice(0,512).join(''):null,status:t.status,targetDate:t.targetDate,scheduledAt:t.scheduledAt,deadline:t.dueAt??t.dueDate};});
+  const candidates=selected.map((t,i)=>{const label='T'+(i+1);bindings[label]={id:t.id,version:t.version};return {label,title:t.title,description:t.description?[...t.description].slice(0,512).join(''):null,descriptionTruncated:t.description!==null&&[...t.description].length>512,status:t.status,targetDate:t.targetDate,scheduledAt:t.scheduledAt,deadline:t.dueAt??t.dueDate};});
   const history=await this.reader.history(userId,conversationId,source.sourceAt);
   const anchors=anchor?[anchor]:[];
   const projected=anchors.map(a=>({label:a.label,kind:a.kind,candidateLabels:a.tasks.map(t=>Object.keys(bindings).find(k=>bindings[k]!.id===t.id)!)}));

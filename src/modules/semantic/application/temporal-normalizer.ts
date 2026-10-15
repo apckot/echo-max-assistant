@@ -17,17 +17,17 @@ function dateExpression(text:string,today:string):string|null{
  return null;
 }
 function clockExpression(text:string):string|null{
- const numeric=text.match(/(?:^|\s)(?:в|к|до|на)\s*(\d{1,2})(?::(\d{2}))?(?![\d-])/iu);
+ const numeric=text.match(/(?:^|\s)(?:в|к|до|на)\s*(\d{1,2})(?::([0-9]+))?(?=$|[^\p{L}\p{N}:])/iu);
  if(numeric&&months.some(month=>text.slice(numeric.index!+numeric[0].length).trimStart().toLocaleLowerCase('ru').startsWith(month)))return null;
- if(numeric){const h=Number(numeric[1]),m=Number(numeric[2]??0);return h<24&&m<60?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`:null;}
- const words=[[/один(?:надцат)?/iu,1],[/двенадцат/iu,12],[/два|двух|двум/iu,2],[/три|тр[её]м|тр[её]х/iu,3],[/четыр/iu,4],[/пят/iu,5],[/шест/iu,6],[/сем/iu,7],[/восем/iu,8],[/девят/iu,9],[/десят/iu,10],[/нол|нул|полноч/iu,0]] as const;
- const suffix=text.match(/(?:^|\s)(?:в|к|до)\s+([а-яё]+)/iu)?.[1];if(!suffix||weekdays.some(p=>p.test(suffix)))return null;
- // Explicitly bounded Russian hour vocabulary; unknown expressions remain unresolved.
- if(/одиннадцат/iu.test(suffix))return '11:00';
- const found=words.find(([pattern])=>pattern.test(suffix));return found?String(found[1]).padStart(2,'0')+':00':null;
+ if(numeric){const h=Number(numeric[1]),m=Number(numeric[2]??0);return h<24&&m<60&&(numeric[2]===undefined||numeric[2].length===2)?`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`:null;}
+ const hour=text.match(/(?:^|\s)(?:в|к|до)\s+([а-яё]+(?:\s+(?:один|два|три))?)(?=$|[\s,;.])/iu)?.[1]?.toLocaleLowerCase('ru');
+ if(!hour)return null;
+ const words:Readonly<Record<string,number>>={ноль:0,нулю:0,полночь:0,один:1,час:1,часу:1,два:2,двух:2,двум:2,три:3,трём:3,трем:3,трёх:3,трех:3,четыре:4,четырём:4,четырем:4,пять:5,пяти:5,шесть:6,шести:6,семь:7,семи:7,восемь:8,восьми:8,девять:9,девяти:9,десять:10,десяти:10,одиннадцать:11,одиннадцати:11,двенадцать:12,двенадцати:12,тринадцать:13,тринадцати:13,четырнадцать:14,четырнадцати:14,пятнадцать:15,пятнадцати:15,шестнадцать:16,шестнадцати:16,семнадцать:17,семнадцати:17,восемнадцать:18,восемнадцати:18,девятнадцать:19,девятнадцати:19,двадцать:20,двадцати:20,'двадцать один':21,'двадцать два':22,'двадцать три':23};
+ const value=words[hour];return value===undefined?null:String(value).padStart(2,'0')+':00';
 }
 export class TemporalNormalizer {
  constructor(private readonly time:TemporalPort){}
+ dateExpression(expression:string,source:{sourceAt:string;timezone:string}):string|null{if(!this.time.validTimezone(source.timezone)||!Number.isFinite(Date.parse(source.sourceAt)))return null;return dateExpression(expression,this.time.localDate(source.sourceAt,source.timezone));}
  normalize(grounded:GroundedMeaning,action:ActionDraft,source:{sourceAt:string;timezone:string}):TimeResolution{
   const issues=validateTemporalIntent(grounded).issues.filter(i=>!i.actionLabel||i.actionLabel===action.label);if(issues.length)return {status:'invalid',reason:issues[0]!.code};
   if(!this.time.validTimezone(source.timezone)||!Number.isFinite(Date.parse(source.sourceAt)))return {status:'invalid',reason:'source_time'};

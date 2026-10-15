@@ -3,20 +3,20 @@ export interface TemporalIssue {readonly code:'TIME_INTENT_MISMATCH'|'TIME_INTEN
 export interface TemporalCheck {readonly ok:boolean;readonly issues:readonly TemporalIssue[]}
 const boundary='(?:^|[^\\p{L}\\p{N}])';
 const deadlineCue=new RegExp(boundary+'(?:срок[а-яё]*|дедлайн[а-яё]*|не\\s+позднее|(?:до|к)(?=\\s|[0-9]))','iu');
-const clockCue=new RegExp(boundary+'(?:в\\s*(?:[0-9]{1,2}(?::[0-9]{2})?|(?:один|дв|тр|четыр|пят|шест|сем|восем|девят|десят)[а-яё]*)|на\\s*[0-9]{1,2}:[0-9]{2})(?![0-9])','iu');
+const clockCue=new RegExp(boundary+'(?:в\\s*(?:[0-9]{1,2}(?::[0-9]{2})?|(?:один|дв|тр|четыр|пят|шест|сем|восем|девят|десят|двадц|нул|нол|полноч|час)[а-яё]*)|на\\s*[0-9]{1,2}:[0-9]{2})(?![0-9])','iu');
 const dateCue=new RegExp(boundary+'(?:(?:после)?завтра|сегодня|понедельник[а-яё]*|вторник[а-яё]*|сред[ауы]|четверг[а-яё]*|пятниц[ауы]|суббот[ауы]|воскресень[ея]|[0-9]{4}-[0-9]{2}-[0-9]{2})(?![\\p{L}\\p{N}])','iu');
 /** Bounded source-evidence guard, not a complete natural-language date parser. Unknown intent fails closed. */
 export function validateTemporalIntent(grounded:GroundedMeaning):TemporalCheck{
  const d=grounded.decision,issues:TemporalIssue[]=[];
  const terminal=new Set(d.actions.filter(a=>['complete','cancel','reopen'].includes(a.kind)).map(a=>a.unitLabel));
- for(const r of d.relations)if(r.kind==='shared_time'&&[r.fromLabel,...r.toLabels].some(l=>terminal.has(l)))issues.push({code:'TIME_SHARED_WITH_LIFECYCLE'});
+ for(const r of d.relations)if(r.kind==='shared_time'&&[r.fromLabel,...r.toLabels].some(l=>terminal.has(l)))for(const action of d.actions.filter(a=>[r.fromLabel,...r.toLabels].includes(a.unitLabel)))issues.push({code:'TIME_SHARED_WITH_LIFECYCLE',actionLabel:action.label});
  for(const action of d.actions)for(const time of action.times){
   if(time.scopeUnitLabels.length!==1||time.scopeUnitLabels[0]!==action.unitLabel||terminal.has(action.unitLabel))issues.push({code:'TIME_SCOPE_INVALID',actionLabel:action.label});
   // These are internally grounded exact quotes, never the model's computed offsets or field name as authority.
   const quotes=time.evidence.map(e=>e.quote),own=d.units.find(u=>u.label===action.unitLabel)?.evidence.map(e=>e.quote)??[];
   if(!quotes.length){issues.push({code:'TIME_INTENT_UNPROVEN',actionLabel:action.label});continue;}
   const expressionDeadline=deadlineCue.test(time.expression),expressionClock=clockCue.test(time.expression),expressionDate=dateCue.test(time.expression)||/[0-9]{1,2}\s*(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/iu.test(time.expression);
-  const namedDeadline=own.some(q=>/срок|дедлайн/iu.test(q));
+  const namedDeadline=own.some(q=>/срок|дедлайн/iu.test(q.replace(/«[^»]*»|"[^"]*"|“[^”]*”/gu,' ')));
   const sourceDeadline=namedDeadline||quotes.some(q=>deadlineCue.test(q)),sourceClock=quotes.some(q=>clockCue.test(q)),sourceDate=quotes.some(q=>dateCue.test(q)||/[0-9]{1,2}\s*(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/iu.test(q));
   let expected:'deadline'|'scheduledAt'|'targetDate'|null=null;
   // Expressions select the temporal slot; literal, grounded source quotes must independently justify its category.

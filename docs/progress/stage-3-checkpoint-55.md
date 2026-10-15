@@ -59,3 +59,7 @@ TargetResolver использует frozen labels/UUID/version и доставл
 RED: отсутствующие validator/resolver/normalizer; дополнительные RED доказывают mutation-kind mismatch, выдуманную дату, completion artifact и русскую явную дату. GREEN:3 functional semantic files14PASS плюс3 существующих temporal assertions =17PASS; typecheck/architecture PASS. Все эти проверки локальные, без AI. Расширение календарных выражений сделано после probe; frozen copies и результаты попытки3 остаются историческим evidence, новый probe не выполняется.
 
 Остаются отдельные этапы56+: runtime coordinator/groups/finalization, STT/audio policy, choices/buttons и реальный callback-canary+replay, live MAX, итоговый независимый quality corpus/latency. Сейчас worker остаётся foundation handler.
+
+### Накопительное ревью55 и исправления
+
+Один независимый reviewer просмотрел6601429..253488c без тестов/сети/секретов. Шесть actionable findings (пятьP1/одинP2) исправлены тем же исполнителем: source authority цели/qualifiers/ordinal, source proof каждого изменяемого поля, отрицания покупок/звонков, quoted deadline title, полное часовое выражение, локальный scope temporal ошибки. См. [review closure](stage-3-checkpoint-55-review.md). Дополнительного reviewer/rereview не было. Финальные целевые проверки33/33, typecheck/architecture PASS. Полный gate ещё не запускался; следующий шаг — один clean clone на окончательном code SHA.

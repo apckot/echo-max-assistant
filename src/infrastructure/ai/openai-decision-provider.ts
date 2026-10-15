@@ -11,10 +11,12 @@ export class OpenAiDecisionProvider implements AiDecisionProvider{
   if(!isApprovedContext(context)||schemaVersion!==2)return failure('denied');
   const remaining=deadline.getTime()-Date.now();if(remaining<=0||signal.aborted)return failure('timeout');
   const cancellation=AbortSignal.any([signal,AbortSignal.timeout(Math.min(Math.ceil(remaining),300000))]);
+  const requestBody=JSON.stringify({model:this.config.model,store:false,service_tier:'default',temperature:0,max_output_tokens:this.config.maxOutputTokens??2000,instructions:this.config.prompt,input:JSON.stringify({context:context.pack,registry}),text:{format:{type:'json_schema',name:'meaning_draft_v2',strict:true,schema:meaningDraftJsonSchema}}});
+  if(Buffer.byteLength(requestBody,'utf8')>24000)return failure('denied');
   let raw:string;
   // Only transport/stream failures are uncertain; a fully received invalid answer is not a transport error.
   try{
-   const response=await this.http(OPENAI_RESPONSES_URL,{method:'POST',redirect:'error',signal:cancellation,headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.config.model,store:false,service_tier:'default',temperature:0,max_output_tokens:this.config.maxOutputTokens??2000,instructions:this.config.prompt,input:JSON.stringify({context:context.pack,registry}),text:{format:{type:'json_schema',name:'meaning_draft_v2',strict:true,schema:meaningDraftJsonSchema}}})});
+   const response=await this.http(OPENAI_RESPONSES_URL,{method:'POST',redirect:'error',signal:cancellation,headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json'},body:requestBody});
    if(!response.ok){await response.body?.cancel();return failure('http_error',response.status);}
    raw=await response.text();
   }catch{return failure(cancellation.aborted?'timeout':'uncertain');}

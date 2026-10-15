@@ -13,3 +13,8 @@ test('0/1/2–5/>5 choices and per-component/turn postquery bounds',async()=>{
  let calls=0;const resolver=new TargetResolver(snapshot,async()=>{calls++;return [];});const target={kind:'search' as const,title:'звонок',qualifiers:{date:null,status:null},evidence:[]};
  await resolver.resolve(target,'g1');await resolver.resolve(target,'g1');await resolver.resolve(target,'g2');await resolver.resolve(target,'g3');expect((await resolver.resolve(target,'g4')).status).toBe('budget');expect(calls).toBe(3);
 });
+test('review: grounded candidate label cannot authorise an unrelated task title',async()=>{
+ const resolver=new TargetResolver({...snapshot,provider:{candidates:[{label:'T1',title:'Отчёт'},{label:'T2',title:'Молоко'}]}},async()=>[]);
+ expect(await resolver.resolve({kind:'candidate',label:'T1',evidence:[{sourceLabel:'S1',quote:'Заверши молоко',start:0,end:14}]})).toEqual({status:'not_found'});
+ expect(await resolver.resolve({kind:'candidate',label:'T2',evidence:[{sourceLabel:'S1',quote:'Заверши молоко',start:0,end:14}]})).toEqual({status:'resolved',targets:[bindings.T2]});
+});

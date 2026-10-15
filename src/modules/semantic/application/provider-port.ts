@@ -1,5 +1,5 @@
 import type {MeaningDraft} from '../domain/meaning-decision.js';
-export interface ContextCandidate {readonly label:string;readonly title:string;readonly description:string|null;readonly status:'open'|'completed'|'cancelled';readonly targetDate:string|null;readonly scheduledAt:string|null;readonly deadline:string|null}
+export interface ContextCandidate {readonly label:string;readonly title:string;readonly description:string|null;readonly descriptionTruncated?:boolean;readonly status:'open'|'completed'|'cancelled';readonly targetDate:string|null;readonly scheduledAt:string|null;readonly deadline:string|null}
 export interface InternalContextPack {
  readonly text:string;readonly sourceLabel:string;readonly sourceAt:string;readonly timezone:string;
  readonly candidates:readonly ContextCandidate[];

@@ -7,11 +7,11 @@ const issued=new WeakMap<object,GroundedMeaning>();
 export interface ValidatedDecision {readonly decision:MeaningDecision;readonly groups:readonly ValidatedGroup[]}
 const withoutQuotes=(text:string)=>text.replace(/«[^»]*»|"[^"]*"|“[^”]*”/gu,' ');
 const createCue=/(?:создай|создать|добавь|добавить|запиши|записать)\s+(?:новую\s+)?(?:задач|дело|пункт)/iu;
-const kindCues={update:/перенес|перенос|перенести|передвин|измени|изменить|поменяй|переимен|назначь/iu,complete:/сделал|сделан|выполни[лт]|готов|заверши|завершать|закрой|закрыть/iu,cancel:/отмени|отменить|отмен[её]н/iu,reopen:/восстанови|восстановить|верни|возобнови|снова\s+открой/iu};
+const kindCues={update:/перенес|перенос|перенести|передвин|измени|изменить|поменяй|переимен|назначь|убери|удали|очисти|сбрось|сними/iu,complete:/сделал|сделан|выполни[лт]|готов|заверши|завершать|закрой|закрыть/iu,cancel:/отмени|отменить|отмен[её]н/iu,reopen:/восстанови|восстановить|верни|возобнови|снова\s+открой/iu};
 const mutationCue=/перенес[иу]|перенести|передвин|измени|изменить|переимен|заверши|закрой|отмени|восстанови|верни\s+задач|сделал|сделан|выполнил/iu;
 function spans(value:unknown,visit:(e:SpanRef)=>void):void{if(!value||typeof value!=='object')return;if(Array.isArray(value)){value.forEach(v=>spans(v,visit));return;}const o=value as Record<string,unknown>;if(typeof o.sourceLabel==='string'&&typeof o.quote==='string'&&typeof o.start==='number'&&typeof o.end==='number'){visit(o as unknown as SpanRef);return;}Object.values(o).forEach(v=>spans(v,visit));}
 /** Structural/evidence failure rejects the frame. Intent/time failure blocks only its connected component. */
-export function validateDecision(grounded:GroundedMeaning,currentSourceLabel:string):ValidatedDecision{
+export function validateDecision(grounded:GroundedMeaning,currentSourceLabel:string,options?:{source:{sourceAt:string;timezone:string};time:TemporalNormalizer}):ValidatedDecision{
  const d=parseMeaning(grounded.decision);const source=grounded.sourceMap.sources[currentSourceLabel];if(!source)throw new Error('DECISION_EVIDENCE');
  spans(d,e=>{const text=grounded.sourceMap.sources[e.sourceLabel];if(!text||[...text].slice(e.start,e.end).join('')!==e.quote)throw new Error('DECISION_EVIDENCE');});
  const parent=d.groups.map((_,i)=>i);const root=(i:number):number=>parent[i]===i?i:parent[i]=root(parent[i]!);
@@ -40,14 +40,32 @@ export function validateDecision(grounded:GroundedMeaning,currentSourceLabel:str
    const evidence=[...unit.evidence,...action.evidence].filter(e=>e.sourceLabel===currentSourceLabel);
    if(unit.kind!=='action'||!unit.authoredByOwner||unit.polarity!=='positive'||unit.modality!=='asserted'||!['request','assertion'].includes(unit.speechAct)||!unit.evidence.some(e=>e.sourceLabel===currentSourceLabel)||!action.evidence.some(e=>e.sourceLabel===currentSourceLabel))reasons.push('OWNER_INTENT_UNPROVEN');
    const text=withoutQuotes(evidence.map(e=>e.quote).join(' '));
+   if(action.target&&action.target.kind!=='created'){
+    const targetEvidence=action.target.evidence.filter(e=>e.sourceLabel===currentSourceLabel&&unit.evidence.some(u=>u.sourceLabel===currentSourceLabel&&e.start>=u.start&&e.end<=u.end));
+    if(!targetEvidence.length)reasons.push('TARGET_EVIDENCE_UNPROVEN');
+    if(action.target.kind==='list_index'){
+     const words=[/перв/iu,/втор/iu,/трет/iu,/четв[её]рт/iu,/пят/iu,/шест/iu,/седьм/iu,/восьм/iu,/девят/iu,/десят/iu];
+     const evidenceText=withoutQuotes(targetEvidence.map(e=>e.quote).join(' '));const ordinals=words.flatMap((pattern,index)=>pattern.test(evidenceText)?[index+1]:[]);
+     if(action.target.indices.some(index=>ordinals.length?!ordinals.includes(index):!new RegExp('(?:^|[^0-9])'+index+'(?=$|[^0-9])','u').test(evidenceText)&&!(words[index-1]?.test(evidenceText))))reasons.push('TARGET_INDEX_UNPROVEN');
+    }
+    if(action.target.kind==='search'){
+     const target=action.target;
+     if(!targetEvidence.some(e=>e.quote.toLocaleLowerCase('ru').includes(target.title.toLocaleLowerCase('ru'))))reasons.push('TARGET_TITLE_UNPROVEN');
+     if(target.qualifiers.date&&!targetEvidence.some(e=>/(?:за|от)\s*(?:[0-9]|сегодня|завтра|прошл)/iu.test(e.quote)&&(e.quote.includes(target.qualifiers.date!)||options?.time.dateExpression(e.quote,options.source)===target.qualifiers.date)))reasons.push('TARGET_DATE_UNPROVEN');
+     if(target.qualifiers.status&&target.qualifiers.status!=='open'&&!targetEvidence.some(e=>({open:/открыт|активн/iu,completed:/заверш[её]н|выполн[её]н/iu,cancelled:/отмен[её]н/iu}[target.qualifiers.status!]).test(e.quote)))reasons.push('TARGET_STATUS_UNPROVEN');
+    }
+   }
    if(/ничего\s+не\s+(?:сохраня|записыва|создава)|это\s+я\s+цитирую/iu.test(withoutQuotes(source)))reasons.push('SOURCE_RETRACTED');
    for(const e of action.evidence.filter(e=>e.sourceLabel===currentSourceLabel)){const before=[...source].slice(0,e.start).join('');if((before.match(/«/gu)?.length??0)>(before.match(/»/gu)?.length??0)||(before.match(/["“”]/gu)?.length??0)%2===1)reasons.push('QUOTED_ACTION');}
    const prefix=evidence.map(e=>[...source].slice(Math.max(0,e.start-24),e.start).join('').split(/[.!?;\n]/u).at(-1)).join(' ');
-   if(/(?:^|\s)не\s+(?:(?:надо|нужно|хочу)\s+)?(?:созда|добав|запис|перенос|перенес|измени|меня|закры|закро|заверш|отмен|восстанов|дела)/iu.test(text)||/(?:^|\s)не\s+(?:(?:надо|нужно|хочу)\s*)?$/iu.test(prefix)||/(?:^|\s)не\s*$/iu.test(prefix)||/(?:он|она|они)\s+(?:сказал|попросил)|цитат|если\s+бы/iu.test(text))reasons.push('SOURCE_INTENT_DENIED');
+   if(/(?:^|\s)не\s+(?!(?:позднее|забудь|забыть)(?:\s|$))[\p{L}]+/iu.test(text)||/(?:^|\s)не\s+(?:(?:надо|нужно|хочу)\s+)?(?:созда|добав|запис|перенос|перенес|измени|меня|закры|закро|заверш|отмен|восстанов|дела)/iu.test(text)||/(?:^|\s)не\s+(?:(?:надо|нужно|хочу)\s*)?$/iu.test(prefix)||/(?:^|\s)не\s*$/iu.test(prefix)||/(?:он|она|они)\s+(?:сказал|попросил)|цитат|если\s+бы/iu.test(text))reasons.push('SOURCE_INTENT_DENIED');
    if(action.kind==='create'){
     if(action.target!==null||!action.fields.title||mutationCue.test(text)&&!createCue.test(text))reasons.push('CREATE_INTENT_MISMATCH');
    }else{
     if(action.target===null||createCue.test(text)||!kindCues[action.kind].test(text)||Object.entries(kindCues).some(([kind,cue])=>kind!==action.kind&&cue.test(text)))reasons.push('MUTATION_INTENT_MISMATCH');
+    if(action.kind==='update'&&action.fields.title!==null&&(!/переимен|назови|назван|заголов/iu.test(text)||!evidence.some(e=>e.quote.toLocaleLowerCase('ru').includes(action.fields.title!.toLocaleLowerCase('ru')))))reasons.push('TITLE_CHANGE_UNPROVEN');
+    if(action.kind==='update'&&action.fields.description!==null&&(!/описан|дополни|добавь\s+к/iu.test(text)||!evidence.some(e=>e.quote.includes(action.fields.description!))))reasons.push('DESCRIPTION_CHANGE_UNPROVEN');
+    if(action.kind==='update'&&action.fields.clearFields.some(field=>!({description:/описан/iu,targetDate:/дат|день|спис/iu,scheduledAt:/врем|встреч/iu,deadline:/срок|дедлайн/iu}[field]).test(text)))reasons.push('CLEAR_FIELD_UNPROVEN');
     if(action.kind==='update'&&action.fields.clearFields.length&&!/(?:убери|удали|очисти|сбрось|сними)/iu.test(text))reasons.push('CLEAR_FIELD_UNPROVEN');
     if(action.kind==='update'&&!action.fields.title&&!action.fields.description&&!action.fields.clearFields.length&&!action.times.length)reasons.push('EMPTY_UPDATE');
     if(['complete','cancel','reopen'].includes(action.kind)&&(action.times.length||action.fields.title!==null||action.fields.description!==null||action.fields.clearFields.length))reasons.push('LIFECYCLE_FIELD_CHANGE');

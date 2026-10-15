@@ -14,7 +14,7 @@ export function preparePrivacy(input:InternalContextPack,policy:PrivacyPolicy):P
   if(typeof input.text!=='string'||Array.from(input.text).length>32000||input.candidates.length>50||input.history.length>24)return {route:'denied',reason:'invalid'};
   // Rebuild the entire envelope: unknown technical/profile fields never reach the adapter.
   const pack:InternalContextPack={text:input.text,sourceLabel:input.sourceLabel,sourceAt:input.sourceAt,timezone:input.timezone,
-   candidates:input.candidates.map(c=>({label:c.label,title:c.title,description:c.description,status:c.status,targetDate:c.targetDate,scheduledAt:c.scheduledAt,deadline:c.deadline})),
+   candidates:input.candidates.map(c=>({label:c.label,title:c.title,description:c.description,...(c.descriptionTruncated===undefined?{}:{descriptionTruncated:c.descriptionTruncated===true}),status:c.status,targetDate:c.targetDate,scheduledAt:c.scheduledAt,deadline:c.deadline})),
    anchors:input.anchors.map(a=>({label:a.label,kind:a.kind,candidateLabels:[...a.candidateLabels]})),
    history:input.history.map(h=>({role:h.role,text:h.text})),pendingChoices:input.pendingChoices.map(p=>({label:p.label,topic:p.topic}))};
   const validLabel=(s:string)=>/^[STRLPH]\d{1,3}$/.test(s);

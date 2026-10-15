@@ -31,3 +31,8 @@ test('Responses wire uses strict schema, store=false, pinned model and no raw id
  const result=await provider.decide(request.context,taskRegistry,2,new Date(Date.now()+1000),new AbortController().signal);
  expect(result.outcome).toBe('ok');expect(wire.store).toBe(false);expect(wire.text.format.strict).toBe(true);expect(wire.text.format.name).toBe('meaning_draft_v2');expect(JSON.stringify(wire.text.format.schema)).not.toContain('"start"');expect(JSON.stringify(wire.text.format.schema)).not.toContain('"end"');expect(wire.max_output_tokens).toBe(2000);expect(JSON.stringify(wire)).not.toContain('+70000000000');
 });
+test('full external request budget includes prompt/schema and fails locally before dispatch',async()=>{
+ let calls=0;const request=prepare();if(request.route==='denied')throw Error('privacy');
+ const provider=new OpenAiDecisionProvider({model:'gpt-4.1-2025-04-14',apiKey:'test-secret',prompt:'a'.repeat(24000)},async()=>{calls++;throw Error('must not dispatch');});
+ expect((await provider.decide(request.context,taskRegistry,2,new Date(Date.now()+1000),new AbortController().signal)).outcome).toBe('denied');expect(calls).toBe(0);
+});

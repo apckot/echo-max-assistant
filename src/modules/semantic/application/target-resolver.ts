@@ -1,7 +1,7 @@
 import type {TargetBasis} from '../domain/meaning-decision.js';
 import type {DeliveredAnchor,TaskBinding} from '../../context/application/context-pack.js';
 export type TargetResolution={readonly status:'resolved';readonly targets:readonly TaskBinding[]}|{readonly status:'choice';readonly options:readonly TaskBinding[]}|{readonly status:'not_found'|'narrow'|'budget'|'created';readonly actionLabel?:string};
-export interface TargetSnapshot {readonly bindings:Readonly<Record<string,TaskBinding>>;readonly anchors:readonly DeliveredAnchor[]}
+export interface TargetSnapshot {readonly bindings:Readonly<Record<string,TaskBinding>>;readonly anchors:readonly DeliveredAnchor[];readonly provider?:{readonly candidates:readonly {readonly label:string;readonly title:string}[]}}
 export type TargetSearch=(title:string,qualifiers:{date:string|null;status:'open'|'completed'|'cancelled'|null},limit:number)=>Promise<readonly TaskBinding[]>;
 /** A resolver is scoped to one turn; its search budget cannot be reset between groups. */
 export class TargetResolver {
@@ -9,7 +9,7 @@ export class TargetResolver {
  constructor(private readonly snapshot:TargetSnapshot,private readonly search:TargetSearch){}
  async resolve(target:TargetBasis,component='default'):Promise<TargetResolution>{
   if(target.kind==='created')return {status:'created',actionLabel:target.label};
-  if(target.kind==='candidate'){const t=this.snapshot.bindings[target.label];return t?{status:'resolved',targets:[t]}:{status:'not_found'};}
+  if(target.kind==='candidate'){const t=this.snapshot.bindings[target.label],candidate=this.snapshot.provider?.candidates.find(c=>c.label===target.label);const proven=!!candidate&&target.evidence.some(e=>e.quote.toLocaleLowerCase('ru').includes(candidate.title.toLocaleLowerCase('ru')));if(!t||!proven)return {status:'not_found'};const matching=this.snapshot.provider!.candidates.filter(c=>target.evidence.some(e=>e.quote.toLocaleLowerCase('ru').includes(c.title.toLocaleLowerCase('ru')))).flatMap(c=>this.snapshot.bindings[c.label]?[this.snapshot.bindings[c.label]!]:[]);return matching.length===1?{status:'resolved',targets:[t]}:matching.length<=5?{status:'choice',options:matching}:{status:'narrow'};}
   if(target.kind==='reply'||target.kind==='list_index'){
    const anchor=this.snapshot.anchors.find(a=>a.label===target.anchorLabel);if(!anchor)return {status:'not_found'};
    if(target.kind==='reply')return anchor.kind==='reply'&&anchor.tasks.length===1?{status:'resolved',targets:anchor.tasks}:{status:'not_found'};

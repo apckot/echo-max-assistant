@@ -58,3 +58,28 @@ test('completion artifacts, trailing retraction and same-target split groups can
  d.decision.units.push({...unit,label:'u2'});d.decision.actions.push({...action,label:'a2',unitLabel:'u2',kind:'cancel',times:[]});d.decision.groups.push({label:'g2',unitLabels:['u2'],actionLabels:['a2'],queryLabels:[],outcome:'execute',reason:null});
  expect(validateDecision(d,'S1').groups).toHaveLength(1);
 });
+test('review: negative purchases and fabricated search qualifiers cannot acquire authority',()=>{
+ for(const text of ['Не купи молоко','Не покупай молоко'])expect(validateDecision(frame(text).grounded,'S1').groups[0]?.status).toBe('blocked');
+ const g=frame('Заверши молоко','complete').grounded;g.decision.actions[0]!.target={kind:'search',title:'Отчёт',qualifiers:{date:null,status:null},evidence:g.decision.actions[0]!.evidence};
+ expect(validateDecision(g,'S1').groups[0]?.status).toBe('blocked');
+});
+test('review: date-only update cannot rename or rewrite description',()=>{
+ for(const key of ['title','description'] as const){const g=frame('Перенеси звонок на завтра','update',{field:'targetDate',expression:'на завтра'}).grounded;g.decision.actions[0]!.fields[key]='Договор';expect(validateDecision(g,'S1').groups[0]?.status).toBe('blocked');}
+});
+test('review: shared-time lifecycle error blocks its component, not an unrelated create',()=>{
+ const g=frame('Купи молоко').grounded,a=g.decision.actions[0]!,u=g.decision.units[0]!;
+ for(const n of [2,3]){g.decision.units.push({...u,label:'u'+n});g.decision.actions.push({...a,label:'a'+n,unitLabel:'u'+n});g.decision.groups.push({label:'g'+n,unitLabels:['u'+n],actionLabels:['a'+n],queryLabels:[],outcome:'execute',reason:null});}
+ g.decision.actions[0]!.kind='complete';g.decision.actions[0]!.target={kind:'candidate',label:'T1',evidence:a.evidence};
+ g.decision.relations=[{kind:'shared_time',fromLabel:'u1',toLabels:['u2'],evidence:u.evidence}];
+ const result=validateDecision(g,'S1');expect(result.groups).toHaveLength(2);expect(result.groups.find(gr=>gr.labels.includes('g3'))?.status).toBe('ready');
+});
+test('C028 review target date is proven from source calendar, never a destination filter',async()=>{
+ const {TemporalNormalizer}=await import('../../../src/modules/semantic/application/temporal-normalizer.js');const {IanaTimeResolver}=await import('../../../src/infrastructure/time/iana-time-resolver.js');
+ const f=frame('Заверши договор за10 сентября','complete');f.grounded.decision.actions[0]!.target={kind:'search',title:'договор',qualifiers:{date:'2026-09-10',status:null},evidence:f.grounded.decision.actions[0]!.evidence};
+ const options={source:f.source,time:new TemporalNormalizer(new IanaTimeResolver())};expect(validateDecision(f.grounded,'S1',options).groups[0]?.status).toBe('ready');
+ const target=f.grounded.decision.actions[0]!.target;if(target.kind==='search')target.qualifiers.date='2026-09-09';expect(validateDecision(f.grounded,'S1',options).groups[0]?.status).toBe('blocked');
+});
+test('review: each cleared field and ordinal is source-proven, destination day is not a list index',()=>{
+ const f=frame('Убери дату списка у звонка','update');f.grounded.decision.actions[0]!.fields.clearFields=['scheduledAt'];expect(validateDecision(f.grounded,'S1').groups[0]?.status).toBe('blocked');
+ const g=frame('Второе перенеси на 1 октября','update',{field:'targetDate',expression:'на 1 октября'}).grounded;g.decision.actions[0]!.target={kind:'list_index',anchorLabel:'L1',indices:[1],evidence:g.decision.actions[0]!.evidence};expect(validateDecision(g,'S1').groups[0]?.status).toBe('blocked');
+});
