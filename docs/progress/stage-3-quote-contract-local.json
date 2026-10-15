@@ -1,0 +1,229 @@
+{
+  "kind": "offline_saved_response_replay_not_AI_eval",
+  "externalContract": "MeaningDraftV2/sourceLabel+quote",
+  "internalContract": "MeaningDecisionV1/exact code-point spans+SourceMap",
+  "model": "gpt-4.1-2025-04-14",
+  "newApiCalls": 0,
+  "historicalProbeResultsRegraded": false,
+  "quoteGroundingPassed": 3,
+  "wrongTemporalCasesRejected": 2,
+  "cases": [
+    {
+      "id": "C015",
+      "quoteGrounding": "pass",
+      "derivedSpans": [
+        {
+          "sourceLabel": "S0",
+          "start": 0,
+          "end": 34,
+          "quote": "Менеджер написал: «закрой договор»"
+        },
+        {
+          "sourceLabel": "S0",
+          "start": 36,
+          "end": 60,
+          "quote": "но я его ещё не закончил"
+        },
+        {
+          "sourceLabel": "S0",
+          "start": 0,
+          "end": 60,
+          "quote": "Менеджер написал: «закрой договор», но я его ещё не закончил"
+        }
+      ],
+      "temporal": {
+        "ok": true,
+        "issues": []
+      },
+      "oracle": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "decisionUnchangedBySemanticChecks": true,
+      "temporalDrafts": [],
+      "relations": [
+        {
+          "kind": "quote_scope",
+          "fromLabel": "u1",
+          "toLabels": [
+            "u2"
+          ],
+          "evidence": [
+            {
+              "sourceLabel": "S0",
+              "start": 0,
+              "end": 60,
+              "quote": "Менеджер написал: «закрой договор», но я его ещё не закончил"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C016",
+      "quoteGrounding": "pass",
+      "derivedSpans": [
+        {
+          "sourceLabel": "S0",
+          "start": 0,
+          "end": 13,
+          "quote": "Сделал первое"
+        },
+        {
+          "sourceLabel": "S0",
+          "start": 15,
+          "end": 40,
+          "quote": "второе перенеси на завтра"
+        },
+        {
+          "sourceLabel": "S0",
+          "start": 0,
+          "end": 40,
+          "quote": "Сделал первое, второе перенеси на завтра"
+        }
+      ],
+      "temporal": {
+        "ok": false,
+        "issues": [
+          {
+            "code": "TIME_SHARED_WITH_LIFECYCLE"
+          },
+          {
+            "code": "TIME_INTENT_MISMATCH",
+            "actionLabel": "a2"
+          }
+        ]
+      },
+      "oracle": {
+        "safety": false,
+        "exact": false,
+        "failures": [
+          "TIME_SHARED_WITH_LIFECYCLE",
+          "TIME_INTENT_MISMATCH",
+          "move_exact_targetDate_required",
+          "independent_groups_required",
+          "spurious_cross_action_relation"
+        ]
+      },
+      "decisionUnchangedBySemanticChecks": true,
+      "temporalDrafts": [
+        {
+          "label": "a1",
+          "kind": "complete",
+          "times": []
+        },
+        {
+          "label": "a2",
+          "kind": "update",
+          "times": [
+            {
+              "field": "deadline",
+              "expression": "завтра",
+              "evidence": [
+                {
+                  "sourceLabel": "S0",
+                  "start": 15,
+                  "end": 40,
+                  "quote": "второе перенеси на завтра"
+                }
+              ],
+              "scopeUnitLabels": [
+                "u2"
+              ]
+            }
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "kind": "shared_time",
+          "fromLabel": "u2",
+          "toLabels": [
+            "u1"
+          ],
+          "evidence": [
+            {
+              "sourceLabel": "S0",
+              "start": 0,
+              "end": 40,
+              "quote": "Сделал первое, второе перенеси на завтра"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C034",
+      "quoteGrounding": "pass",
+      "derivedSpans": [
+        {
+          "sourceLabel": "S0",
+          "start": 0,
+          "end": 11,
+          "quote": "Купи молоко"
+        },
+        {
+          "sourceLabel": "S0",
+          "start": 12,
+          "end": 39,
+          "quote": "и перенеси звонок на завтра"
+        },
+        {
+          "sourceLabel": "S0",
+          "start": 30,
+          "end": 39,
+          "quote": "на завтра"
+        }
+      ],
+      "temporal": {
+        "ok": false,
+        "issues": [
+          {
+            "code": "TIME_INTENT_MISMATCH",
+            "actionLabel": "a2"
+          }
+        ]
+      },
+      "oracle": {
+        "safety": false,
+        "exact": false,
+        "failures": [
+          "TIME_INTENT_MISMATCH",
+          "move_exact_targetDate_required",
+          "missing_dated_move_choice"
+        ]
+      },
+      "decisionUnchangedBySemanticChecks": true,
+      "temporalDrafts": [
+        {
+          "label": "a1",
+          "kind": "create",
+          "times": []
+        },
+        {
+          "label": "a2",
+          "kind": "update",
+          "times": [
+            {
+              "field": "deadline",
+              "expression": "завтра",
+              "evidence": [
+                {
+                  "sourceLabel": "S0",
+                  "start": 30,
+                  "end": 39,
+                  "quote": "на завтра"
+                }
+              ],
+              "scopeUnitLabels": [
+                "u2"
+              ]
+            }
+          ]
+        }
+      ],
+      "relations": []
+    }
+  ]
+}

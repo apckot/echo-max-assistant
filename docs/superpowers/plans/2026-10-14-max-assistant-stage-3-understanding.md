@@ -1,9 +1,9 @@
 # Echo MAX Stage3 — план реализации 51–70
 
-> **Исполнение:** superpowers:executing-plans. Один исполнитель на разрешённый блок из пяти итераций, без делегирования реализации. Отдельный коммит на итерацию; одно накопительное независимое ревью на checkpoint. Сейчас обновляются только документы; все шаги ниже будущие.
+> **Исполнение:** superpowers:executing-plans. Один исполнитель на разрешённый блок из пяти итераций, без делегирования реализации. Отдельный коммит на итерацию; одно накопительное независимое ревью на checkpoint. Базовые документы приняты; выполнены51–52 и два FAIL probe53. Сейчас разрешено только локальное уточнение контрактов/проверок;54–55 и следующий probe не начаты.
 
 **Цель:** понимание текста и голоса через OpenAI, управление Tasks через MAX, сохранение смысла и контекста, Privacy Gateway и восстановление без повторного эффекта.
-**Архитектура:** Context/Privacy → один MeaningDecisionV1 → validator/resolver → durable groups → публичный Tasks API → response intent/final outbox. OpenAI semantic/STT — заменяемые adapters; сеть вне DB locks.
+**Архитектура:** Context/Privacy → один внешний MeaningDraftV2 → QuoteGrounder → внутренний MeaningDecisionV1 → validator/resolver → durable groups → публичный Tasks API → response intent/final outbox. OpenAI semantic/STT — заменяемые adapters; сеть вне DB locks.
 **Стек:** существующие TypeScript ESM/Node22/PG17/Zod4/Vitest; provider API/codec версии закрепляются при реализации.
 **Спецификация:** [Stage3](../specs/2026-10-14-max-assistant-stage-3-understanding-design.md).
 **Корпус:** [регрессионные диалоги, ранний probe и контроль](../corpora/2026-10-14-max-assistant-stage-3-dialogues.md).
@@ -34,7 +34,7 @@ Checkpoint55/60/65/70: один reviewer накопительного diff бл�
 
 |Граница|Файлы/владелец|
 |---|---|
-|Meaning/validation/time/resolution|src/modules/semantic/domain/meaning-decision.ts; src/modules/semantic/application/{provider-port.ts,decision-validator.ts,temporal-normalizer.ts,target-resolver.ts}|
+|Meaning/validation/time/resolution|src/modules/semantic/domain/meaning-decision.ts; src/modules/semantic/application/{provider-port.ts,quote-grounding.ts,temporal-intent.ts,decision-validator.ts,temporal-normalizer.ts,target-resolver.ts}|
 |Context|src/modules/context/application/{context-pack.ts,context-builder.ts,context-port.ts}; src/infrastructure/postgres/context/context-reader.ts|
 |Privacy|src/modules/privacy/application/{privacy-gateway.ts,source-map.ts}; src/infrastructure/postgres/privacy/token-map.ts|
 |OpenAI transport|src/infrastructure/ai/{openai-decision-provider.ts,provider-config.ts}; src/infrastructure/media/openai-stt-provider.ts|
@@ -50,8 +50,8 @@ Review focus: (1) отрицание в цитируемом title против 
 
 ### 51. Meaning contract и замороженные сценарии
 **Файлы:** src/modules/semantic/domain/meaning-decision.ts, src/modules/semantic/application/provider-port.ts; tests/unit/semantic/meaning-contract.test.ts; tests/fixtures/stage3/{regressions.json,probe-manifest.json}; docs/runbooks/stage-3-provider-admission.md.
-**Результат:** strict MeaningDecisionV1, ProviderContext/ProviderResult и registry, C001–C101 regression oracle. Контроль H001–H020 отдельно, frozen hash до настройки, без доступа prompt tuning; независимый источник/владелец и приватный oracle фиксируются в manifest, не выдаются за готовые фактические данные.
-- [ ] RED S01/S20: unknown keys/refs, evidence code points,21 actions, negative/quoted units, local labels и relation scope.
+**Результат:** strict внешний MeaningDraftV2 (sourceLabel+quote) и внутренний MeaningDecisionV1 (диапазоны только приложения), ProviderContext/ProviderResult и registry, C001–C101 regression oracle. Контроль H001–H020 отдельно, frozen hash до настройки, без доступа prompt tuning; независимый источник/владелец и приватный oracle фиксируются в manifest, не выдаются за готовые фактические данные.
+- [ ] RED S01/S20: unknown keys/refs, quote-only wire/unique literal grounding/code-point spans внутри,21 actions, negative/quoted units, local labels и relation scope.
 - [ ] Материализовать12 probe cases из корпуса; зафиксировать source/anchors/pending context, exact oracles, версии/hash и лимиты12 calls/USD2/12000input/2000output. Контроль не используется для разработки; отсутствие H отмечается как незавершённая независимая приёмка.
 - [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/semantic/meaning-contract.test.ts`; static; commit `feat(semantic): define meaning contract and regression oracles`.
 
@@ -81,8 +81,8 @@ Review focus: (1) отрицание в цитируемом title против 
 ### 55. Единственный validator, resolver и source-time semantics
 **Файлы:** src/modules/semantic/application/{decision-validator.ts,target-resolver.ts,temporal-normalizer.ts}; tests/functional/semantic/{action-boundary.test.ts,task-resolver.test.ts,temporal-intent.test.ts}.
 **Результат:** ValidatedDecision/resolved targets/time DTO для будущего runner, без Task writes или второго AI.
-- [ ] RED S01–S06: C003/C018/C024/C025/C028/C036–C040/C061–C070/C097–C098; «к девяти» deadline, «в девять» schedule; reply/list target authorization, copy-completion, no mutation→Create.
-- [ ] Validator принимает evidence/graph/ownership; resolver0/1/2–5/>5 и≤3postqueries; связанные actions объединяются; Stage2 time port разрешает gap/fold/day отдельно, source clock не retry clock. Разрешать неопределённость только в связанном компоненте, structural bad frame целиком reject.
+- [ ] RED S01–S06: C003/C018/C024/C025/C028/C036–C040/C061–C070/C097–C098; «к девяти» deadline, «в девять» schedule, «перенеси на завтра» targetDate; никакой автозамены ошибочного deadline; C016/C034 exact changed/unchanged fields, own temporal scope и independent groups; reply/list target authorization, copy-completion, no mutation→Create.
+- [ ] QuoteGrounder принимает только sourceLabel/quote: unique exact match и SourceMap,0/2+matches closed refusal, без fuzzy/первого совпадения; validator принимает grounded evidence/graph/ownership; resolver0/1/2–5/>5 и≤3postqueries; связанные actions объединяются; Stage2 time port разрешает gap/fold/day отдельно, source clock не retry clock. Разрешать неопределённость только в связанном компоненте, structural bad frame целиком reject.
 - [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/semantic/action-boundary.test.ts tests/functional/semantic/task-resolver.test.ts tests/functional/semantic/temporal-intent.test.ts`; static; commit `feat(semantic): validate intent targets and source-time scopes`.
 - [ ] Checkpoint55: одно review/gate, отчёт с отдельным probe53 evidence, push/SHA, остановка перед56. Никакого повторного probe в gate.
 
@@ -213,3 +213,5 @@ S01→51/55/66; S02→53/55; S03→55/57/66; S04→54/55; S05→55/57/66; S06→
 Принято владельцем2026-10-15. Разрешён только блок51–55, включая один ограниченный probe53; остальные блоки требуют отдельного разрешения.
 
 Дополнение к53 (разрешение владельца2026-10-15): один repair cycle (dated C034 плюс C101 без даты, prefix labels, invalid vs transport); replay сохранённых синтетических ответов/targeted tests; freeze attempt2; один полный проход12 на той же модели≤USD2. Первая попытка сохраняется FAIL. При втором FAIL остановка до54, без gate/новой модели/дополнительного probe.
+
+Текущее разрешение после FAIL attempt2: только локальное уточнение quote-only wire и source temporal guards, replay сохранённых ответов/целевые тесты/документы. Шаги54–55 не возобновлены. Диспетчер старых probe закрыт, новый probe/профиль/заморозка требуют отдельного согласования, прежняя модель не меняется.

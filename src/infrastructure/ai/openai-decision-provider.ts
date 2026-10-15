@@ -1,20 +1,20 @@
-import {parseMeaning,meaningJsonSchema} from '../../modules/semantic/domain/meaning-decision.js';
+import {parseMeaningDraft,meaningDraftJsonSchema} from '../../modules/semantic/domain/meaning-decision.js';
 import type {AiDecisionProvider,ProviderContext,ProviderResult,ProviderUsage,InvalidReason,ToolRegistryV1} from '../../modules/semantic/application/provider-port.js';
 import {isApprovedContext} from '../../modules/privacy/application/privacy-gateway.js';
 import {OPENAI_RESPONSES_URL,type OpenAiConfig} from './provider-config.js';
 export type HttpTransport=(url:string,init:RequestInit)=>Promise<Response>;
 export class OpenAiDecisionProvider implements AiDecisionProvider{
  constructor(private readonly config:OpenAiConfig,private readonly http:HttpTransport=fetch){}
- async decide(context:ProviderContext,registry:ToolRegistryV1,schemaVersion:1,deadline:Date,signal:AbortSignal):Promise<ProviderResult>{
+ async decide(context:ProviderContext,registry:ToolRegistryV1,schemaVersion:2,deadline:Date,signal:AbortSignal):Promise<ProviderResult>{
   const started=performance.now(),duration=()=>performance.now()-started;
   const failure=(outcome:'denied'|'timeout'|'uncertain'|'http_error'|'refusal',status?:number):ProviderResult=>({outcome,durationMs:duration(),...(status===undefined?{}:{status})});
-  if(!isApprovedContext(context)||schemaVersion!==1)return failure('denied');
+  if(!isApprovedContext(context)||schemaVersion!==2)return failure('denied');
   const remaining=deadline.getTime()-Date.now();if(remaining<=0||signal.aborted)return failure('timeout');
   const cancellation=AbortSignal.any([signal,AbortSignal.timeout(Math.min(Math.ceil(remaining),300000))]);
   let raw:string;
   // Only transport/stream failures are uncertain; a fully received invalid answer is not a transport error.
   try{
-   const response=await this.http(OPENAI_RESPONSES_URL,{method:'POST',redirect:'error',signal:cancellation,headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.config.model,store:false,service_tier:'default',temperature:0,max_output_tokens:this.config.maxOutputTokens??2000,instructions:this.config.prompt,input:JSON.stringify({context:context.pack,sourceCodePointLength:Array.from(context.pack.text).length,registry}),text:{format:{type:'json_schema',name:'meaning_v1',strict:true,schema:meaningJsonSchema}}})});
+   const response=await this.http(OPENAI_RESPONSES_URL,{method:'POST',redirect:'error',signal:cancellation,headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.config.model,store:false,service_tier:'default',temperature:0,max_output_tokens:this.config.maxOutputTokens??2000,instructions:this.config.prompt,input:JSON.stringify({context:context.pack,registry}),text:{format:{type:'json_schema',name:'meaning_draft_v2',strict:true,schema:meaningDraftJsonSchema}}})});
    if(!response.ok){await response.body?.cancel();return failure('http_error',response.status);}
    raw=await response.text();
   }catch{return failure(cancellation.aborted?'timeout':'uncertain');}
@@ -42,7 +42,7 @@ export class OpenAiDecisionProvider implements AiDecisionProvider{
   if(refusal)return {outcome:'refusal',usage,durationMs:duration()};
   if(texts.length!==1)return invalid('missing_output');
   let decision:unknown;try{decision=JSON.parse(texts[0]!);}catch{return invalid('decision_json');}
-  try{return {outcome:'ok',decision:parseMeaning(decision),model:model??this.config.model,durationMs:duration(),usage};}
+  try{return {outcome:'ok',decision:parseMeaningDraft(decision),model:model??this.config.model,durationMs:duration(),usage};}
   catch(error){return invalid(error instanceof Error&&error.message.startsWith('MEANING_')?'meaning_references':'meaning_schema');}
  }
 }

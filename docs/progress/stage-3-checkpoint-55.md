@@ -31,3 +31,9 @@ Owner authorised one repair cycle and12new requests≤USD2 on the same model. Na
 Focused RED:3failed/1passed (prefix/reference baseline already partly enforced); GREEN15/15 across saved-response replay/contract/budget/transport tests, typecheck/architecture passed. No external requests during local repair; second profile frozen before dispatch, conservative maximumUSD0.44184.
 
 Attempt2: exactly12new requests, safety9/12/exact9/12, actual usage estimateUSD0.068972. C020fixed; C015/C016/C034 span failures, and C016/C034 wrong temporal field. [Second report/results](stage-3-openai-probe-attempt-2.md). No hidden regrades, JSON repair or reruns. **Stop before54**, no full gate/reviewer/push. Checkpoint55 is not complete.
+
+## Local refinement after attempt2 — no new probe authorisation
+
+Owner authorised quote-only wire, deterministic unique literal grounding, distinct source-backed temporal intentions and stronger C016/C034 oracles only. External MeaningDraftV2/schemaVersion2 returns sourceLabel+quote; application generates internal MeaningDecisionV1 ranges through original/provider SourceMap. No fuzzy matching, first-match selection or silent deadline repair. Provider never receives SourceMap or computes numeric positions.
+
+Local saved-response replay:3/3range recoveries, C015semanticPASS, C016/C034stillsemanticFAIL (deadline/shared_time/independence caught automatically). Historical scores/reports unchanged. Targeted23/23 then focused8/8 after guard refinement, typecheck/architecturePASS; no full gate/reviewer/API. [Local report](stage-3-quote-contract-local.md). Old dispatcher is closed; wait for explicit next-probe decision.54–55 remain unstarted.

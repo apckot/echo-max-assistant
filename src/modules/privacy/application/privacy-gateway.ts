@@ -31,6 +31,7 @@ export function preparePrivacy(input:InternalContextPack,policy:PrivacyPolicy):P
   const sanitized:InternalContextPack={...pack,text:sanitize(pack.text),candidates:pack.candidates.map(c=>({...c,title:sanitize(c.title),description:c.description===null?null:sanitize(c.description)})),history:pack.history.map(h=>({...h,text:sanitize(h.text)})),pendingChoices:pack.pendingChoices.map(p=>({...p,topic:sanitize(p.topic)}))};
   const route=Object.keys(values).length?'tokenized':'external_allowed';
   const context:ProviderContext=freeze({kind:'privacy_approved_v1',pack:sanitized,route});approved.add(context);
-  return {route,context,sourceMap:freeze({values,sources})};
+  const providerSources:Record<string,string>={[sanitized.sourceLabel]:sanitized.text};sanitized.candidates.forEach(c=>providerSources[c.label]=c.title);sanitized.history.forEach((h,i)=>providerSources['H'+i]=h.text);
+  return {route,context,sourceMap:freeze({values,sources,providerSources})};
  }catch{return {route:'denied',reason:'check_failed'};}
 }

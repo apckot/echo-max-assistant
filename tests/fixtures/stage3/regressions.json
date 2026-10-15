@@ -96,7 +96,7 @@
       "id": "C016",
       "sourceAndMode": "B3/R",
       "scenario": "«Сделал первое, второе перенеси на завтра»; delivered anchor[T1 отчёт,T2 звонок]",
-      "oracle": "CompleteT1; moveT2 date12, own instant если есть переносится с сохранёнными local hours; чужой порядок не пересчитывать"
+      "oracle": "CompleteT1 + UpdateT2 targetDate2026-09-12 in distinct independent execute groups; date-only fixture preserves title/description/status/scheduledAt/deadline on T2; no completion times/rename/clear; own move unit scope, no cross-action shared_time/dependency"
     },
     {
       "id": "C017",
@@ -204,7 +204,7 @@
       "id": "C034",
       "sourceAndMode": "B3/R",
       "scenario": "«Купи молоко и перенеси звонок на завтра»;2 звонка",
-      "oracle": "Create молоко independently; saved Update draft targetDate tomorrow in needs_choice group, two grounded targets; no move before choice"
+      "oracle": "Independent undated milk Create executes; saved Update draft changes targetDate only to tomorrow inside needs_choice, two call targets; no rename/description/clear/scheduledAt/deadline, own move unit scope; separate groups/no cross-action relation; zero move before choice"
     },
     {
       "id": "C035",

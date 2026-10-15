@@ -1,7 +1,9 @@
 import {z} from 'zod';
 const label=z.string().regex(/^[A-Za-z][A-Za-z0-9_-]{0,39}$/);
 export const spanSchema=z.strictObject({sourceLabel:label,start:z.number().int().min(0),end:z.number().int().min(0),quote:z.string().max(32000)});
-const evidence=z.array(spanSchema).max(40);
+export const quoteSchema=z.strictObject({sourceLabel:label,quote:z.string().min(1).max(32000)});
+function buildSchemas<E extends z.ZodType,V extends 1|2>(evidenceItem:E,version:V){
+const evidence=z.array(evidenceItem).max(40);
 const unitLabel=z.string().regex(/^u[1-9][0-9]{0,2}$/);
 const actionLabel=z.string().regex(/^a[1-9][0-9]{0,2}$/);
 const queryLabel=z.string().regex(/^q[1-9][0-9]{0,2}$/);
@@ -13,15 +15,27 @@ const target=z.discriminatedUnion('kind',[
  z.strictObject({kind:z.literal('search'),title:z.string().max(500),qualifiers:z.strictObject({date:z.string().nullable(),status:z.enum(['open','completed','cancelled']).nullable()}),evidence}),
  z.strictObject({kind:z.literal('created'),label:actionLabel}),
 ]);
-export const unitSchema=z.strictObject({label:unitLabel,kind:z.enum(['action','query','context','unsupported']),speechAct:z.enum(['request','assertion','question','quote','hypothesis','meta']),polarity:z.enum(['positive','negative']),modality:z.enum(['asserted','uncertain']),authoredByOwner:z.boolean(),evidence,uncertainty:z.enum(['target','time','intent']).nullable()});
-export const actionSchema=z.strictObject({label:actionLabel,unitLabel,kind:z.enum(['create','update','complete','cancel','reopen']),target:target.nullable(),fields:z.strictObject({title:z.string().max(500).nullable(),description:z.string().max(16000).nullable(),clearFields:z.array(z.enum(['description','targetDate','scheduledAt','deadline'])).max(4)}),times:z.array(z.strictObject({field:z.enum(['targetDate','scheduledAt','deadline']),expression:z.string().max(500),evidence,scopeUnitLabels:z.array(unitLabel).min(1).max(20)})).max(6),evidence});
-export const meaningSchema=z.strictObject({version:z.literal(1),units:z.array(unitSchema).max(20),relations:z.array(z.strictObject({kind:z.enum(['shared_time','same_target','correction','depends_on','quote_scope']),fromLabel:unitLabel,toLabels:z.array(unitLabel).min(1).max(20),evidence})).max(60),actions:z.array(actionSchema).max(20),queries:z.array(z.strictObject({label:queryLabel,unitLabel,kind:z.enum(['open','day','find','history','capabilities']),text:z.string().max(500).nullable(),dayExpression:z.string().max(500).nullable(),statuses:z.array(z.enum(['open','completed','cancelled'])).max(3),target:target.nullable()})).max(20),groups:z.array(z.strictObject({label:groupLabel,unitLabels:z.array(unitLabel).min(1).max(20),actionLabels:z.array(actionLabel).max(20),queryLabels:z.array(queryLabel).max(20),outcome:z.enum(['execute','needs_choice','respond','capability_unavailable']),reason:z.enum(['target','time','intent','unsupported']).nullable()})).max(10)});
+const unitSchema=z.strictObject({label:unitLabel,kind:z.enum(['action','query','context','unsupported']),speechAct:z.enum(['request','assertion','question','quote','hypothesis','meta']),polarity:z.enum(['positive','negative']),modality:z.enum(['asserted','uncertain']),authoredByOwner:z.boolean(),evidence,uncertainty:z.enum(['target','time','intent']).nullable()});
+const actionSchema=z.strictObject({label:actionLabel,unitLabel,kind:z.enum(['create','update','complete','cancel','reopen']),target:target.nullable(),fields:z.strictObject({title:z.string().max(500).nullable(),description:z.string().max(16000).nullable(),clearFields:z.array(z.enum(['description','targetDate','scheduledAt','deadline'])).max(4)}),times:z.array(z.strictObject({field:z.enum(['targetDate','scheduledAt','deadline']),expression:z.string().max(500),evidence,scopeUnitLabels:z.array(unitLabel).min(1).max(20)})).max(6),evidence});
+const meaningSchema=z.strictObject({version:z.literal(version),units:z.array(unitSchema).max(20),relations:z.array(z.strictObject({kind:z.enum(['shared_time','same_target','correction','depends_on','quote_scope']),fromLabel:unitLabel,toLabels:z.array(unitLabel).min(1).max(20),evidence})).max(60),actions:z.array(actionSchema).max(20),queries:z.array(z.strictObject({label:queryLabel,unitLabel,kind:z.enum(['open','day','find','history','capabilities']),text:z.string().max(500).nullable(),dayExpression:z.string().max(500).nullable(),statuses:z.array(z.enum(['open','completed','cancelled'])).max(3),target:target.nullable()})).max(20),groups:z.array(z.strictObject({label:groupLabel,unitLabels:z.array(unitLabel).min(1).max(20),actionLabels:z.array(actionLabel).max(20),queryLabels:z.array(queryLabel).max(20),outcome:z.enum(['execute','needs_choice','respond','capability_unavailable']),reason:z.enum(['target','time','intent','unsupported']).nullable()})).max(10)});
+return {unitSchema,actionSchema,meaningSchema};
+}
+const internal=buildSchemas(spanSchema,1);
+export const {unitSchema,actionSchema,meaningSchema}=internal;
+export const meaningDraftSchema=buildSchemas(quoteSchema,2).meaningSchema;
+export type MeaningDraft=Readonly<z.infer<typeof meaningDraftSchema>>;
 export type MeaningDecision=Readonly<z.infer<typeof meaningSchema>>;
 export type SpanRef=Readonly<z.infer<typeof spanSchema>>;
 export type ActionDraft=Readonly<z.infer<typeof actionSchema>>;
 export type TargetBasis=NonNullable<ActionDraft['target']>;
 export function parseMeaning(value:unknown):MeaningDecision{
- const frame=meaningSchema.parse(value);
+ const frame=meaningSchema.parse(value);assertMeaningReferences(frame);
+ const walk=(x:unknown):void=>{if(!x||typeof x!=='object')return;if(Array.isArray(x)){x.forEach(walk);return;}const o=x as Record<string,unknown>;
+ if(typeof o.start==='number'&&typeof o.end==='number'&&o.end<=o.start)throw new Error('MEANING_SPAN_RANGE');Object.values(o).forEach(walk);};walk(frame);
+ return frame;
+}
+export function parseMeaningDraft(value:unknown):MeaningDraft{const frame=meaningDraftSchema.parse(value);assertMeaningReferences(frame);return frame;}
+function assertMeaningReferences(frame:MeaningDecision|MeaningDraft){
  const units=new Set(frame.units.map(x=>x.label));
  const nodes=[...frame.units,...frame.actions,...frame.queries,...frame.groups];
  if(new Set(nodes.map(x=>x.label)).size!==nodes.length)throw new Error('MEANING_DUPLICATE_LABEL');
@@ -39,8 +53,6 @@ export function parseMeaning(value:unknown):MeaningDecision{
   }
  }
  if(assigned.size!==frame.actions.length+frame.queries.length)throw new Error('MEANING_UNASSIGNED_ACTION');
- const walk=(x:unknown):void=>{if(!x||typeof x!=='object')return;if(Array.isArray(x)){x.forEach(walk);return;}const o=x as Record<string,unknown>;
- if(typeof o.start==='number'&&typeof o.end==='number'&&o.end<=o.start)throw new Error('MEANING_SPAN_RANGE');Object.values(o).forEach(walk);};walk(frame);
- return frame;
 }
 export const meaningJsonSchema=z.toJSONSchema(meaningSchema,{target:'draft-7',reused:'ref'});
+export const meaningDraftJsonSchema=z.toJSONSchema(meaningDraftSchema,{target:'draft-7',reused:'ref'});

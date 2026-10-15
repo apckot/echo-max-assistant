@@ -31,7 +31,7 @@
 |C013|B3/R|«Не создавай задачу про отчёт»|0 Tasks|
 |C014|B3/R|«Не могу подтвердить, что договор готов»; T1 договор|T1 unchanged; no complete|
 |C015|B3/R|«Менеджер написал: “закрой договор”, но я его ещё не закончил»; T1 договор|T1 unchanged; чужая цитата/отрицание не mutation|
-|C016|B3/R|«Сделал первое, второе перенеси на завтра»; delivered anchor[T1 отчёт,T2 звонок]|CompleteT1; moveT2 date12, own instant если есть переносится с сохранёнными local hours; чужой порядок не пересчитывать|
+|C016|B3/R|«Сделал первое, второе перенеси на завтра»; delivered anchor[T1 отчёт,T2 звонок]|CompleteT1 и UpdateT2 в разных независимых execute groups. В probe date-only fixture менять у T2 только targetDate12; title/description/status/scheduledAt/deadline без изменения; у Complete нет schedule/clear/rename. Time scope только unit переноса, без shared_time/dependency с завершением. Не пересчитывать delivered list order. В отдельном fixture с existing instant полный reschedule проверяется явно, не подразумевается этим probe|
 |C017|B1/R|delivered text «1. Отчёт;2. Счётчики» mapsT1/T2; user копирует и добавляет «сделано»|Complete2existing;0 Creates|
 |C018|B1/V|current «Отчёт сделан»; fake Create «Отчёт — пометить выполнено»|Validator rejects completion artifact;0 Tasks/effects|
 |C019|B3/R|«Всё сделано»;10 несвязанных открытыхTasks без bounded anchor|0 complete; объяснить отсутствие ограниченной цели, не10 choices|
@@ -49,7 +49,7 @@
 |C031|B3/R|T1 completed/v2; «Исправь название завершённого отчёта»|invalid_transition, no silent Reopen|
 |C032|B3/R|T1 completed/v2; «Верни отчёт и переименуй в Финальный»|One atomic Reopen+UpdateT1 ->v4/2events|
 |C033|B3/R|«Создай подготовку вопросов и переименуй её в Вопросы интервью»|One Create+local Update ->oneTaskv2|
-|C034|B3/R|«Купи молоко и перенеси звонок на завтра»;2 звонка|Независимый Create молоко; Update draft с targetDate завтра в needs_choice группе, actionLabels ссылается на draft, варианты двух звонков;0 фактических переносов до выбора|
+|C034|B3/R|«Купи молоко и перенеси звонок на завтра»;2 звонка|Независимый Create молоко; Update draft с targetDate завтра в needs_choice группе, actionLabels ссылается на draft, варианты двух звонков;0 фактических переносов до выбора. Move меняет только targetDate12; без rename/description/clear/scheduledAt/deadline. Покупка без даты и других заимствованных полей. Два независимых groups, без общей даты/shared_time/dependency|
 |C035|B3/R|«Заверши отчёт и создай отправку документа»; exactT1|CompleteT1+Create1 independent groups; truthful both outcomes|
 |C036|N/V|sameTask Update+Cancel split into allegedly independent groups|Combine related component or reject before writes;no half-effect|
 |C037|N/V|Create+unknown created label/cycle in samegroup|Reject component, no earlier Create|
@@ -166,3 +166,7 @@ Clean STT WER denominator excludes deliberately corrupted A27/A28 и policy-deni
 Принято владельцем2026-10-15. Разрешён только блок51–55, включая один ограниченный probe53; остальные блоки требуют отдельного разрешения.
 
 Уточнение владельца2026-10-15: probe attempt2 меняет только C034 на фразу с «на завтра»; исходная фраза сохранена как C101. Первая попытка и её FAIL не переоцениваются задним числом. Модель прежняя, один новый проход12/≤USD2, без повторов.
+
+Локальная проверка после attempt2: все evidence во внешнем wire только sourceLabel+дословная quote; start/end вычисляются приложением по единственному точному совпадению с SourceMap. Для повторяющейся цитаты — отказ либо более полная уникальная дословная цитата, без occurrence guessing. Offline projection старых ответов удаляет **только** устаревшие числовые позиции, сохраняя цитаты, fields, scope, labels и relations. Это не ремонт смысла и не новый AI PASS.
+
+C016/C034 oracle автоматически отвергает неверный temporal field, дополнительный scheduledAt/deadline, rename/description/clear, неверный scope, объединение groups и ложные межкомандные relations. Проверяется набор user-visible изменений; технические version/updatedAt/completedAt остаются владельцу Stage2. Полной Task transaction proof этот локальный replay не является. Старые отчёты FAIL неизменны, новый probe не разрешён.

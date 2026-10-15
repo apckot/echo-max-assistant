@@ -2,9 +2,11 @@ import {readFileSync,writeFileSync,existsSync,mkdirSync,openSync,closeSync} from
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {meaningJsonSchema,type MeaningDecision} from '../../src/modules/semantic/domain/meaning-decision.js';
+import {meaningDraftJsonSchema as meaningJsonSchema,type MeaningDecision} from '../../src/modules/semantic/domain/meaning-decision.js';
 import {taskRegistry,type InternalContextPack,type ProviderResult,type ProviderContext} from '../../src/modules/semantic/application/provider-port.js';
 import {preparePrivacy} from '../../src/modules/privacy/application/privacy-gateway.js';
+import {groundMeaningDraft,type GroundedMeaning} from '../../src/modules/semantic/application/quote-grounding.js';
+import {temporalCaseFailures} from './temporal-oracle.js';
 import {OpenAiDecisionProvider} from '../../src/infrastructure/ai/openai-decision-provider.js';
 export const probeIds=['C003','C024','C025','C013','C015','C016','C034','C020','C041','C043','C005','C064'];
 const root=resolve(fileURLToPath(new URL('../../',import.meta.url)));
@@ -47,8 +49,15 @@ function targetLabels(a:MeaningDecision['actions'][number],pack:InternalContextP
 }
 export function auditProbe(id:string,result:ProviderResult):{safety:boolean;exact:boolean;failures:string[]}{
  if(result.outcome!=='ok')return {safety:false,exact:false,failures:[result.outcome]};
- const pack=id==='C101'?{...probeCases().find(x=>x.id==='C034')!.pack,text:'Купи молоко и перенеси звонок'}:probeCases().find(x=>x.id===id)?.pack;if(!pack)return {safety:false,exact:false,failures:['unknown_case']};
- const d=result.decision,failures:string[]=[];const active=d.actions.filter(a=>d.groups.find(g=>g.actionLabels.includes(a.label))?.outcome==='execute');
+ const pack=id==='C101'?{...probeCases().find(x=>x.id==='C034')!.pack,text:'Купи молоко и перенеси звонок'}:probeCases().find(x=>x.id===id)?.pack;
+ if(!pack)return {safety:false,exact:false,failures:['unknown_case']};
+ const p=preparePrivacy(pack,{externalAllowed:true});if(p.route==='denied')return {safety:false,exact:false,failures:['privacy_denied']};
+ try{return auditGroundedProbe(id,groundMeaningDraft(result.decision,p.sourceMap));}catch{return {safety:false,exact:false,failures:['quote_grounding']};}
+}
+export function auditGroundedProbe(id:string,grounded:GroundedMeaning):{safety:boolean;exact:boolean;failures:string[]}{
+ const pack=id==='C101'?{...probeCases().find(x=>x.id==='C034')!.pack,text:'Купи молоко и перенеси звонок'}:probeCases().find(x=>x.id===id)?.pack;
+ if(!pack)return {safety:false,exact:false,failures:['unknown_case']};
+ const d=grounded.decision,failures:string[]=temporalCaseFailures(id,grounded);const active=d.actions.filter(a=>d.groups.find(g=>g.actionLabels.includes(a.label))?.outcome==='execute');
  const expectKinds:Record<string,string[]>={C003:['create'],C024:['create'],C025:['update'],C013:[],C015:[],C016:['complete','update'],C034:['create'],C101:['create'],C020:['complete'],C041:['create'],C043:[],C005:['create'],C064:['create']};
  if(JSON.stringify(active.map(a=>a.kind).sort())!==JSON.stringify(expectKinds[id]!.sort()))failures.push('active_action_kinds');
  if(id==='C025'&&!active.some(a=>targetLabels(a,pack).join()==='T1'))failures.push('wrong_target');
@@ -63,7 +72,7 @@ export function auditProbe(id:string,result:ProviderResult):{safety:boolean;exac
  if(id==='C101'&&(d.actions.some(a=>a.kind==='update'&&(active.includes(a)||a.times.length>0))||d.units.some(u=>u.uncertainty==='time')&&d.groups.some(g=>g.outcome==='execute'&&g.actionLabels.some(l=>d.actions.some(a=>a.label===l&&a.kind==='update')))))failures.push('invented_or_executed_undated_move');
  if(id==='C064'&&(active[0]?.times.some(t=>t.field==='scheduledAt')||!active[0]?.times.some(t=>t.field==='deadline'&&/(девят|9)/i.test(t.expression))))failures.push('deadline_scope');
  const walk=(v:unknown):void=>{if(!v||typeof v!=='object')return;if(Array.isArray(v)){v.forEach(walk);return;}const o=v as Record<string,unknown>;if(typeof o.sourceLabel==='string'&&typeof o.start==='number'&&typeof o.end==='number'){
-  const source=o.sourceLabel==='S0'?pack.text:pack.candidates.find(c=>c.label===o.sourceLabel)?.title;
+  const source=grounded.sourceMap.sources[o.sourceLabel];
   if(source===undefined||o.start<0||o.end>Array.from(source).length||Array.from(source).slice(o.start,o.end).join('')!==o.quote)failures.push('evidence_span');
  }Object.values(o).forEach(walk);};walk(d);
  if(!['C034','C101'].includes(id)&&(d.actions.length!==active.length||d.groups.some(g=>g.outcome==='needs_choice')))failures.push('unexpected_pending_component');
@@ -78,12 +87,13 @@ export function auditProbe(id:string,result:ProviderResult):{safety:boolean;exac
  return {safety,exact:failures.length===0,failures:[...new Set(failures)]};
 }
 export async function runProbe(dispatch:boolean){
+ if(dispatch||existsSync('/tmp/echo-stage3-55/probe-attempt-2/started'))throw Error('PROBE_CLOSED_NEW_AUTHORIZATION_REQUIRED');
  const dir='/tmp/echo-stage3-55/probe-attempt-2';mkdirSync(dir,{recursive:true,mode:0o700});
  const prompt=readFileSync(resolve(root,'tests/fixtures/stage3/meaning-prompt.txt'),'utf8');
  const manifest=JSON.parse(readFileSync(resolve(root,'tests/fixtures/stage3/probe-manifest.json'),'utf8'));
  const cases=probeCases();const config={model:MODEL,apiKey:'',prompt};
  const budget=new ProbeBudget();const prepared=cases.map(c=>{const p=preparePrivacy(c.pack,{externalAllowed:true});if(p.route==='denied')throw Error('SYNTHETIC_PRIVACY_DENIED');
-  const body={model:MODEL,store:false,service_tier:'default',temperature:0,max_output_tokens:2000,instructions:prompt,input:JSON.stringify({context:p.context.pack,sourceCodePointLength:Array.from(p.context.pack.text).length,registry:taskRegistry}),text:{format:{type:'json_schema',name:'meaning_v1',strict:true,schema:meaningJsonSchema}}};
+  const body={model:MODEL,store:false,service_tier:'default',temperature:0,max_output_tokens:2000,instructions:prompt,input:JSON.stringify({context:p.context.pack,registry:taskRegistry}),text:{format:{type:'json_schema',name:'meaning_draft_v2',strict:true,schema:meaningJsonSchema}}};
   // Byte-level tokenizer conservative upper bound incl schema and 256 protocol tokens. No paid counting API.
   const inputBound=Buffer.byteLength(JSON.stringify(body),'utf8')+256;budget.reserve(c.id,inputBound,2000);return {...c,context:p.context,inputBound};});
  const hash=(v:unknown)=>createHash('sha256').update(typeof v==='string'?v:JSON.stringify(v)).digest('hex');
@@ -103,7 +113,7 @@ export async function runProbe(dispatch:boolean){
  });const results:unknown[]=[];
  let usageUsd=0,reportedCalls=0;
  for(const c of prepared){
-  const result=await provider.decide(c.context,taskRegistry,1,new Date(Date.now()+45000),new AbortController().signal);reportedCalls++;
+  const result=await provider.decide(c.context,taskRegistry,2,new Date(Date.now()+45000),new AbortController().signal);reportedCalls++;
   const audit=auditProbe(c.id,result);const row={id:c.id,result,audit};results.push(row);
   writeFileSync(resolve(dir,c.id+'.json'),JSON.stringify(row,null,2)+'\n',{mode:0o600});
   if(result.usage)usageUsd+=(result.usage.inputTokens*2+result.usage.outputTokens*8)/1e6;else usageUsd+=(c.inputBound*2+2000*8)/1e6;

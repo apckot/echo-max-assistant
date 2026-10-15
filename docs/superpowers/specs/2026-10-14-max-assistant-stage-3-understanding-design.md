@@ -1,6 +1,6 @@
 # Echo MAX — Stage 3: смысл, голос и управление задачами
 
-Дата2026-10-14, Europe/Moscow. **Проект для принятия владельцем. Сейчас разрешено только обновление документов. После их принятия ранний шаг53 допускает заранее ограниченные синтетические OpenAI-запросы; реализация сейчас не начинается.** Stage2 принят владельцем на SHA `66014298a4e511a1aa10a1df0242deda06ecc48e`.
+Дата2026-10-14, уточнено2026-10-15, Europe/Moscow. **Базовые документы приняты; после двух FAIL probe текущий объём — только локальное уточнение контрактов/проверок. Новые API и54–55 не разрешены до отдельного согласования.** Stage2 принят на SHA `66014298a4e511a1aa10a1df0242deda06ecc48e`.
 
 ## 1. Приоритет и результат
 
@@ -21,19 +21,20 @@ Model/API/profile закрепляются при реализации по ак
 |Media|скачивание, изоляция codec, audio privacy, transcript и cleanup|transcript не является командой|
 |Privacy|локальная классификация и минимизация всех данных перед provider|не определяет lifecycle Task|
 |Context|доставленная беседа, committed changes, точные ссылки, кандидаты|retrieval не авторизует mutation|
-|Semantic|целая реплика → MeaningDecisionV1; один DecisionValidator|не пишет Task SQL и не стилизует committed ответ вторым AI|
+|Semantic|целая реплика → MeaningDraftV2 → точное grounding → MeaningDecisionV1; один DecisionValidator|не пишет Task SQL и не стилизует committed ответ вторым AI|
 |Agent Runtime|бюджет, durable run/decision, группы, pending choices, recovery|не меняет правила Tasks|
 |Tasks|существующие команды, версии, events, receipts, public reads|не знает MAX/OpenAI/transcript|
 |Delivery|MAX drafts/buttons, outbox, certainty и receipt доставки|не переисполняет команды|
 
 Application/domain остаются DTO/port-only. Runtime выбирает adapter конфигурацией выпуска. OpenAI-вызовы, transport schema, auth, usage/error mapping принадлежат infrastructure. Будущие внешние и локальные backend реализуют те же порты; в текущем runtime есть только OpenAI. Автоматический fallback отсутствует. Запрещённый внешний маршрут означает безопасный отказ, а не необходимость реализовать локальную модель.
 
-Контракты (readonly DTO; JSON schema strict, version1):
+Контракты readonly/strict: внешний MeaningDraftV2 с цитатами, внутренний MeaningDecisionV1 с точными диапазонами; registry version1.
 
 - `PrivacyGateway.prepare(pack: InternalContextPack): PrivacyResult` — `external_allowed|tokenized|denied`; выдаёт ProviderContext и локальный handle mapping либо код безопасного отказа. Не делает сеть.
-- `AiDecisionProvider.decide(context: ProviderContext, registry: ToolRegistryV1, schemaVersion:1, deadline: Instant, signal: AbortSignal): Promise<ProviderResult>` — decision JSON, model/profile/prompt versions, nullable usage, duration, закрытый outcome. Не получает InternalContextPack или token mapping.
+- `AiDecisionProvider.decide(context: ProviderContext, registry: ToolRegistryV1, schemaVersion:2, deadline: Instant, signal: AbortSignal): Promise<ProviderResult>` — MeaningDraftV2 JSON без числовых позиций, model/profile/prompt versions, nullable usage, duration, закрытый outcome. Не получает InternalContextPack или token mapping.
 - `AudioPrivacyGateway.route(asset: VerifiedAudio, principal: AudioPolicy): AudioRoute` — external_stt_allowed / denied. Отдельный контракт, не текстовый PrivacyGateway.
 - `SpeechToTextProvider.transcribe(input: ApprovedAudio, deadline, signal): TranscriptResult` — текст, язык, segments/critical uncertainty, checksum, provider/model/version; неизвестная confidence остаётся null.
+- `QuoteGrounder.ground(draft: MeaningDraftV2, sourceMap): GroundedMeaning` — точное однозначное сопоставление provider-цитат и восстановление оригинальных code-point ranges; не semantic approval.
 - `DecisionValidator.validate(decision, sourceMap, contextSnapshot): ValidatedDecision|InvalidDecision` — единственный semantic authority validator.
 - `TaskResolver.resolve(target: TargetBasis, contextSnapshot): ResolvedTarget|FiniteChoice|NotFound` — только public TaskQueries, не второй AI.
 - `TurnCoordinator.stage/run/finalize(turnId)` — durable решение, исполнение групп, общая truthful projection. `ChoiceExecutor.consume(token, authenticatedCallbackSource)` — без AI.
@@ -43,7 +44,8 @@ Application/domain остаются DTO/port-only. Runtime выбирает adap
 Нормативная DTO-форма (спецификация, не реализация):
 
 ```typescript
-type SpanRef = {sourceLabel:string; start:number; end:number; quote:string}; // code points
+type QuoteRef = {sourceLabel:string; quote:string}; // внешний wire: только дословная цитата
+type SpanRef = QuoteRef & {start:number; end:number}; // только приложение, code points
 type TargetBasis =
  | {kind:'candidate'; label:string; evidence:SpanRef[]}
  | {kind:'reply'; anchorLabel:string; evidence:SpanRef[]}
@@ -59,6 +61,12 @@ type MeaningDecisionV1 = {version:1; units:MeaningUnit[]; relations:MeaningRelat
  actions:ActionDraft[]; queries:ReadDraft[]; groups:GroupDraft[]};
 ```
 
+Внешний `MeaningDraftV2` имеет ту же смысловую структуру units/relations/actions/queries/groups, но `version:2` и **все** evidence содержат только QuoteRef. Числовые start/end в нём запрещены strict schema. Приведённые ниже SpanRef принадлежат внутреннему контракту; модель их не заполняет.
+
+QuoteGrounder использует sourceLabel как точную ссылку на разрешённый source в SourceMap, ищет **дословное** совпадение цитаты в providerSources этого source и считает все вхождения, включая перекрывающиеся. Ровно одно — вычислить start/end приложением. Ноль, несколько или неизвестный sourceLabel — закрытый отказ с безопасным кодом; без первого/ближайшего совпадения, fuzzy search, изменения регистра, Unicode-нормализации и угадывания. В этой версии нет occurrence index/selector для выбора из повторов. Можно вернуть более полную дословную цитату, которая сама имеет одно вхождение; явный sourceLabel различает разные источники.
+
+SourceMap сохраняет оригинальные `sources`, выданные `providerSources` и значения меток. Сначала доказывается точное совпадение в реально выданном source; затем rehydration prefix/quote вычисляет диапазон в оригинале по Unicode code points. Весь provider source должен точно восстановиться в original source. Unknown/cross-run token, разрыв токена, несогласованный mapping или диапазон — отказ. Угаданное приватное имя, отсутствующее в provider source, не является цитатой. Внутренний GroundedMeaning содержит MeaningDecisionV1 с точными диапазонами и SourceMap; semantic authority всё ещё требует отдельного validator. Rehydration не переименовывает temporal fields и не исправляет смысл.
+
 Все объекты strict, неизвестные keys запрещены. Метки: units `u[1-9][0-9]{0,2}`, actions `a[1-9][0-9]{0,2}`, queries `q[1-9][0-9]{0,2}`, groups `g[1-9][0-9]{0,2}`. Ссылки unitLabel/relation endpoints/scopeUnitLabels только на u, actionLabels на a, queryLabels на q; created target на a-label соответствующего Create. Пересечения/повторы/неизвестные ссылки отклоняются, второй AI для ремонта не используется. MeaningUnit fields: label,kind,speechAct,polarity(`positive|negative`),modality(`asserted|uncertain`),authoredByOwner,evidence[],uncertainty(`null|target|time|intent`). MeaningRelation fields: kind(`shared_time|same_target|correction|depends_on|quote_scope`),fromLabel,toLabels[],evidence[]. GroupDraft fields: label,unitLabels[],actionLabels[],queryLabels[],outcome(`execute|needs_choice|respond|capability_unavailable`),reason(`null|target|time|intent|unsupported`). Group labels canonicalise приложение; unknown/duplicate refs invalid. No UUID/version/effectKey/provider-supplied arbitrary command JSON. Model may suggest needs_choice reason, но options и их command payload строит только application.
 
 Search target set с явным «оба/перечисленные» разрешён только при доказанном bounded scope≤20 и полноте selection, не по первому page. Неполнота/слишком много целей → no effect компонента. Набор targets и versions фиксируется до Task execution. Pure query/history не делает mutation. «Готовые дела на сегодня» означает назначенные на сегодня completed Tasks; запрос факта завершения в день требует history evidence и не подменяется Task.day membership.
@@ -66,13 +74,13 @@ Search target set с явным «оба/перечисленные» разре
 
 `MeaningDecisionV1` содержит `units[]`, `relations[]`, `groups[]`, `queries[]`. До20 units/20 actions/10 groups на ход, до20 commands в группе (лимит Stage2). Для превышения — явный отказ без усечения и без частичного «первых20».
 
-Unit: local label; тип `action|query|context|unsupported`; speech act `request|assertion|question|quote|hypothesis|meta`; polarity, modality, authoredByOwner; ссылки на исходные code-point spans `[start,end)` и точные цитаты; temporal expressions, task target basis, uncertainty. Общие даты/перечисленные цели и self-correction задаются явными relations, не механическим last-field-wins. UUID и expectedVersion назначает приложение, не модель.
+Unit: local label; тип `action|query|context|unsupported`; speech act `request|assertion|question|quote|hypothesis|meta`; polarity, modality, authoredByOwner; внешние дословные цитаты, а после локального grounding — исходные code-point spans `[start,end)`; temporal expressions, task target basis, uncertainty. Общие даты/перечисленные цели и self-correction задаются явными relations, не механическим last-field-wins. UUID, expectedVersion и числовые диапазоны назначает приложение, не модель.
 
 Group имеет один исход: execute / needs_choice / respond / capability_unavailable. Для execute — только разрешённые TaskCreate/Update/Complete/Cancel/Reopen и queries. `created:localLabel` допускается внутри одной группы. Зависимости между группами не исполняются как независимые: приложение объединяет связанные actions или отклоняет конфликтующий компонент. Пересечение одного Task/локальных ссылок/условий запрещает частичное исполнение компонента; модель не может сама объявить его независимым. При невозможности доказать independence — не применять спорный компонент, а не откатывать уже доказанную независимую задачу.
 
 Нулевые mutations — нормальный исход мысли, гипотезы, отрицания, цитаты, мета-реплики или вопроса. Исходник сохраняется как принятый turn, но это не обещание создания memory item: Stage2 хранит только Task. Отсутствие действия не запускает capture fallback.
 
-Validator проверяет schema/labels/graph, точные spans и source provenance, владельца, отрицание/цитирование/неопределённость, allowed fields, evidence/target scope, временную связь и группу. Confidence модели не даёт полномочий. Структурно сломанный frame полностью отклоняется без извлечения «хороших кусков» и без JSON-repair AI. В структурно валидном frame локальная неопределённость блокирует только связанный компонент. Это прикладные guards и corpus evidence, не утверждение о формальном доказательстве естественного языка.
+После QuoteGrounder validator проверяет schema/labels/graph, точные spans и source provenance, владельца, отрицание/цитирование/неопределённость, allowed fields, evidence/target scope, временную связь и группу. Confidence модели не даёт полномочий. Структурно сломанный frame полностью отклоняется без извлечения «хороших кусков» и без JSON-repair AI. В структурно валидном frame локальная неопределённость блокирует только связанный компонент. Это прикладные guards и corpus evidence, не утверждение о формальном доказательстве естественного языка.
 
 ### Создание и изменение
 
@@ -93,6 +101,8 @@ InternalContextPack строится на snapshot исходного событ
 Бюджет вспомогательного context6000 tokens; полный provider input≤24000 tokens включая current source/registry. Сокращается только auxiliary context; полный current input/нужный точный anchor не помещается → явный отказ, без silent clipping. Максимум input поддерживается выбранным pinned model profile, проверяется локальным tokenizer. Pending choices присутствуют только как справка с labels, не active conversation mode.
 
 Модель возвращает выражения дат/часов и scope. Application TemporalNormalizer использует IANA port Stage2. «Завтра» от local date исходного события; названный weekday без «прошлый» — ближайшая дата не раньше source local date, включая сегодня; «в прошлый» — предыдущая. «Сегодня» при позднем retry не становится завтра. Точные часы дают scheduledAt; targetDate ставится только при явном/общем date scope (Stage2 разрешает instant без targetDate). Deadline задаётся явно: «до», «не позднее», «срок», «к девяти / к9». «Завтра к девяти отправить отчёт» означает deadline.at завтра09:00 в source timezone, без scheduledAt; «завтра в девять» означает scheduledAt. «К девяти» без дня использует source local date, не автоматически завтра; уже прошедший срок не переносится. Отсутствие срока/часа не требует выбора.
+
+Три временных намерения разделены: перенос/назначение дня задачи → `targetDate`; назначение точного времени встречи → `scheduledAt`; явное изменение крайнего срока → `deadline` (далее dueDate/dueAt Stage2). «Перенеси звонок на завтра» не является изменением deadline. «Завтра в девять» не означает «к девяти». Объявленного моделью field недостаточно: исходные grounded цитаты, temporal scope и отношение к другим actions должны подтверждать именно это намерение. Несоответствие field/исходного намерения отклоняется с TIME_INTENT_MISMATCH; неподтверждённое намерение — TIME_INTENT_UNPROVEN. Никакой молчаливой замены deadline на targetDate. Локальный guard сейчас ограничен проверенными языковыми формами; полный разбор значений/таймзон остаётся этапом55, unknown не угадывается.
 
 Meeting gap → nonexistent, fold → кнопки двух допустимых offsets, без догадки. Calendar day reading использует отдельную политику Stage2 gap/fold/skipped boundaries и cursor asOf; никакого23:59/instant+24h/carry-forward. Перенос date-only не сдвигает точный instant молча: explicit scope меняет ровно выбранные поля. Если пользователь переносит саму встречу «её на завтра», полное доказанное schedule изменение задаёт дату+точное время; если время не сообщено и не унаследовано из цели — не придумывать часы.
 
@@ -219,8 +229,10 @@ S01 input/graph/spans; S02 create vs mutation; S03 evidence/ownership; S04 targe
 
 Одно внешнее смысловое решение вместо legacy Understanding→Planning→repair→style. Уменьшаем число сетевых шагов, но делаем локальный validator/Context/Privacy более строгими. Независимые groups дают полезный частичный результат, поэтому final response отделён от первого group commit и имеет durable continuation intent. OpenAI text/STT сокращают объём запуска. Цена этого решения: локальные privacy-проверки ограничены, а разрешённый STT получает саму запись до text Gateway; этот риск отражён в audio policy, а не скрыт обещанием анонимизации. Кнопки заменяют необходимый конечный выбор, а не диалог целиком.
 
-Документы ждут принятия. Сейчас изменяются только три документа. После принятия предусмотрен ранний probe53 в разрешённых пределах; реальные пользовательские данные, аудио, canary и deployment им не разрешаются. Реализацию Stage3 и последующий этап сейчас не начинать.
+Базовые документы приняты. Текущее уточнение — локальные контракты, проверки и replay; новый probe ждёт отдельного согласования. Реальные пользовательские данные, аудио, canary, deployment и продолжение54–55 сейчас не разрешены.
 
 Принято владельцем2026-10-15. Разрешён только блок51–55, включая один ограниченный probe53; остальные блоки требуют отдельного разрешения.
 
 Уточнение53 от владельца2026-10-15: C034 теперь содержит «на завтра», обязательны независимый Create и сохранённый dated Update draft для выбора цели. Исходный no-date перенос — C101, выбор цели не восполняет отсутствующую дату, пустой Update не исполняется. Полностью полученный невалидный ответ имеет outcome `invalid` и безопасный reason code с доступными usage/duration; только транспортная неопределённость — `uncertain`. Разрешена attempt2 на прежней модели,12 новых calls/≤USD2, после локального replay первой попытки и новой заморозки.
+
+Локальное уточнение после attempt2 (2026-10-15): внешний quote-only MeaningDraftV2, приложение вычисляет spans; усилены exact-field/scope/unchanged/independence oracles C016/C034. Это не новый AI eval и не пересмотр старых FAIL. Оба разрешённых probe завершены; никаких новых API-вызовов до отдельного согласования. Модель прежняя.
