@@ -1,0 +1,812 @@
+{
+  "kind": "offline_checkpoint60_replay",
+  "modelInvocations": 0,
+  "rows": [
+    {
+      "id": "C003",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "create",
+                "target": null,
+                "fields": {
+                  "title": "купить молоко",
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 31,
+                    "quote": "Создай ещё задачу купить молоко"
+                  }
+                ]
+              },
+              "target": null,
+              "time": {
+                "status": "resolved",
+                "values": []
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "C024",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "create",
+                "target": null,
+                "fields": {
+                  "title": "Лотки заказать",
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [
+                  {
+                    "field": "scheduledAt",
+                    "expression": "завтра в9",
+                    "evidence": [
+                      {
+                        "sourceLabel": "S0",
+                        "start": 15,
+                        "end": 24,
+                        "quote": "завтра в9"
+                      }
+                    ],
+                    "scopeUnitLabels": [
+                      "u1"
+                    ]
+                  }
+                ],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 24,
+                    "quote": "Лотки заказать завтра в9"
+                  }
+                ]
+              },
+              "target": null,
+              "time": {
+                "status": "resolved",
+                "values": [
+                  {
+                    "field": "scheduledAt",
+                    "at": "2026-09-12T06:00:00.000Z"
+                  }
+                ]
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "C025",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "update",
+                "target": {
+                  "kind": "candidate",
+                  "label": "T1",
+                  "evidence": [
+                    {
+                      "sourceLabel": "S0",
+                      "start": 9,
+                      "end": 21,
+                      "quote": "заказ лотков"
+                    }
+                  ]
+                },
+                "fields": {
+                  "title": null,
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [
+                  {
+                    "field": "targetDate",
+                    "expression": "завтра",
+                    "evidence": [
+                      {
+                        "sourceLabel": "S0",
+                        "start": 22,
+                        "end": 31,
+                        "quote": "на завтра"
+                      }
+                    ],
+                    "scopeUnitLabels": [
+                      "u1"
+                    ]
+                  },
+                  {
+                    "field": "scheduledAt",
+                    "expression": "в9",
+                    "evidence": [
+                      {
+                        "sourceLabel": "S0",
+                        "start": 32,
+                        "end": 34,
+                        "quote": "в9"
+                      }
+                    ],
+                    "scopeUnitLabels": [
+                      "u1"
+                    ]
+                  }
+                ],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 34,
+                    "quote": "Перенеси заказ лотков на завтра в9"
+                  }
+                ]
+              },
+              "target": {
+                "status": "resolved",
+                "targets": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "version": 1
+                  }
+                ]
+              },
+              "time": {
+                "status": "resolved",
+                "values": [
+                  {
+                    "field": "targetDate",
+                    "date": "2026-09-12"
+                  },
+                  {
+                    "field": "scheduledAt",
+                    "at": "2026-09-11T06:00:00.000Z"
+                  }
+                ]
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "C013",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": []
+    },
+    {
+      "id": "C015",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": []
+    },
+    {
+      "id": "C016",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "complete",
+                "target": {
+                  "kind": "list_index",
+                  "anchorLabel": "L1",
+                  "indices": [
+                    1
+                  ],
+                  "evidence": [
+                    {
+                      "sourceLabel": "S0",
+                      "start": 0,
+                      "end": 13,
+                      "quote": "Сделал первое"
+                    }
+                  ]
+                },
+                "fields": {
+                  "title": null,
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 13,
+                    "quote": "Сделал первое"
+                  }
+                ]
+              },
+              "target": {
+                "status": "resolved",
+                "targets": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "version": 1
+                  }
+                ]
+              },
+              "time": {
+                "status": "resolved",
+                "values": []
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        },
+        {
+          "labels": [
+            "g2"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a2",
+                "unitLabel": "u2",
+                "kind": "update",
+                "target": {
+                  "kind": "list_index",
+                  "anchorLabel": "L1",
+                  "indices": [
+                    2
+                  ],
+                  "evidence": [
+                    {
+                      "sourceLabel": "S0",
+                      "start": 15,
+                      "end": 40,
+                      "quote": "второе перенеси на завтра"
+                    }
+                  ]
+                },
+                "fields": {
+                  "title": null,
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [
+                  {
+                    "field": "targetDate",
+                    "expression": "завтра",
+                    "evidence": [
+                      {
+                        "sourceLabel": "S0",
+                        "start": 31,
+                        "end": 40,
+                        "quote": "на завтра"
+                      }
+                    ],
+                    "scopeUnitLabels": [
+                      "u2"
+                    ]
+                  }
+                ],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 15,
+                    "end": 40,
+                    "quote": "второе перенеси на завтра"
+                  }
+                ]
+              },
+              "target": {
+                "status": "resolved",
+                "targets": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000002",
+                    "version": 1
+                  }
+                ]
+              },
+              "time": {
+                "status": "resolved",
+                "values": [
+                  {
+                    "field": "targetDate",
+                    "date": "2026-09-12"
+                  }
+                ]
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "C034",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "create",
+                "target": null,
+                "fields": {
+                  "title": "Купи молоко",
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 11,
+                    "quote": "Купи молоко"
+                  }
+                ]
+              },
+              "target": null,
+              "time": {
+                "status": "resolved",
+                "values": []
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        },
+        {
+          "labels": [
+            "g2"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a2",
+                "unitLabel": "u2",
+                "kind": "update",
+                "target": {
+                  "kind": "search",
+                  "title": "Звонок",
+                  "qualifiers": {
+                    "date": null,
+                    "status": "open"
+                  },
+                  "evidence": [
+                    {
+                      "sourceLabel": "S0",
+                      "start": 14,
+                      "end": 39,
+                      "quote": "перенеси звонок на завтра"
+                    }
+                  ]
+                },
+                "fields": {
+                  "title": null,
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [
+                  {
+                    "field": "targetDate",
+                    "expression": "завтра",
+                    "evidence": [
+                      {
+                        "sourceLabel": "S0",
+                        "start": 30,
+                        "end": 39,
+                        "quote": "на завтра"
+                      }
+                    ],
+                    "scopeUnitLabels": [
+                      "u2"
+                    ]
+                  }
+                ],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 14,
+                    "end": 39,
+                    "quote": "перенеси звонок на завтра"
+                  }
+                ]
+              },
+              "target": {
+                "status": "choice",
+                "options": [
+                  {
+                    "id": "00000000-0000-4000-8000-000000000001",
+                    "version": 1
+                  },
+                  {
+                    "id": "00000000-0000-4000-8000-000000000002",
+                    "version": 1
+                  }
+                ]
+              },
+              "time": {
+                "status": "resolved",
+                "values": [
+                  {
+                    "field": "targetDate",
+                    "date": "2026-09-12"
+                  }
+                ]
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "choice",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "C020",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "complete",
+                "target": {
+                  "kind": "candidate",
+                  "label": "T1",
+                  "evidence": [
+                    {
+                      "sourceLabel": "S0",
+                      "start": 0,
+                      "end": 2,
+                      "quote": "Её"
+                    }
+                  ]
+                },
+                "fields": {
+                  "title": null,
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 10,
+                    "quote": "Её заверши"
+                  }
+                ]
+              },
+              "target": {
+                "status": "not_found"
+              },
+              "time": {
+                "status": "resolved",
+                "values": []
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "blocked",
+          "reasons": [
+            "TARGET_NOT_FOUND"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C041",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "create",
+                "target": null,
+                "fields": {
+                  "title": "Купить хлеб",
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 11,
+                    "quote": "Купить хлеб"
+                  }
+                ]
+              },
+              "target": null,
+              "time": {
+                "status": "resolved",
+                "values": []
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "C043",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": []
+    },
+    {
+      "id": "C005",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "create",
+                "target": null,
+                "fields": {
+                  "title": "встреча",
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [
+                  {
+                    "field": "scheduledAt",
+                    "expression": "в11",
+                    "evidence": [
+                      {
+                        "sourceLabel": "S0",
+                        "start": 18,
+                        "end": 21,
+                        "quote": "в11"
+                      }
+                    ],
+                    "scopeUnitLabels": [
+                      "u1"
+                    ]
+                  }
+                ],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 21,
+                    "quote": "В10 встреча, нет, в11"
+                  }
+                ]
+              },
+              "target": null,
+              "time": {
+                "status": "resolved",
+                "values": [
+                  {
+                    "field": "scheduledAt",
+                    "at": "2026-09-11T08:00:00.000Z"
+                  }
+                ]
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "C064",
+      "kind": "local_saved_response_replay",
+      "newApiCalls": 0,
+      "originalProbeAudit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "groups": [
+        {
+          "labels": [
+            "g1"
+          ],
+          "actions": [
+            {
+              "draft": {
+                "label": "a1",
+                "unitLabel": "u1",
+                "kind": "create",
+                "target": null,
+                "fields": {
+                  "title": "отправить отчёт",
+                  "description": null,
+                  "clearFields": []
+                },
+                "times": [
+                  {
+                    "field": "deadline",
+                    "expression": "завтра к девяти",
+                    "evidence": [
+                      {
+                        "sourceLabel": "S0",
+                        "start": 0,
+                        "end": 15,
+                        "quote": "Завтра к девяти"
+                      }
+                    ],
+                    "scopeUnitLabels": [
+                      "u1"
+                    ]
+                  }
+                ],
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 31,
+                    "quote": "Завтра к девяти отправить отчёт"
+                  }
+                ]
+              },
+              "target": null,
+              "time": {
+                "status": "resolved",
+                "values": [
+                  {
+                    "field": "deadline",
+                    "at": "2026-09-12T06:00:00.000Z"
+                  }
+                ]
+              }
+            }
+          ],
+          "queryLabels": [],
+          "status": "ready",
+          "reasons": []
+        }
+      ]
+    }
+  ],
+  "correctProbeResponsesRejectedLocally": [
+    {
+      "id": "C020",
+      "reasons": [
+        "TARGET_NOT_FOUND"
+      ]
+    }
+  ]
+}
