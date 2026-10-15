@@ -15,3 +15,11 @@ Targeted RED: missing meaning module. GREEN4/4; typecheck/architecture pass. Ini
 Privacy allowlist rebuilds whole pack, known-value/email/phone/document/UUID masking and per-run SourceMap; policy/secret/check failure denies. Issued contexts use an in-memory capability and deep freeze; raw/forged contexts cannot invoke adapter. OpenAI Responses transport fixed official origin, redirects forbidden, store=false/strict schema, no retry; safe error codes. AES-GCM map envelope authenticates expiry; migration27 adds forced RLS, counts/cascade account erasure and bounded fenced expiration cleanup. No claim exhaustive PII detection. Schema-head expectations advance27.
 
 RED missing privacy/transport modules; GREEN6/6 (real isolated PG included), typecheck/architecture pass. Local Docker started only for tests. Node22.23.3 runtime installed through npm exec for checkpoint tooling; no server/deployment. Live provider calls0.
+
+## Iteration53 — failed probe; checkpoint55 NOT reached
+
+Budget/credential/oracle harness RED missing runner; GREEN3/3 budget/collector/credential tests (plus51/52 shared contract targeted tests11/11 before dispatch), typecheck/architecture verified. Frozen schema uses shared JSON Schema references; provider input includes exact source code-point length. Input byte upper bounds≤11147tokens, preflight maximumUSD0.45486. Probe45s deadline is experimental, not production latency evidence. See [freeze/report](stage-3-openai-probe.md).
+
+Credential-format preparation failed before exclusive marker/any requests, then was fixed against prefixed fake-file fixture and manifest re-frozen. Real pass then sent8 requests, no retries:6passed, C034 missing unresolved action payload, C020 duplicate unit/action label rejected locally. Remaining4not dispatched. Cost by complete returned usageUSD0.049978; conservative uncertain-attempt accountingUSD0.082140. All synthetic outputs/statuses retained.
+
+Owner stop condition applies: **stop before54**, no model/prompt/schema tuning or new requests. No independent review, full gate, push or claim checkpoint55 complete. Future work needs explicit owner decision.

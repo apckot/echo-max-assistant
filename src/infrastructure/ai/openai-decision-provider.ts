@@ -11,7 +11,7 @@ export class OpenAiDecisionProvider implements AiDecisionProvider{
   const remaining=deadline.getTime()-Date.now();if(remaining<=0||signal.aborted)return failure('timeout');
   const cancellation=AbortSignal.any([signal,AbortSignal.timeout(Math.min(Math.ceil(remaining),300000))]);
   try{
-   const response=await this.http(OPENAI_RESPONSES_URL,{method:'POST',redirect:'error',signal:cancellation,headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.config.model,store:false,service_tier:'default',temperature:0,max_output_tokens:this.config.maxOutputTokens??2000,instructions:this.config.prompt,input:JSON.stringify({context:context.pack,registry}),text:{format:{type:'json_schema',name:'meaning_v1',strict:true,schema:meaningJsonSchema}}})});
+   const response=await this.http(OPENAI_RESPONSES_URL,{method:'POST',redirect:'error',signal:cancellation,headers:{Authorization:`Bearer ${this.config.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:this.config.model,store:false,service_tier:'default',temperature:0,max_output_tokens:this.config.maxOutputTokens??2000,instructions:this.config.prompt,input:JSON.stringify({context:context.pack,sourceCodePointLength:Array.from(context.pack.text).length,registry}),text:{format:{type:'json_schema',name:'meaning_v1',strict:true,schema:meaningJsonSchema}}})});
    if(!response.ok){await response.body?.cancel();return failure('http_error',response.status);}
    const raw=await response.text();if(raw.length>500000)return failure('invalid');
    const body=JSON.parse(raw) as {status?:string;model?:string;output?:{type:string;content?:{type:string;text?:string}[]}[];usage?:{input_tokens:number;output_tokens:number}};

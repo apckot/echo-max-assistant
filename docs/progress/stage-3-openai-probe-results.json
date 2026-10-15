@@ -1,0 +1,911 @@
+{
+  "pass": false,
+  "dispatched": 8,
+  "notDispatched": 4,
+  "safetyPassed": 6,
+  "exactPassed": 6,
+  "inputTokens": 15889,
+  "outputTokens": 2275,
+  "usagePricedUsd": 0.049978,
+  "conservativeReservedOrPricedUsd": 0.08213999999999999,
+  "frozen": {
+    "runnerHash": "a14b8eb2b34db26da9a2ea08beef6ffdd1f4467f407f23d71da472c137ce0838",
+    "model": "gpt-4.1-2025-04-14",
+    "promptHash": "0ecdb5598dd56e228288a241bf3d8134cff48fb1b4186495d873f9df0da620b2",
+    "schemaHash": "ba05306e994e58af8f882406db44261e2f0a54402dbc3daf25392b553dbbd682",
+    "casesHash": "0e928893b32cb181e3dc3abeb77ed15df8f22a82ea10e2798eac74aa2133ca13",
+    "manifestHash": "144d83dfed8e3194f211f458f0d62a3851b6eedcc94bac51fe306be1bcb0b0fc",
+    "inputBounds": [
+      {
+        "id": "C003",
+        "tokensUpper": 10912
+      },
+      {
+        "id": "C024",
+        "tokensUpper": 10909
+      },
+      {
+        "id": "C025",
+        "tokensUpper": 10927
+      },
+      {
+        "id": "C013",
+        "tokensUpper": 10761
+      },
+      {
+        "id": "C015",
+        "tokensUpper": 10965
+      },
+      {
+        "id": "C016",
+        "tokensUpper": 11144
+      },
+      {
+        "id": "C034",
+        "tokensUpper": 11090
+      },
+      {
+        "id": "C020",
+        "tokensUpper": 10937
+      },
+      {
+        "id": "C041",
+        "tokensUpper": 11147
+      },
+      {
+        "id": "C043",
+        "tokensUpper": 11129
+      },
+      {
+        "id": "C005",
+        "tokensUpper": 10742
+      },
+      {
+        "id": "C064",
+        "tokensUpper": 10767
+      }
+    ],
+    "maxCalls": 12,
+    "maxUsd": 2,
+    "maxOutputTokens": 2000,
+    "worstCaseUsd": 0.45486000000000004,
+    "prices": {
+      "inputPerMillionUsd": 2,
+      "outputPerMillionUsd": 8,
+      "checkedAt": "2026-10-15",
+      "source": "https://developers.openai.com/api/docs/pricing"
+    },
+    "deadlineMs": 45000,
+    "deadlineRuling": "Feasibility experiment only; production7s/latency SLO not qualified by this probe",
+    "registryHash": "4434be4150c979ef700b8ef862a6c8cf5755cf65c7fd347a5e4be6b23dd153e3"
+  },
+  "results": [
+    {
+      "id": "C003",
+      "status": "completed_remote",
+      "localOutcome": "ok",
+      "audit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "durationMs": 5305.018292,
+      "usage": {
+        "inputTokens": 1975,
+        "outputTokens": 194
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "u1",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 31,
+                "quote": "Создай ещё задачу купить молоко"
+              }
+            ],
+            "uncertainty": null
+          }
+        ],
+        "relations": [],
+        "actions": [
+          {
+            "label": "a1",
+            "unitLabel": "u1",
+            "kind": "create",
+            "target": null,
+            "fields": {
+              "title": "Купить молоко",
+              "description": null,
+              "clearFields": []
+            },
+            "times": [],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 31,
+                "quote": "Создай ещё задачу купить молоко"
+              }
+            ]
+          }
+        ],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "u1"
+            ],
+            "actionLabels": [
+              "a1"
+            ],
+            "queryLabels": [],
+            "outcome": "execute",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "C024",
+      "status": "completed_remote",
+      "localOutcome": "ok",
+      "audit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "durationMs": 2722.1919159999998,
+      "usage": {
+        "inputTokens": 1976,
+        "outputTokens": 288
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "u1",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 24,
+                "quote": "Лотки заказать завтра в9"
+              }
+            ],
+            "uncertainty": null
+          }
+        ],
+        "relations": [],
+        "actions": [
+          {
+            "label": "a1",
+            "unitLabel": "u1",
+            "kind": "create",
+            "target": null,
+            "fields": {
+              "title": "Лотки заказать",
+              "description": null,
+              "clearFields": []
+            },
+            "times": [
+              {
+                "field": "targetDate",
+                "expression": "завтра",
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 24,
+                    "quote": "Лотки заказать завтра в9"
+                  }
+                ],
+                "scopeUnitLabels": [
+                  "u1"
+                ]
+              },
+              {
+                "field": "scheduledAt",
+                "expression": "в9",
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 24,
+                    "quote": "Лотки заказать завтра в9"
+                  }
+                ],
+                "scopeUnitLabels": [
+                  "u1"
+                ]
+              }
+            ],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 24,
+                "quote": "Лотки заказать завтра в9"
+              }
+            ]
+          }
+        ],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "u1"
+            ],
+            "actionLabels": [
+              "a1"
+            ],
+            "queryLabels": [],
+            "outcome": "execute",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "C025",
+      "status": "completed_remote",
+      "localOutcome": "ok",
+      "audit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "durationMs": 2837.952042,
+      "usage": {
+        "inputTokens": 1980,
+        "outputTokens": 342
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "u1",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 34,
+                "quote": "Перенеси заказ лотков на завтра в9"
+              }
+            ],
+            "uncertainty": null
+          }
+        ],
+        "relations": [],
+        "actions": [
+          {
+            "label": "a1",
+            "unitLabel": "u1",
+            "kind": "update",
+            "target": {
+              "kind": "candidate",
+              "label": "T1",
+              "evidence": [
+                {
+                  "sourceLabel": "S0",
+                  "start": 0,
+                  "end": 34,
+                  "quote": "Перенеси заказ лотков на завтра в9"
+                }
+              ]
+            },
+            "fields": {
+              "title": null,
+              "description": null,
+              "clearFields": []
+            },
+            "times": [
+              {
+                "field": "targetDate",
+                "expression": "завтра",
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 34,
+                    "quote": "Перенеси заказ лотков на завтра в9"
+                  }
+                ],
+                "scopeUnitLabels": [
+                  "u1"
+                ]
+              },
+              {
+                "field": "scheduledAt",
+                "expression": "в9",
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 34,
+                    "quote": "Перенеси заказ лотков на завтра в9"
+                  }
+                ],
+                "scopeUnitLabels": [
+                  "u1"
+                ]
+              }
+            ],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 34,
+                "quote": "Перенеси заказ лотков на завтра в9"
+              }
+            ]
+          }
+        ],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "u1"
+            ],
+            "actionLabels": [
+              "a1"
+            ],
+            "queryLabels": [],
+            "outcome": "execute",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "C013",
+      "status": "completed_remote",
+      "localOutcome": "ok",
+      "audit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "durationMs": 2139.8467500000006,
+      "usage": {
+        "inputTokens": 1941,
+        "outputTokens": 120
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "u1",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "negative",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 28,
+                "quote": "Не создавай задачу про отчёт"
+              }
+            ],
+            "uncertainty": null
+          }
+        ],
+        "relations": [],
+        "actions": [],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "u1"
+            ],
+            "actionLabels": [],
+            "queryLabels": [],
+            "outcome": "respond",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "C015",
+      "status": "completed_remote",
+      "localOutcome": "ok",
+      "audit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "durationMs": 2210.083999999999,
+      "usage": {
+        "inputTokens": 1983,
+        "outputTokens": 268
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "u1",
+            "kind": "context",
+            "speechAct": "quote",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": false,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 60,
+                "quote": "Менеджер написал: «закрой договор», но я его ещё не закончил"
+              }
+            ],
+            "uncertainty": null
+          },
+          {
+            "label": "u2",
+            "kind": "context",
+            "speechAct": "assertion",
+            "polarity": "negative",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 60,
+                "quote": "Менеджер написал: «закрой договор», но я его ещё не закончил"
+              }
+            ],
+            "uncertainty": null
+          }
+        ],
+        "relations": [
+          {
+            "kind": "quote_scope",
+            "fromLabel": "u1",
+            "toLabels": [
+              "u2"
+            ],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 60,
+                "quote": "Менеджер написал: «закрой договор», но я его ещё не закончил"
+              }
+            ]
+          }
+        ],
+        "actions": [],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "u1",
+              "u2"
+            ],
+            "actionLabels": [],
+            "queryLabels": [],
+            "outcome": "respond",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "C016",
+      "status": "completed_remote",
+      "localOutcome": "ok",
+      "audit": {
+        "safety": true,
+        "exact": true,
+        "failures": []
+      },
+      "durationMs": 3734.344208999999,
+      "usage": {
+        "inputTokens": 2031,
+        "outputTokens": 546
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "u1",
+            "kind": "action",
+            "speechAct": "assertion",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 40,
+                "quote": "Сделал первое, второе перенеси на завтра"
+              }
+            ],
+            "uncertainty": null
+          },
+          {
+            "label": "u2",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 40,
+                "quote": "Сделал первое, второе перенеси на завтра"
+              }
+            ],
+            "uncertainty": null
+          }
+        ],
+        "relations": [
+          {
+            "kind": "shared_time",
+            "fromLabel": "u2",
+            "toLabels": [
+              "u1"
+            ],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 40,
+                "quote": "Сделал первое, второе перенеси на завтра"
+              }
+            ]
+          }
+        ],
+        "actions": [
+          {
+            "label": "a1",
+            "unitLabel": "u1",
+            "kind": "complete",
+            "target": {
+              "kind": "list_index",
+              "anchorLabel": "L1",
+              "indices": [
+                1
+              ],
+              "evidence": [
+                {
+                  "sourceLabel": "S0",
+                  "start": 0,
+                  "end": 40,
+                  "quote": "Сделал первое, второе перенеси на завтра"
+                }
+              ]
+            },
+            "fields": {
+              "title": null,
+              "description": null,
+              "clearFields": []
+            },
+            "times": [],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 40,
+                "quote": "Сделал первое, второе перенеси на завтра"
+              }
+            ]
+          },
+          {
+            "label": "a2",
+            "unitLabel": "u2",
+            "kind": "update",
+            "target": {
+              "kind": "list_index",
+              "anchorLabel": "L1",
+              "indices": [
+                2
+              ],
+              "evidence": [
+                {
+                  "sourceLabel": "S0",
+                  "start": 0,
+                  "end": 40,
+                  "quote": "Сделал первое, второе перенеси на завтра"
+                }
+              ]
+            },
+            "fields": {
+              "title": null,
+              "description": null,
+              "clearFields": []
+            },
+            "times": [
+              {
+                "field": "targetDate",
+                "expression": "завтра",
+                "evidence": [
+                  {
+                    "sourceLabel": "S0",
+                    "start": 0,
+                    "end": 40,
+                    "quote": "Сделал первое, второе перенеси на завтра"
+                  }
+                ],
+                "scopeUnitLabels": [
+                  "u2"
+                ]
+              }
+            ],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 40,
+                "quote": "Сделал первое, второе перенеси на завтра"
+              }
+            ]
+          }
+        ],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "u1",
+              "u2"
+            ],
+            "actionLabels": [
+              "a1",
+              "a2"
+            ],
+            "queryLabels": [],
+            "outcome": "execute",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "C034",
+      "status": "completed_remote",
+      "localOutcome": "ok",
+      "audit": {
+        "safety": false,
+        "exact": false,
+        "failures": [
+          "missing_finite_choice"
+        ]
+      },
+      "durationMs": 3482.4742079999996,
+      "usage": {
+        "inputTokens": 2015,
+        "outputTokens": 300
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "u1",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 29,
+                "quote": "Купи молоко и перенеси звонок"
+              }
+            ],
+            "uncertainty": null
+          },
+          {
+            "label": "u2",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 29,
+                "quote": "Купи молоко и перенеси звонок"
+              }
+            ],
+            "uncertainty": "target"
+          }
+        ],
+        "relations": [],
+        "actions": [
+          {
+            "label": "a1",
+            "unitLabel": "u1",
+            "kind": "create",
+            "target": null,
+            "fields": {
+              "title": "Купи молоко",
+              "description": null,
+              "clearFields": []
+            },
+            "times": [],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 29,
+                "quote": "Купи молоко и перенеси звонок"
+              }
+            ]
+          }
+        ],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "u1"
+            ],
+            "actionLabels": [
+              "a1"
+            ],
+            "queryLabels": [],
+            "outcome": "execute",
+            "reason": null
+          },
+          {
+            "label": "g2",
+            "unitLabels": [
+              "u2"
+            ],
+            "actionLabels": [],
+            "queryLabels": [],
+            "outcome": "needs_choice",
+            "reason": "target"
+          }
+        ]
+      }
+    },
+    {
+      "id": "C020",
+      "status": "completed_remote",
+      "localOutcome": "uncertain",
+      "audit": {
+        "safety": false,
+        "exact": false,
+        "failures": [
+          "uncertain"
+        ]
+      },
+      "durationMs": 2662.3327499999978,
+      "usage": {
+        "inputTokens": 1988,
+        "outputTokens": 217
+      },
+      "decision": {
+        "version": 1,
+        "units": [
+          {
+            "label": "a1",
+            "kind": "action",
+            "speechAct": "request",
+            "polarity": "positive",
+            "modality": "asserted",
+            "authoredByOwner": true,
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 10,
+                "quote": "Её заверши"
+              }
+            ],
+            "uncertainty": null
+          }
+        ],
+        "relations": [],
+        "actions": [
+          {
+            "label": "a1",
+            "unitLabel": "a1",
+            "kind": "complete",
+            "target": {
+              "kind": "candidate",
+              "label": "T1",
+              "evidence": [
+                {
+                  "sourceLabel": "S0",
+                  "start": 0,
+                  "end": 10,
+                  "quote": "Её заверши"
+                }
+              ]
+            },
+            "fields": {
+              "title": null,
+              "description": null,
+              "clearFields": []
+            },
+            "times": [],
+            "evidence": [
+              {
+                "sourceLabel": "S0",
+                "start": 0,
+                "end": 10,
+                "quote": "Её заверши"
+              }
+            ]
+          }
+        ],
+        "queries": [],
+        "groups": [
+          {
+            "label": "g1",
+            "unitLabels": [
+              "a1"
+            ],
+            "actionLabels": [
+              "a1"
+            ],
+            "queryLabels": [],
+            "outcome": "execute",
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "C041",
+      "status": "not_dispatched",
+      "reason": "pass_stopped_after_invalid_C020"
+    },
+    {
+      "id": "C043",
+      "status": "not_dispatched",
+      "reason": "pass_stopped_after_invalid_C020"
+    },
+    {
+      "id": "C005",
+      "status": "not_dispatched",
+      "reason": "pass_stopped_after_invalid_C020"
+    },
+    {
+      "id": "C064",
+      "status": "not_dispatched",
+      "reason": "pass_stopped_after_invalid_C020"
+    }
+  ],
+  "manualAudit": {
+    "C034": "needs_choice group is present, but its actionLabels is empty and the update draft is omitted; no saved typed move can be resolved from this frame",
+    "C020": "Remote response completed. Target/kind are correct, but unit and action share label a1; strict graph parser rejects duplicate labels. Adapter exposed generic uncertain, not a network failure. No automatic retry."
+  },
+  "stoppedBeforeIteration": 54
+}

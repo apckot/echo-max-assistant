@@ -39,4 +39,4 @@ export function parseMeaning(value:unknown):MeaningDecision{
  if(typeof o.start==='number'&&typeof o.end==='number'&&o.end<=o.start)throw new Error('MEANING_SPAN_RANGE');Object.values(o).forEach(walk);};walk(frame);
  return frame;
 }
-export const meaningJsonSchema=z.toJSONSchema(meaningSchema,{target:'draft-7'});
+export const meaningJsonSchema=z.toJSONSchema(meaningSchema,{target:'draft-7',reused:'ref'});

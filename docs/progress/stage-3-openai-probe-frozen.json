@@ -1,0 +1,71 @@
+{
+  "runnerHash": "a14b8eb2b34db26da9a2ea08beef6ffdd1f4467f407f23d71da472c137ce0838",
+  "model": "gpt-4.1-2025-04-14",
+  "promptHash": "0ecdb5598dd56e228288a241bf3d8134cff48fb1b4186495d873f9df0da620b2",
+  "schemaHash": "ba05306e994e58af8f882406db44261e2f0a54402dbc3daf25392b553dbbd682",
+  "casesHash": "0e928893b32cb181e3dc3abeb77ed15df8f22a82ea10e2798eac74aa2133ca13",
+  "manifestHash": "144d83dfed8e3194f211f458f0d62a3851b6eedcc94bac51fe306be1bcb0b0fc",
+  "inputBounds": [
+    {
+      "id": "C003",
+      "tokensUpper": 10912
+    },
+    {
+      "id": "C024",
+      "tokensUpper": 10909
+    },
+    {
+      "id": "C025",
+      "tokensUpper": 10927
+    },
+    {
+      "id": "C013",
+      "tokensUpper": 10761
+    },
+    {
+      "id": "C015",
+      "tokensUpper": 10965
+    },
+    {
+      "id": "C016",
+      "tokensUpper": 11144
+    },
+    {
+      "id": "C034",
+      "tokensUpper": 11090
+    },
+    {
+      "id": "C020",
+      "tokensUpper": 10937
+    },
+    {
+      "id": "C041",
+      "tokensUpper": 11147
+    },
+    {
+      "id": "C043",
+      "tokensUpper": 11129
+    },
+    {
+      "id": "C005",
+      "tokensUpper": 10742
+    },
+    {
+      "id": "C064",
+      "tokensUpper": 10767
+    }
+  ],
+  "maxCalls": 12,
+  "maxUsd": 2,
+  "maxOutputTokens": 2000,
+  "worstCaseUsd": 0.45486000000000004,
+  "prices": {
+    "inputPerMillionUsd": 2,
+    "outputPerMillionUsd": 8,
+    "checkedAt": "2026-10-15",
+    "source": "https://developers.openai.com/api/docs/pricing"
+  },
+  "deadlineMs": 45000,
+  "deadlineRuling": "Feasibility experiment only; production7s/latency SLO not qualified by this probe",
+  "registryHash": "4434be4150c979ef700b8ef862a6c8cf5755cf65c7fd347a5e4be6b23dd153e3"
+}
