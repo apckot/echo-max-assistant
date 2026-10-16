@@ -39,3 +39,9 @@ Mixed reply with one committed Task plus unresolved alternatives is not a unique
 ## Checkpoint65 pending
 
 One cumulative independent review on this block, confirmed fixes by original executor, then one clean-clone gate with one image build and one npm test (includes functional/e2e/restore/smoke; no separate review-focus/probe). Publish automatic evidence; external callback acceptance remains partial pending named bot/server/recipient approval. Stop before66.
+
+### Cumulative review fixes
+
+One independent reviewer found3P2; original executor fixed all three, same reviewer confirmed closure by scoped diff without a second audit or tests. RED reproduced3failures (`review-red.log`). Callback committed response now saves rendered Task/version anchor atomically with result outbox, enabling exact delivered-reply follow-up; no anchor on cancellation/empty response. Bare numeric1–5 and feminine/neuter ordinals fail closed rather than becoming a phantom create. Qualification requires frozen full expected regression metadata: omissions become collector_error rows in the denominator, duplicate IDs or metadata mismatch refuse qualification. Control uniqueness is also explicit. Synthetic101R+20H metadata verifies complete qualification versus5R+20H failure (96missing errors); this is collector proof, not model quality evidence or opening H examples.
+
+Targeted GREEN: numeric/ordinal and inventory2PASS in `review-green.log`; callback anchor proof uses the selected saved command target (not seed-array order), with exact pronoun evidence and unchanged other Task (`review-anchor-final.log`). Typecheck/architecture logs `review-typecheck.log` / `review-architecture.log`. No new implementation agent, full audit, external call or gate before final freeze.

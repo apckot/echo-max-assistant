@@ -18,7 +18,7 @@ test('three delivered choices never capture independent text or voice; only comm
 },120000);
 test('unbound yes/ordinal never become consent or a task even with an incorrect fake create',async()=>{
  const f=await choiceFixture();try{await f.confirm();const before=(await f.migrator.query('SELECT count(*)::int n FROM work_items')).rows[0].n;
- for(const text of ['Да','Второй']){const input=await f.admit(text,f.input.chat),done=await finish(f,input,createProvider('Wrong phantom'));expect(done.staged.ticket.plan!.groups.every(g=>g.status==='blocked')).toBe(true);}
+ for(const text of ['Да','Второй','1','2','3','4','5','четвёртая','четвёртое','пятая','пятое']){const input=await f.admit(text,f.input.chat),done=await finish(f,input,createProvider('Wrong phantom'));expect(done.staged.ticket.plan!.groups.every(g=>g.status==='blocked')).toBe(true);}
  expect((await f.migrator.query('SELECT count(*)::int n FROM work_items')).rows[0].n).toBe(before);expect((await f.migrator.query('SELECT state FROM pending_choices')).rows[0].state).toBe('pending');
  }finally{await f.close();}
 },120000);
@@ -61,5 +61,20 @@ test('mixed committed Task plus pending choice is not a unique pronoun target ev
  const f=await choiceFixture();try{const mixed=await f.anotherChoice(true);await f.confirm('mixed-choice',mixed.out.id);const input=await f.admit('Её заверши',f.input.chat,'301',{kind:'text',text:'Её заверши',replyToMessageId:'mixed-choice'});
  const base=parseMeaningDraft(projectLegacyQuotes(frame('Её заверши','complete').grounded.decision));const decision=parseMeaningDraft({...base,actions:base.actions.map(a=>({...a,target:{kind:'candidate',label:'T1',evidence:[{sourceLabel:'S1',quote:'Её'}]}}))});const provider:AiDecisionProvider={decide:async()=>({outcome:'ok',decision,model:'fake-adversary',durationMs:0,usage:null})};const staged=await f.coordinator(provider).run(input.lease);if(staged.status!=='accepted')throw Error('stage');expect(staged.ticket.plan!.groups[0]!.status).toBe('blocked');expect(staged.ticket.plan!.groups[0]!.commands).toEqual([]);
  expect((await f.migrator.query("SELECT status,version FROM work_items WHERE title='Молоко'")).rows).toEqual([{status:'open',version:1}]);
+ }finally{await f.close();}
+},120000);
+
+test('delivered callback confirmation preserves exact Task/version anchor for a subsequent pronoun command',async()=>{
+ const f=await choiceFixture();try{await f.confirm();const callback=await f.callback();await f.processor.run(callback.lease);
+ const out=(await f.migrator.query('SELECT id FROM outbound_messages WHERE source_inbound_event_id=$1',[callback.event.id])).rows[0];await f.confirm('callback-confirmation',out.id);
+ const input=await f.admit('Её заверши',f.input.chat,'301',{kind:'text',text:'Её заверши',replyToMessageId:'callback-confirmation'});
+ const base=parseMeaningDraft(projectLegacyQuotes(frame('Её заверши','complete').grounded.decision));
+ const decision=parseMeaningDraft({...base,actions:base.actions.map(a=>({...a,target:{kind:'candidate',label:'T1',evidence:[{sourceLabel:'S1',quote:'Её'}]}}))});
+ const staged=await f.coordinator({decide:async()=>({outcome:'ok',decision,model:'fake',durationMs:0,usage:null})}).run(input.lease);
+ expect(staged.status).toBe('accepted');if(staged.status!=='accepted')throw Error('missing callback anchor');
+ const result=await new PostgresAgentTaskProcessing(f.authority,f.choices).runGroup(staged.ticket,0);expect(result.outcome).toBe('applied');await new PostgresTurnFinalizer(f.authority).finalize(staged.ticket);
+ const selected=(await f.migrator.query('SELECT commands FROM pending_choice_options WHERE choice_id=$1 AND ordinal=1',[f.group.choice!.id])).rows[0].commands[0].target.taskId;
+ expect((await f.migrator.query('SELECT status,version FROM work_items WHERE id=$1',[selected])).rows).toEqual([{status:'completed',version:3}]);
+ expect((await f.migrator.query('SELECT status,version FROM work_items WHERE id<>$1',[selected])).rows).toEqual([{status:'open',version:1}]);
  }finally{await f.close();}
 },120000);

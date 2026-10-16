@@ -12,9 +12,12 @@ export class PostgresContextReader implements ContextReader {
   await this.db.tenantTransaction('worker',userId,tx=>this.saveAnchorWith(tx,userId,conversationId,outboundId,kind,tasks));
  }
  async saveAnchorWith(tx:DbTx,userId:UserId,conversationId:string,outboundId:string,kind:'reply'|'list',tasks:readonly TaskBinding[]){
+  return saveContextAnchorWith(tx,userId,conversationId,outboundId,kind,tasks);
+ }
+}
+export async function saveContextAnchorWith(tx:DbTx,userId:UserId,conversationId:string,outboundId:string,kind:'reply'|'list',tasks:readonly TaskBinding[]){
   if(!tasks.length||tasks.length>100)throw new Error('CONTEXT_ANCHOR_INVALID');
    const out=await tx.query('SELECT id FROM public.outbound_messages WHERE id=$1 AND conversation_id=$2',[outboundId,conversationId]);if(out.length!==1)throw new Error('CONTEXT_ANCHOR_INVALID');
    await tx.query('INSERT INTO public.context_anchors(user_id,conversation_id,outbound_id,kind) VALUES($1,$2,$3,$4)',[userId,conversationId,outboundId,kind]);
    for(const [i,t] of tasks.entries())await tx.query('INSERT INTO public.context_anchor_tasks(user_id,outbound_id,ordinal,task_id,task_version) VALUES($1,$2,$3,$4,$5)',[userId,outboundId,i+1,t.id,t.version]);
- }
 }

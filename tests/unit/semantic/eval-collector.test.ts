@@ -35,3 +35,16 @@ test('sampler counts actual wrapped port/wire entries including failure, never m
  await expect(sampler.port('stt',async()=>sampler.wire('stt',async()=>{now+=7;throw Error('synthetic');}))).rejects.toThrow('synthetic');
  expect(sampler.snapshot()).toEqual({semantic:1,semanticWire:1,stt:1,sttWire:1,portMs:12});
 });
+
+test('complete frozen regression inventory is mandatory; omitted and duplicate cases cannot qualify',async()=>{
+ const regression=Array.from({length:101},(_,i)=>({...sample('C'+String(i+1).padStart(3,'0')),family:['create','update','lifecycle','query','multi'][i%5]!,execution:'real' as const}));
+ const controls=Array.from({length:20},(_,i)=>({...sample('H'+i),set:'control' as const,execution:'real' as const}));
+ const control={ids:controls.map(c=>c.id),frozen:true,unusedForTuning:true};
+ const inventory={cases:regression,frozen:true};
+ const complete=await runCorpus([...regression,...controls],async()=>observation());
+ expect(qualificationReport(complete,control,inventory).qualityQualified).toBe(true);
+ const reduced=complete.filter(r=>r.case.set==='control'||regression.slice(0,5).some(c=>c.id===r.case.id));
+ const report=qualificationReport(reduced,control,inventory);expect(report.qualityQualified).toBe(false);expect(report.total).toBe(121);expect(report.errors).toBe(96);expect(report.modelEligible).toBe(101);expect(report.regressionComplete).toBe(false);
+ expect(qualificationReport([...complete,complete[0]!],control,inventory).qualityQualified).toBe(false);
+ expect(qualificationReport(complete,control).qualityQualified).toBe(false);
+});
