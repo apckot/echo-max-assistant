@@ -6,7 +6,7 @@ export class ContextBuilder {
  constructor(private readonly tasks:Pick<TaskQueries,'get'|'list'>,private readonly reader:ContextReader){}
  async build(userId:UserId,conversationId:string,input:SourceSnapshot):Promise<ContextSnapshot>{
   const source=structuredClone(input);
-  if([...source.text].length>16000||Buffer.byteLength(source.text,'utf8')>65536||!source.text||!Number.isFinite(Date.parse(source.sourceAt)))throw new Error('CONTEXT_SOURCE_INVALID');
+  if([...source.text].length>(source.kind==='transcript'?32000:16000)||Buffer.byteLength(source.text,'utf8')>(source.kind==='transcript'?128000:65536)||!source.text||!Number.isFinite(Date.parse(source.sourceAt)))throw new Error('CONTEXT_SOURCE_INVALID');
   const anchor=source.replyMessageId?await this.reader.anchor(userId,conversationId,source.replyMessageId):null;
   if(source.replyMessageId&&!anchor)throw new Error('CONTEXT_ANCHOR_MISSING');
   const ctx={userId,capability:'task_read' as const,timezone:source.timezone};

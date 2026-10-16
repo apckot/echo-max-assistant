@@ -12,6 +12,7 @@ import {TaskQueries} from '../../src/modules/tasks/application/task-queries.js';
 import {PostgresTaskReadRunner} from '../../src/infrastructure/postgres/tasks/task-read-model.js';
 import {IanaTimeResolver} from '../../src/infrastructure/time/iana-time-resolver.js';
 import {TurnCoordinator} from '../../src/modules/agent/application/turn-coordinator.js';
+import type {TurnSourcePreparation} from '../../src/modules/media/application/transcript.js';
 import type {AiDecisionProvider} from '../../src/modules/semantic/application/provider-port.js';
 let chatSequence=12000;
 export async function agentFixture(){
@@ -19,11 +20,11 @@ export async function agentFixture(){
  const authority=new PostgresTurnAuthority(f.database,new TurnStore(f.database,keys),randomBytes(32));
  const time=new IanaTimeResolver(),tasks=new TaskQueries(new PostgresTaskReadRunner(f.database),time),context=new ContextBuilder(tasks,new PostgresContextReader(f.database));
  const fake:AiDecisionProvider={decide:async ctx=>({outcome:'ok',decision:parseMeaningDraft(projectLegacyQuotes(frame(ctx.pack.text).grounded.decision)),durationMs:1,model:'fake',usage:null})};
- const coordinator=(provider:AiDecisionProvider=fake)=>new TurnCoordinator(authority,context,tasks,time,provider,{profileDigest:'b'.repeat(64),externalAllowed:true,deadlineMs:7000});
- async function admit(text='Купи молоко',chat=String(++chatSequence),providerUser='301'){
-  const key='message:agent:'+randomUUID();await f.gateway.query('SELECT * FROM public.accept_max_inbound($1,$2,$3,$4,$5,$6)',[providerUser,chat,key,'2026-09-11T12:48:33Z',JSON.stringify({kind:'text',text}),'a'.repeat(64)]);
+ const coordinator=(provider:AiDecisionProvider=fake,sourcePreparation?:TurnSourcePreparation)=>new TurnCoordinator(authority,context,tasks,time,provider,{profileDigest:'b'.repeat(64),externalAllowed:true,deadlineMs:7000},sourcePreparation);
+ async function admit(text='Купи молоко',chat=String(++chatSequence),providerUser='301',payload?:import('../../src/modules/intake/domain/inbound-event.js').InboundPayload){
+  const key='message:agent:'+randomUUID();await f.gateway.query('SELECT * FROM public.accept_max_inbound($1,$2,$3,$4,$5,$6)',[providerUser,chat,key,'2026-09-11T12:48:33Z',JSON.stringify(payload??{kind:'text',text}),'a'.repeat(64)]);
   const event=(await f.postgres.pool.query('SELECT * FROM inbound_events WHERE provider_event_key=$1',[key])).rows[0];
   const lease=(await queue.claim({ownerId:randomUUID(),limit:100})).find(l=>l.conversationId===event.conversation_id)!;return {lease,event,chat};
  }
- return {...f,queue,authority,tasks,time,context,coordinator,fake,admit};
+ return {...f,queue,authority,tasks,time,context,coordinator,fake,admit,admitVoice:()=>admit('',undefined,'301',{kind:'voice',media:{url:'https://media.example.org/file',token:'synthetic-attachment'}})};
 }

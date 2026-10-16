@@ -10,30 +10,32 @@ import { FoundationInboundHandler } from '../modules/intake/application/inbound-
 import { ProcessInbound } from '../modules/intake/application/process-inbound.js';
 import { parseRuntimeConfig } from '../shared/config/config.js';
 
-type WorkerOptions = { queue: ConversationQueue; process: {run(lease:ConversationLease):Promise<unknown>};
+type WorkerOptions = { queue: ConversationQueue; process: {run(lease:ConversationLease,signal?:AbortSignal):Promise<unknown>};
   close: () => Promise<void>; concurrency: number; leaseMs: number; renewMs: number; enabled?: boolean };
 
 // Ports supplied here must settle; createWorker supplies bounded database operations.
 export function startWorkerLoop(options: WorkerOptions) {
   const ownerId = randomUUID();
   const active = new Set<Promise<void>>();
+  const cancellations=new Set<AbortController>();
   const timers = new Set<ReturnType<typeof setInterval>>();
   let stopping = false;
   let scan: Promise<void> | undefined;
   let stopped: Promise<void> | undefined;
   function launch(lease: ConversationLease) {
+    const cancellation=new AbortController();cancellations.add(cancellation);
     let renewal: Promise<unknown> | undefined;
     const timer = setInterval(() => {
       if (stopping || renewal) return;
       // Independent of processing: never await this from inside its transaction.
       renewal = Promise.resolve().then(() => options.queue.renew(lease, options.leaseMs))
-        .catch(() => {}).finally(() => { renewal = undefined; });
+        .then(until=>{if(until===null)cancellation.abort();}).catch(() => {cancellation.abort();}).finally(() => { renewal = undefined; });
     }, options.renewMs);
     timers.add(timer);
-    const task = Promise.resolve().then(() => options.process.run(lease)).catch(() => {
+    const task = Promise.resolve().then(() => options.process.run(lease,cancellation.signal)).catch(() => {
       // DB/lease failures are reclaimed after expiry; the processor owns retries.
     }).finally(async () => {
-      clearInterval(timer); timers.delete(timer);
+      clearInterval(timer); timers.delete(timer);cancellations.delete(cancellation);
       await renewal;
     }).then(() => { active.delete(task); });
     active.add(task);
@@ -49,7 +51,7 @@ export function startWorkerLoop(options: WorkerOptions) {
   poll();
   return { stop(): Promise<void> {
     if (!stopped) {
-      stopping = true; clearInterval(scanTimer);
+      stopping = true; clearInterval(scanTimer);for(const cancellation of cancellations)cancellation.abort();
       for (const timer of timers) clearInterval(timer);
       stopped = (async () => { await scan; await Promise.all(active); await options.close(); })();
     }
@@ -71,8 +73,8 @@ export function createWorker(environment: Record<string, unknown>) {
     close: () => database.close(),
   };
   const foundation=new ProcessInbound(new PostgresAtomicProcessing(new PostgresOrderedHead(new PostgresFencedConversation(guarded))),new FoundationInboundHandler(),config.HANDLER_TIMEOUT_MS);
-  const assistant=config.ASSISTANT_STAGE3_ENABLED?createAssistantRuntime(guarded,{apiKey:config.OPENAI_API_KEY??'',dedupKeysJson:config.ASSISTANT_DEDUP_KEYS_JSON??'',mapKeyBase64:config.ASSISTANT_MAP_KEY_BASE64??''}):null;
-  const processor=assistant?{run:async(lease:ConversationLease)=>{const kind=await assistant.authority.peek(lease);return kind==='text'||kind==='voice'?assistant.process.run(lease):kind?foundation.run(lease):undefined;}}:foundation;
+  const assistant=config.ASSISTANT_STAGE3_ENABLED?createAssistantRuntime(guarded,{apiKey:config.OPENAI_API_KEY??'',dedupKeysJson:config.ASSISTANT_DEDUP_KEYS_JSON??'',mapKeyBase64:config.ASSISTANT_MAP_KEY_BASE64??'',audioProfileJson:config.ASSISTANT_AUDIO_PROFILE_JSON,mediaOriginsJson:config.ASSISTANT_MEDIA_ORIGINS_JSON}):null;
+  const processor=assistant?{run:async(lease:ConversationLease,signal?:AbortSignal)=>{const kind=await assistant.authority.peek(lease);return kind==='text'||kind==='voice'?assistant.process.run(lease,signal):kind?foundation.run(lease):undefined;}}:foundation;
   return startWorkerLoop({ queue: new PostgresConversationQueue(guarded),
     process:processor,
     close: () => guarded.close(), concurrency: config.ASSISTANT_STAGE3_ENABLED?Math.min(4,config.WORKER_CONCURRENCY):config.WORKER_CONCURRENCY,

@@ -14,16 +14,17 @@ export function releaseAudio(input:object){approved.get(input)?.fill(0);approved
 export class MediaService {
  constructor(private readonly loader:AudioLoader,private readonly codec:AudioCodec){}
  async prepare(source:AudioSource,consent:AudioConsent|null,profile:AudioProfile,refresh:()=>Promise<AudioConsent|null>,signal:AbortSignal):Promise<ApprovedAudio>{
+  const startedAt=Date.now();
   if(!audioRoute(consent,profile).allowed)throw Error('AUDIO_DENIED');
   let raw:Uint8Array|undefined,decoded:InspectedAudio|undefined;
   try{
-   raw=await withDeadline(10000,s=>this.loader.load(source,25000000,AbortSignal.any([s,signal])));
+   raw=await withDeadline(10000,s=>this.loader.load(source,25000000,AbortSignal.any([s,signal])),signal);
    if(!raw.length||raw.length>25000000)throw Error('MEDIA_SIZE');
-   decoded=await withDeadline(5000,s=>this.codec.inspect(raw!,AbortSignal.any([s,signal])));
+   decoded=await withDeadline(5000,s=>this.codec.inspect(raw!,AbortSignal.any([s,signal])),signal);
    if(!decoded.bytes.length||decoded.bytes.length>25000000||!Number.isFinite(decoded.durationMs)||decoded.durationMs<=0||decoded.durationMs>1200000||decoded.format!=='flac'||decoded.contentType!=='audio/flac')throw Error('MEDIA_CODEC');
    const current=await refresh();if(signal.aborted||!audioRoute(current,profile).allowed||current!.revision!==consent!.revision)throw Error('AUDIO_DENIED');
    const copy=Uint8Array.from(decoded.bytes),hash=await crypto.subtle.digest('SHA-256',copy.buffer);
-   const capability:ApprovedAudio=Object.freeze({kind:'approved_audio_v1',format:'flac',contentType:'audio/flac',durationMs:decoded.durationMs,size:copy.length,checksum:Array.from(new Uint8Array(hash)).map(n=>n.toString(16).padStart(2,'0')).join(''),consentRevision:current!.revision,policyVersion:profile.version,expiresAt:Date.now()+30*60000});
+   const capability:ApprovedAudio=Object.freeze({kind:'approved_audio_v1',format:'flac',contentType:'audio/flac',durationMs:decoded.durationMs,size:copy.length,checksum:Array.from(new Uint8Array(hash)).map(n=>n.toString(16).padStart(2,'0')).join(''),consentRevision:current!.revision,policyVersion:profile.version,expiresAt:startedAt+30*60000});
    approved.set(capability,copy);const timer=setTimeout(()=>releaseAudio(capability),30*60000);timer.unref?.();return capability;
   }finally{raw?.fill(0);decoded?.bytes.fill(0);}
  }

@@ -1,6 +1,6 @@
 # Echo MAX Stage3 — план реализации 51–70
 
-> **Исполнение:** superpowers:executing-plans. Один исполнитель на разрешённый блок из пяти итераций, без делегирования реализации. Отдельный коммит на итерацию; одно накопительное независимое ревью на checkpoint. Базовые документы приняты; попытки1/2 probe53 сохранены FAIL, разрешённая попытка3 PASS12/12. Реализованы51–55; checkpoint review/gate фиксируются в progress ledger. Блок56+ не разрешён.
+> **Исполнение:** superpowers:executing-plans. Один исполнитель на разрешённый блок из пяти итераций, без делегирования реализации. Отдельный коммит на итерацию; одно накопительное независимое ревью на checkpoint. Базовые документы приняты; попытки1/2 probe53 сохранены FAIL, разрешённая попытка3 PASS12/12. Checkpoint55 принят. Владелец разрешил56–60; они реализованы, checkpoint60 review/gate фиксируются в progress ledger. Блок61+ не разрешён.
 
 **Цель:** понимание текста и голоса через OpenAI, управление Tasks через MAX, сохранение смысла и контекста, Privacy Gateway и восстановление без повторного эффекта.
 **Архитектура:** Context/Privacy → один внешний MeaningDraftV2 → QuoteGrounder → внутренний MeaningDecisionV1 → validator/resolver → durable groups → публичный Tasks API → response intent/final outbox. OpenAI semantic/STT — заменяемые adapters; сеть вне DB locks.

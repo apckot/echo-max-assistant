@@ -43,6 +43,7 @@ export class PostgresTurnAuthority implements TurnAuthority {
  async accept(ticket:TurnTicket,plan:AcceptedPlan){await this.guarded(ticket,async tx=>{
   const changed=await tx.query("UPDATE public.agent_runs SET phase='accepted' WHERE user_id=$1 AND turn_id=$2 AND phase='started' RETURNING run_id",[ticket.event.userId,ticket.turnId]);if(changed.length!==1)throw Error('AGENT_STAGE_CLOSED');
   await tx.query('INSERT INTO public.accepted_decisions(user_id,turn_id,run_id,plan) VALUES($1,$2,$3,$4)',[ticket.event.userId,ticket.turnId,ticket.runId,JSON.stringify(plan)]);
+  await tx.query('DELETE FROM public.run_token_maps WHERE user_id=$1 AND run_id=$2',[ticket.event.userId,ticket.runId]);
  });}
- async fail(ticket:TurnTicket,reason:string){await this.guarded(ticket,async tx=>{await tx.query("UPDATE public.agent_runs SET phase='failed',failure_code=$3 WHERE user_id=$1 AND turn_id=$2 AND phase IN('claimed','started')",[ticket.event.userId,ticket.turnId,/^[a-z_]{1,80}$/.test(reason)?reason:'invalid_decision']);});}
+ async fail(ticket:TurnTicket,reason:string){await this.guarded(ticket,async tx=>{await tx.query("UPDATE public.agent_runs SET phase='failed',failure_code=$3 WHERE user_id=$1 AND turn_id=$2 AND phase IN('claimed','started')",[ticket.event.userId,ticket.turnId,/^[a-z_]{1,80}$/.test(reason)?reason:'invalid_decision']);await tx.query('DELETE FROM public.run_token_maps WHERE user_id=$1 AND run_id=$2',[ticket.event.userId,ticket.runId]);});}
 }

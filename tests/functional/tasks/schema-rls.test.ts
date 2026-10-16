@@ -17,7 +17,7 @@ async function insertTriplet(tx:{query:Function},tenant:string,eventTenant=tenan
  VALUES($1,$2,'schema:create',$3,$4,$5,'typed',$6,'owner','2026-10-13T12:00:00Z','Europe/Moscow')`,[receiptId,tenant,'a'.repeat(64),JSON.stringify({contractVersion:1,commands:[{kind:'create'}],actor:'owner',source:{kind:'typed',operationId:sourceId},sourceOccurredAt:'2026-10-13T12:00:00.000Z',timezoneSnapshot:'Europe/Moscow',intents:[]}),JSON.stringify(result),sourceId]);
 }
 test('task schema exposes forced tenant RLS and permits only an atomic state/event/receipt triplet',async()=>{
- expect((await f.migrator.query('SELECT schema_version FROM public.system_state')).rows[0].schema_version).toBe(32);
+ expect((await f.migrator.query('SELECT schema_version FROM public.system_state')).rows[0].schema_version).toBe(33);
  const client=await f.worker.connect();
  try {await client.query('BEGIN');await client.query("SELECT set_config('app.user_id',$1,true)",[f.a]);
  await insertTriplet({query:async(sql:string,params:unknown[])=>{return (await client.query(sql,params)).rows;}},f.a);

@@ -22,6 +22,8 @@ const runtimeConfigSchema = z.object({
   OPENAI_API_KEY:secret.optional(),
   ASSISTANT_DEDUP_KEYS_JSON:secret.optional(),
   ASSISTANT_MAP_KEY_BASE64:secret.optional(),
+  ASSISTANT_AUDIO_PROFILE_JSON:z.string().optional(),
+  ASSISTANT_MEDIA_ORIGINS_JSON:z.string().optional(),
   FOUNDATION_ECHO_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   GATEWAY_DB_POOL_SIZE: positiveInteger(10, 100),
   WORKER_CONCURRENCY: positiveInteger(10, 100),

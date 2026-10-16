@@ -60,3 +60,8 @@ test('an immediate stop prevents a queued scan from issuing any claim', async ()
     process: { run: async () => ({ kind: 'drained' }) }, close: async () => {} });
   await runtime.stop(); expect(claims).toBe(0); expect(vi.getTimerCount()).toBe(0);
 });
+test('cancels external work when independent renewal loses its lease',async()=>{
+ vi.useFakeTimers();const processing=deferred<{kind:'drained'}>();let claimed=false,signal:AbortSignal|undefined;
+ const runtime=startWorkerLoop({concurrency:1,leaseMs:60000,renewMs:20000,queue:{claim:async()=>claimed?[]:(claimed=true,[lease(9)]),renew:async()=>null},process:{run:async(_lease,parent)=>{signal=parent;return processing.promise;}},close:async()=>{}});
+ try{await vi.advanceTimersByTimeAsync(20000);expect(signal?.aborted).toBe(true);}finally{processing.resolve({kind:'drained'});await runtime.stop();vi.useRealTimers();}
+});
