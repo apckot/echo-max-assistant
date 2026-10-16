@@ -1,3 +1,4 @@
+import {seedStage3Restore,verifyStage3Restore} from '../../support/stage3-restore.js';
 import {mkdtemp,mkdir,writeFile,readFile,chmod,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
@@ -46,6 +47,7 @@ test('isolated physical encrypted restore: verified WAL/data, fenced replay, mea
  let created;
  try{created=await command.execute(request.context,request.group);}catch(error){await sourceDb.close();throw error;}
  expect(created).toMatchObject({receipt:{outcome:'applied'}});
+ const stage3Ids=await seedStage3Restore(pool,workerUrl.toString());
  const backup=(await exec('sh',['ops/backup/backup.sh'],{env})).stdout.trim();
  const manifest=JSON.parse(await readFile(join(backup,'manifest.json'),'utf8'));
  // Acknowledge NEW work after the base backup; only archive recovery can reproduce it.
@@ -83,16 +85,17 @@ test('isolated physical encrypted restore: verified WAL/data, fenced replay, mea
  const incident=randomUUID();await restoredPool.query('SELECT public.reconcile_restore($1,$2,true)',[incident,snapshot]);
  await restoredPool.query('SELECT public.reopen_restore($1)',[incident]);
  expect((await restoredPool.query("SELECT count(*)::int n FROM public.delivery_work WHERE state IN ('ready','retry','leased')")).rows[0].n).toBe(0);
- expect((await restoredPool.query('SELECT status FROM public.outbound_messages')).rows).toEqual([{status:'uncertain_restore'}]);
+ expect((await restoredPool.query('SELECT status FROM public.outbound_messages')).rows).toEqual([{status:'uncertain_restore'},{status:'uncertain_restore'}]);
  const recovered=(await restoredPool.query('SELECT acknowledged_at FROM public.restore_drill_marker WHERE id=true')).rows[0]?.acknowledged_at;
  expect(recovered,'acknowledged post-base WAL marker').toEqual(acknowledged);
  const taskCounts=(await restoredPool.query(`SELECT (SELECT count(*)::int FROM public.work_items) tasks,(SELECT count(*)::int FROM public.work_item_events) events,(SELECT count(*)::int FROM public.task_command_receipts) receipts`)).rows[0];
- expect(taskCounts).toEqual({tasks:1,events:2,receipts:2});
+ expect(taskCounts).toEqual({tasks:2,events:3,receipts:3});
  const current=(await restoredPool.query('SELECT public.task_row_snapshot(w) task FROM public.work_items w WHERE id=$1',[created.receipt.snapshots[0].id])).rows[0].task;
  expect(current).toEqual(updated.receipt.snapshots[0]);
  try{expect(await restoredCommands.execute(mutation.context,mutation.group)).toEqual({receipt:updated.receipt,replayed:true});expect(await restoredCommands.execute(request.context,request.group)).toEqual({receipt:created.receipt,replayed:true});}finally{await restoredDb.close();}
  expect((await restoredPool.query('SELECT count(*)::int n FROM public.work_items WHERE id=$1',[beyond.receipt.snapshots[0].id])).rows[0].n).toBe(0);
- const report={taskFixtureRestored:true,taskPostBaseWALMutationRecovered:true,taskSurvivingReceiptReplay:true,lostTaskNotReplayed:true,taskCounts,postBaseAcknowledgedMarkerRecovered:true,recoverySource:'authenticated encrypted archived WAL',kind:'isolated_physical_restore',postgres:17,authenticatedEncryption:true,pgVerifybackup:true,replayEligibleOldOutbound:0,
+ const stage3=await verifyStage3Restore(restoredPool,restoredWorkerUrl.toString(),stage3Ids);
+ const report={stage3,taskFixtureRestored:true,taskPostBaseWALMutationRecovered:true,taskSurvivingReceiptReplay:true,lostTaskNotReplayed:true,taskCounts,postBaseAcknowledgedMarkerRecovered:true,recoverySource:'authenticated encrypted archived WAL',kind:'isolated_physical_restore',postgres:17,authenticatedEncryption:true,pgVerifybackup:true,replayEligibleOldOutbound:0,
  rpoMs:Math.max(0,acknowledged.getTime()-recovered.getTime()),rtoMs:Date.now()-started,productionStorageVerified:false};
  expect(report.rpoMs).toBeLessThanOrEqual(300_000);expect(report.rtoMs).toBeLessThanOrEqual(14_400_000);
  if(process.env.ECHO_RESTORE_REPORT)await writeFile(process.env.ECHO_RESTORE_REPORT,JSON.stringify(report,null,2)+'\n');
