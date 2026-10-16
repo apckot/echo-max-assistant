@@ -1,0 +1,11 @@
+# SDD ledger — plan: docs/superpowers/plans/2026-10-14-max-assistant-stage-3-understanding.md
+
+Owner accepts60 for development only, native codec release blocker open. Authorised61–65, one executor, separate commits, targeted checks, one cumulative review and one gate at65. Base d7654c46b2fd1611582e2279c049050eefcfcf95 published, local/remote equal. No new external AI/STT/MAX/server/deployment. Network diagnostic SHA256 d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade preserved.
+
+Preflight interfaces:61 finite typed alternatives→62 internal rich draft/message binding/callback consumer→63 race/erasure proof→65 E2E.64 oracle collector consumes committed outcomes, separate from provider oracles/holdout. Ruling: reuse current accepted checkout/branch and same primary executor; no implementation agents or per-iteration reviews. Native decoder namespace qualification must PASS in an explicitly permitted environment without bypass before any voice canary/release. MAX callback-canary plus duplicate remains open until owner names bot/server/recipient; synthetic proof cannot close it.
+
+## 61 — finite saved components
+
+RED missing choice planner/store. GREEN pending-choice target1file/2tests; typecheck/architecture PASS. C034 options preserve date, target bindings and expected versions. Bound alternatives2–5 plus cancel; no guessed missing date/unbounded Cartesian product. Same-turn/group save is idempotent, tenant RLS, new independent text does not consume pending choice. Migration34 includes own erasure counts/cascade and24h expiry metadata immediately.
+
+Ruling: pseudorandom256-bit token derives from secret/domain-separated HMAC and random choice ID. DB stores token hash only; delivery draft will store internal choice reference, transport derives the opaque token. This avoids persisting the bearer token in the durable outbox. Existing key-ring retains old key versions for retry/rotation; no new credentials. Callback binding/consume+effects/receipt/group outcome/outbox are integrated and proven in62 rather than exposing an unbound61 consumer. Optional finite DST metadata carries selected field and prior values; unsupported alternatives fail closed. No full gate.

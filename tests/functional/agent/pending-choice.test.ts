@@ -1,0 +1,31 @@
+import {beforeAll,afterAll,test,expect} from 'vitest';
+import {agentFixture} from '../../support/agent-fixture.js';
+import {replayCheckpoint60} from '../../semantic/checkpoint60-replay.js';
+import {compileGroups} from '../../../src/modules/agent/application/group-runner.js';
+import {choiceOptions} from '../../../src/modules/agent/application/choice-executor.js';
+import {PostgresPendingChoices,ChoiceTokens} from '../../../src/infrastructure/postgres/agent/pending-choice.js';
+import {create,taskHarness} from '../../support/task-command-fixtures.js';
+let f:Awaited<ReturnType<typeof agentFixture>>;
+beforeAll(async()=>{f=await agentFixture();},120000);afterAll(async()=>{await f?.close();});
+export const syntheticKey=Buffer.alloc(32,7);
+test('C034 retains dated finite alternatives and versions; new independent text never consumes them',async()=>{
+ const h=taskHarness(f),tasks=[await create(h,f.a,{title:'Звонок поставщику'}),await create(h,f.a,{title:'Звонок коллеге'})];
+ const replay=await replayCheckpoint60(),choice=replay.rows.find(r=>r.id==='C034')!.groups[1]!;
+ const bindings=tasks.map(t=>({id:t.id,version:t.version,snapshot:t}));
+ const group={...choice,actions:choice.actions.map(a=>({...a,target:{status:'choice' as const,options:bindings}}))};
+ const input=await f.admit(),staged=await f.coordinator().run(input.lease);if(staged.status!=='accepted')throw Error('stage');
+ const options=choiceOptions(group,{...staged.ticket.plan!.context,taskSnapshots:tasks},f.a,f.time);expect(options).toHaveLength(2);expect(options.map(o=>o.commands[0])).toEqual(tasks.map(t=>({kind:'update',target:{taskId:t.id},expectedVersion:1,patch:{targetDate:'2026-09-12'}})));
+ const tokens=new ChoiceTokens([{version:1,key:syntheticKey}]),store=new PostgresPendingChoices(tokens);
+ const saved=await f.authority.guarded(staged.ticket,tx=>store.saveWith(tx,staged.ticket.event,staged.ticket.turnId,'g2',options));
+ expect(saved.options).toHaveLength(3);expect(JSON.stringify(saved)).not.toContain('c1.');
+ const db=(await f.migrator.query('SELECT token_hash,commands FROM pending_choice_options WHERE user_id=$1',[f.a])).rows;expect(db).toHaveLength(3);expect(db.every(r=>/^[a-f0-9]{64}$/.test(r.token_hash))).toBe(true);
+ const duplicate=await f.authority.guarded(staged.ticket,tx=>store.saveWith(tx,staged.ticket.event,staged.ticket.turnId,'g2',options));expect(duplicate).toEqual(saved);
+ await f.coordinator().run((await f.admit('Купить хлеб')).lease);expect((await f.migrator.query('SELECT state FROM pending_choices WHERE id=$1',[saved.id])).rows[0].state).toBe('pending');
+ expect(await f.database.tenantTransaction('worker',f.b,tx=>tx.query('SELECT * FROM pending_choices'))).toEqual([]);
+});
+test('finite choices never guess missing dates or expand beyond5 combinations',async()=>{
+ const replay=await replayCheckpoint60(),g=replay.rows.find(r=>r.id==='C034')!.groups[1]!;
+ const input=await f.admit(),staged=await f.coordinator().run(input.lease);if(staged.status!=='accepted')throw Error('stage');
+ expect(choiceOptions({...g,actions:g.actions.map(a=>({...a,target:{status:'choice',options:Array.from({length:6},(_,i)=>({id:String(i),version:1}))}}))},staged.ticket.plan!.context,f.a,f.time)).toEqual([]);
+ expect(compileGroups([{...g,status:'blocked'}],staged.ticket.plan!.context,f.a,f.time)[0]!.commands).toEqual([]);
+});

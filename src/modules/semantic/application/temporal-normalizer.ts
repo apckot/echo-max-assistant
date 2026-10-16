@@ -4,7 +4,7 @@ import type {ActionDraft} from '../domain/meaning-decision.js';
 import type {GroundedMeaning} from './quote-grounding.js';
 import {validateTemporalIntent} from './temporal-intent.js';
 export type NormalizedTime={readonly field:'targetDate'|'deadline';readonly date:string}|{readonly field:'scheduledAt'|'deadline';readonly at:string};
-export type TimeResolution={readonly status:'resolved';readonly values:readonly NormalizedTime[]}|{readonly status:'invalid';readonly reason:string}|{readonly status:'choice';readonly options:readonly {at:string;offset:string}[]};
+export type TimeResolution={readonly status:'resolved';readonly values:readonly NormalizedTime[]}|{readonly status:'invalid';readonly reason:string}|{readonly status:'choice';readonly field?:'scheduledAt'|'deadline';readonly values?:readonly NormalizedTime[];readonly options:readonly {at:string;offset:string}[]};
 const weekdays=[/воскресень/iu,/понедельник/iu,/вторник/iu,/сред[ауы]/iu,/четверг/iu,/пятниц[ауы]/iu,/суббот[ауы]/iu];
 function shift(date:string,days:number){const d=new Date(date+'T12:00:00.000Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);}
 const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -56,7 +56,7 @@ export class TemporalNormalizer {
      const offset=parts.find(p=>p.type==='timeZoneName')?.value.replace('GMT','')||'+00:00';if(/^[+-]\d{2}:\d{2}$/.test(offset))offsets.add(offset);
     }
     const options=[...offsets].flatMap(offset=>{const r=this.time.resolveLocalTime({...local,offset});return 'error' in r?[]:[{at:r.at,offset}];}).sort((a,b)=>a.at.localeCompare(b.at));
-    return options.length>1?{status:'choice',options}:{status:'invalid',reason:'ambiguous_local_time'};
+    return options.length>1?{status:'choice',field:t.field,values,options}:{status:'invalid',reason:'ambiguous_local_time'};
    }
    values.push({field:t.field,at:resolved.at});
   }
