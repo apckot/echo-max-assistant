@@ -10,10 +10,10 @@ let f:Awaited<ReturnType<typeof taskFixture>>,p:ReturnType<typeof processingFixt
 beforeAll(async()=>{f=await taskFixture();p=processingFixture(f);},120000);afterAll(async()=>{await f?.close();});
 const restart=()=>createDatabase({worker:f.worker.options.connectionString,workerTransactionTimeoutMs:5000});
 test('real PG backend disconnect after outbox rolls everything back; independent restarted session retries once',async()=>{
- const input=await p.admit([{kind:'create',localId:'a',title:'Disconnect'}]),before=await p.counts();let killed=false;
+ const input=await p.admit([{kind:'create',localId:'a',title:'Disconnect'}]),before=await p.counts();let termination:Promise<boolean>|undefined;
  const broken={...f.database,tenantTransaction:(role,userId,fn)=>f.database.tenantTransaction(role,userId,tx=>fn({...tx,query:async(sql,values)=>{
- const rows=await tx.query(sql,values);if(sql.startsWith('INSERT INTO public.delivery_work')){const [pid]=await tx.query('SELECT pg_backend_pid() pid');await f.postgres.pool.query('SELECT pg_terminate_backend($1)',[pid.pid]);killed=true;await tx.query('SELECT 1');}return rows;}}))};
- await expect(p.runner(input,broken).run(input.lease)).rejects.toThrow();expect(killed).toBe(true);expect(await p.counts()).toEqual(before);
+ const rows=await tx.query(sql,values);if(sql.startsWith('INSERT INTO public.delivery_work')){const [pid]=await tx.query('SELECT pg_backend_pid() pid');termination=f.postgres.pool.query('SELECT pg_terminate_backend($1) terminated',[pid.pid]).then(result=>result.rows[0].terminated);await termination;await tx.query('SELECT 1');}return rows;}}))};
+ const failure=await p.runner(input,broken).run(input.lease).catch(error=>error);expect(failure).toBeInstanceOf(Error);expect(termination).toBeDefined();expect(await termination).toBe(true);expect(await p.counts()).toEqual(before);
  const fresh=restart();try{expect(await p.runner(input,fresh).run(input.lease)).toMatchObject({kind:'actionable'});}finally{await fresh.close();}
  expect(await p.counts()).toEqual({tasks:before.tasks+1,events:before.events+1,task_receipts:before.task_receipts+1,processing:before.processing+1,outbox:before.outbox+1,delivery:before.delivery+1});
 });
