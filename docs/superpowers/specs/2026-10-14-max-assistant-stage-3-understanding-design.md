@@ -94,6 +94,8 @@ Resolver: ровно1 доказанная цель → UUID/version;2–5 → �
 
 ## 4. Контекст и время
 
+В нормализации одного действия отдельные targetDate «завтра» и scheduledAt «в9» задают встречу завтра в9, независимо от порядка полей. Дата берётся только из одного явного source-proven targetDate того же действия; явно названная дата самого scheduledAt имеет приоритет. Даты других действий, старой задачи или deadline не подставляются. Все expression/scope/intent guards выполняются до разрешения DST; gap отказывается, fold даёт конечный выбор. Это разрешение календарных значений, без исправления field names/смысла ответа модели.
+
 InternalContextPack строится на snapshot исходного события, timezone и локальной дате/времени, не clock времени retry. Текущий input полный: text≤16000 code points/64KiB (существующий intake); transcript≤32000 code points. Больший input не обрезается и не делится на дополнительные AI вызовы автоматически: capability_unavailable, источник сохранён локально.
 
 История: до12 пар/ходов за48ч, только ассистентские сообщения с certainty=sent и действительными внешними IDs; inbound provenance сохраняется отдельно. Uncertain/pending reply не притворяется виденным пользователем. Recent committed Task changes приоритетнее недоставленных реплик. До50 candidates через TaskQueries all/open, включая недавно terminal; description excerpt≤512 code points, явные truncation flags; internal source остаётся доступен локальному resolver.

@@ -1,0 +1,289 @@
+{
+  "kind": "checkpoint60_authorised_c025_closure",
+  "date": "2026-10-16",
+  "previousC020FixSha": "3d65b79c46b2508167c99bf4405a20d21f93020b",
+  "authorization": "Owner explicitly approved C025 date/time binding within this limited cycle; no new API/full gate",
+  "targeted": {
+    "files": 5,
+    "passed": 32,
+    "failed": 0,
+    "skipped": 0
+  },
+  "applicationReplay": {
+    "kind": "offline_saved_probe3_application_replay",
+    "newAiCalls": 0,
+    "rows": [
+      {
+        "id": "C003",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": null,
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C024",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": "2026-09-12",
+                "scheduledAt": "2026-09-12T06:00:00.000Z",
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C025",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "update",
+                "patch": {
+                  "targetDate": "2026-09-12",
+                  "scheduledAt": "2026-09-12T06:00:00.000Z"
+                }
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C013",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [],
+        "outcomes": []
+      },
+      {
+        "id": "C015",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [],
+        "outcomes": []
+      },
+      {
+        "id": "C016",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "complete"
+              }
+            ],
+            "reasons": []
+          },
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "update",
+                "patch": {
+                  "targetDate": "2026-09-12"
+                }
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied",
+          "applied"
+        ]
+      },
+      {
+        "id": "C034",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": null,
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          },
+          {
+            "status": "choice",
+            "commands": [],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied",
+          "choice"
+        ]
+      },
+      {
+        "id": "C020",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "complete"
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C041",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": null,
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C043",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [],
+        "outcomes": []
+      },
+      {
+        "id": "C005",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": "2026-09-11T08:00:00.000Z",
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C064",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": "2026-09-12",
+                "scheduledAt": null,
+                "deadline": {
+                  "kind": "instant",
+                  "at": "2026-09-12T06:00:00.000Z"
+                }
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      }
+    ]
+  },
+  "applicationAcceptance": {
+    "result": "pass",
+    "casesTraversed": 12,
+    "passing": 12,
+    "failures": [],
+    "savedResponsesModified": false,
+    "externalAiCalls": 0
+  },
+  "resolverReplay": {
+    "cases": 12,
+    "blockedCorrectResponses": 0,
+    "externalAiCalls": 0
+  },
+  "preservedGuards": [
+    "current-source exact whole-word pronoun",
+    "tenant/conversation/sent anchor and captured version",
+    "source time / same action only / explicit schedule date precedence",
+    "strict appointment gap/fold",
+    "wrong deadline/shared_time remain rejected"
+  ],
+  "typecheck": true,
+  "architectureGuard": true,
+  "review": "same checkpoint60 reviewer: C020 confirmed on3d65b79; C025 scoped confirmation pending",
+  "nativeCodecOutcome": "blocked; see stage-3-checkpoint-60-c020-verification.json; no second native attempt or bypass",
+  "newFullGates": 0,
+  "newApiCalls": 0,
+  "deployment": false,
+  "evidenceSha256": {
+    "c025-red.log": "3f9f7fa23dc1ed0e49c892ef718a4dc37d4b5525ef4d404912066c3c5d7ce2ab",
+    "c025-green.log": "29b88b74a5d1690a8b5e1c81b307ec0e3ab911a2667024130ead1a8463ca40cd",
+    "c025-type.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "c025-architecture.log": "38930d01cd58d32bf68e8a2cffb4bdcd6e65bc40f94fea1ae66b5cebeb9f8659",
+    "application-replay-c025-green.json": "7da46e5821b51c6799086711c8ec8b0d23789bb215bc28648f25ed45f5fd37af",
+    "resolver-replay-final.json": "d21b23815d5ca2367e508c7ebdd6414cc1ce99571901d4729e5065bc4a6bad84"
+  }
+}

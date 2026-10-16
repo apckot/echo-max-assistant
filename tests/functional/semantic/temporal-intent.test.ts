@@ -41,3 +41,26 @@ test('review: full Russian hour words and malformed minutes never degrade to ano
  expect(normalize('Назначь звонок завтра в тринадцать','scheduledAt','завтра в тринадцать')).toMatchObject({values:[{at:'2026-09-12T10:00:00.000Z'}]});
  for(const clock of ['9:999','9:7','29:00'])expect(normalize('Назначь звонок завтра в '+clock,'scheduledAt','завтра в '+clock).status).toBe('invalid');
 });
+function splitTime(fields:{field:'targetDate'|'scheduledAt'|'deadline';expression:string}[],text='Перенеси звонок на завтра в9',source={sourceAt:'2026-09-11T12:48:33.000Z',timezone:'Europe/Moscow'}){
+ const f=frame(text,'update'),action={...f.grounded.decision.actions[0]!,times:fields.map(t=>({...t,evidence:f.grounded.decision.actions[0]!.evidence,scopeUnitLabels:['u1']}))};
+ return normalizer.normalize({...f.grounded,decision:{...f.grounded.decision,actions:[action]}},action,source);
+}
+test('C025 separate date and clock of one action combine independently of model field ordering',()=>{
+ for(const reverse of [false,true]){
+  const fields=[{field:'targetDate' as const,expression:'завтра'},{field:'scheduledAt' as const,expression:'в9'}];if(reverse)fields.reverse();
+  const result=splitTime(fields);expect(result).toMatchObject({status:'resolved'});if(result.status==='resolved')expect(result.values).toEqual(expect.arrayContaining([{field:'targetDate',date:'2026-09-12'},{field:'scheduledAt',at:'2026-09-12T06:00:00.000Z'}]));
+ }
+});
+test('C025 binding preserves explicit appointment day and never borrows a date from another action',()=>{
+ expect(splitTime([{field:'targetDate',expression:'завтра'},{field:'scheduledAt',expression:'сегодня в9'}],'Перенеси список на завтра, время сегодня в9')).toMatchObject({values:[{field:'targetDate',date:'2026-09-12'},{field:'scheduledAt',at:'2026-09-11T06:00:00.000Z'}]});
+ const f=frame('Перенеси отчёт на завтра и назначь звонок в9','update'),base=f.grounded.decision.actions[0]!;
+ const date={...base,times:[{field:'targetDate' as const,expression:'завтра',evidence:base.evidence,scopeUnitLabels:['u1']}]};
+ const clock={...base,label:'a2',unitLabel:'u2',times:[{field:'scheduledAt' as const,expression:'в9',evidence:base.evidence,scopeUnitLabels:['u2']}]};
+ const grounded={...f.grounded,decision:{...f.grounded.decision,units:[...f.grounded.decision.units,{...f.grounded.decision.units[0]!,label:'u2'}],actions:[date,clock]}};
+ expect(normalizer.normalize(grounded,clock,f.source)).toEqual({status:'resolved',values:[{field:'scheduledAt',at:'2026-09-11T06:00:00.000Z'}]});
+});
+test('C025 split date/clock still refuses strict appointment gaps and offers real fold choices',()=>{
+ const fields=[{field:'targetDate' as const,expression:'завтра'},{field:'scheduledAt' as const,expression:'в02:30'}];
+ expect(splitTime(fields,'Перенеси звонок на завтра в02:30',{sourceAt:'2026-03-07T17:00:00.000Z',timezone:'America/New_York'})).toMatchObject({status:'invalid',reason:'nonexistent_local_time'});
+ const fold=splitTime([{field:'targetDate',expression:'завтра'},{field:'scheduledAt',expression:'в01:30'}],'Перенеси звонок на завтра в01:30',{sourceAt:'2026-10-31T16:00:00.000Z',timezone:'America/New_York'});expect(fold.status).toBe('choice');if(fold.status==='choice')expect(fold.options).toHaveLength(2);
+});

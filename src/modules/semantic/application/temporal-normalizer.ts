@@ -32,16 +32,21 @@ export class TemporalNormalizer {
   const issues=validateTemporalIntent(grounded).issues.filter(i=>!i.actionLabel||i.actionLabel===action.label);if(issues.length)return {status:'invalid',reason:issues[0]!.code};
   if(!this.time.validTimezone(source.timezone)||!Number.isFinite(Date.parse(source.sourceAt)))return {status:'invalid',reason:'source_time'};
   const today=this.time.localDate(source.sourceAt,source.timezone),values:NormalizedTime[]=[];const used=new Set<string>();
+  const own=grounded.decision.units.find(u=>u.label===action.unitLabel)?.evidence??[];
+  // Validate all expressions before sharing any date or returning a DST choice.
+  if(action.times.some(t=>![...t.evidence,...own].some(e=>e.quote.toLocaleLowerCase('ru').includes(t.expression.trim().toLocaleLowerCase('ru')))))return {status:'invalid',reason:'time_expression_unproven'};
+  const calendarSlots=action.times.filter(t=>t.field==='targetDate');
+  const actionDate=calendarSlots.length===1?dateExpression(calendarSlots[0]!.expression,today):null;
   for(const t of action.times){
    if(used.has(t.field))return {status:'invalid',reason:'duplicate_time_field'};used.add(t.field);
-   const own=grounded.decision.units.find(u=>u.label===action.unitLabel)?.evidence??[];
-   if(![...t.evidence,...own].some(e=>e.quote.toLocaleLowerCase('ru').includes(t.expression.trim().toLocaleLowerCase('ru'))))return {status:'invalid',reason:'time_expression_unproven'};
    const date=dateExpression(t.expression,today),clock=clockExpression(t.expression);
    if(!date&&(/\d{4}-\d{2}-\d{2}/u.test(t.expression)||months.some(m=>t.expression.toLocaleLowerCase('ru').includes(m))))return {status:'invalid',reason:'date_expression'};
    if(!clock&&/(?:^|\s)(?:в|к|до|на)\s*\d{1,2}:/iu.test(t.expression))return {status:'invalid',reason:'clock_expression'};
    if(t.field==='targetDate'){if(!date||clock)return {status:'invalid',reason:'date_expression'};values.push({field:t.field,date});continue;}
    if(!clock){if(t.field==='deadline'&&date){values.push({field:'deadline',date});continue;}return {status:'invalid',reason:'clock_expression'};}
-   const local={date:date??today,time:clock,timezone:source.timezone};const resolved=this.time.resolveLocalTime(local);
+   // Only the same action's explicit calendar slot supplies a missing appointment date.
+   // Explicit appointment dates win; deadlines and other actions never inherit it.
+   const local={date:date??(t.field==='scheduledAt'?actionDate:null)??today,time:clock,timezone:source.timezone};const resolved=this.time.resolveLocalTime(local);
    if('error' in resolved){
     if(resolved.error.code!=='ambiguous_local_time')return {status:'invalid',reason:resolved.error.code};
     // Fold choices are real neighbouring IANA offsets, not an arbitrary default offset.
