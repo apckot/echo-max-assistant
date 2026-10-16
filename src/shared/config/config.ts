@@ -19,6 +19,7 @@ const runtimeConfigSchema = z.object({
   MAX_WEBHOOK_URL: z.url({ protocol: /^https$/ }),
   RESTORE_FENCE: z.enum(['on', 'off']).default('on'),
   ASSISTANT_STAGE3_ENABLED:z.enum(['true','false']).default('false').transform(v=>v==='true'),
+  ASSISTANT_CHOICES_ENABLED:z.enum(['true','false']).default('false').transform(v=>v==='true'),
   OPENAI_API_KEY:secret.optional(),
   ASSISTANT_DEDUP_KEYS_JSON:secret.optional(),
   ASSISTANT_MAP_KEY_BASE64:secret.optional(),

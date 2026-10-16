@@ -73,8 +73,8 @@ export function createWorker(environment: Record<string, unknown>) {
     close: () => database.close(),
   };
   const foundation=new ProcessInbound(new PostgresAtomicProcessing(new PostgresOrderedHead(new PostgresFencedConversation(guarded))),new FoundationInboundHandler(),config.HANDLER_TIMEOUT_MS);
-  const assistant=config.ASSISTANT_STAGE3_ENABLED?createAssistantRuntime(guarded,{apiKey:config.OPENAI_API_KEY??'',dedupKeysJson:config.ASSISTANT_DEDUP_KEYS_JSON??'',mapKeyBase64:config.ASSISTANT_MAP_KEY_BASE64??'',audioProfileJson:config.ASSISTANT_AUDIO_PROFILE_JSON,mediaOriginsJson:config.ASSISTANT_MEDIA_ORIGINS_JSON}):null;
-  const processor=assistant?{run:async(lease:ConversationLease,signal?:AbortSignal)=>{const kind=await assistant.authority.peek(lease);return kind==='text'||kind==='voice'?assistant.process.run(lease,signal):kind?foundation.run(lease):undefined;}}:foundation;
+  const assistant=config.ASSISTANT_STAGE3_ENABLED?createAssistantRuntime(guarded,{choicesEnabled:config.ASSISTANT_CHOICES_ENABLED,apiKey:config.OPENAI_API_KEY??'',dedupKeysJson:config.ASSISTANT_DEDUP_KEYS_JSON??'',mapKeyBase64:config.ASSISTANT_MAP_KEY_BASE64??'',audioProfileJson:config.ASSISTANT_AUDIO_PROFILE_JSON,mediaOriginsJson:config.ASSISTANT_MEDIA_ORIGINS_JSON}):null;
+  const processor=assistant?{run:async(lease:ConversationLease,signal?:AbortSignal)=>{const kind=await assistant.authority.peek(lease);return kind==='button'&&assistant.callbacks?assistant.callbacks.run(lease):kind==='text'||kind==='voice'?assistant.process.run(lease,signal):kind?foundation.run(lease):undefined;}}:foundation;
   return startWorkerLoop({ queue: new PostgresConversationQueue(guarded),
     process:processor,
     close: () => guarded.close(), concurrency: config.ASSISTANT_STAGE3_ENABLED?Math.min(4,config.WORKER_CONCURRENCY):config.WORKER_CONCURRENCY,

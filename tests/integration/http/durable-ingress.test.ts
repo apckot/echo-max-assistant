@@ -59,7 +59,7 @@ describe('guarded durable HTTP ingress', () => {
   afterAll(async () => { await migrator?.end(); await postgres?.stop(); });
   function gateway(overrides: Partial<RuntimeConfig> = {}) {
     const settings = { ...config, ...overrides };
-    const app = createGateway({ ...settings, FOUNDATION_ECHO_ENABLED: String(settings.FOUNDATION_ECHO_ENABLED), ASSISTANT_STAGE3_ENABLED: String(settings.ASSISTANT_STAGE3_ENABLED) },
+    const app = createGateway({ ...settings, FOUNDATION_ECHO_ENABLED: String(settings.FOUNDATION_ECHO_ENABLED), ASSISTANT_STAGE3_ENABLED: String(settings.ASSISTANT_STAGE3_ENABLED), ASSISTANT_CHOICES_ENABLED:String(settings.ASSISTANT_CHOICES_ENABLED) },
       pino({}, new Writable({ write(chunk, _encoding, done) { lines.push(String(chunk)); done(); } })));
     apps.push(app); return app;
   }

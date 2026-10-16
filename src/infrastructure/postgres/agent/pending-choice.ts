@@ -2,8 +2,8 @@ import {createHash,createHmac,randomUUID} from 'node:crypto';
 import type {DbTx} from '../database.js';
 import type {InboundEvent} from '../../../modules/intake/domain/inbound-event.js';
 import type {ChoiceOption} from '../../../modules/agent/application/choice-executor.js';
-export interface ChoiceReference {readonly choiceId:string;readonly revision:number;readonly option:number;readonly keyVersion:number}
-export interface SavedChoice {readonly id:string;readonly revision:number;readonly options:readonly {label:string;ref:ChoiceReference}[]}
+import type {ChoiceReference,SavedChoice} from '../../../modules/agent/application/choice-executor.js';
+export type {ChoiceReference,SavedChoice} from '../../../modules/agent/application/choice-executor.js';
 /** Domain-separated pseudorandom256-bit tokens: only hashes persist; outbox stores internal refs. */
 export class ChoiceTokens{
  constructor(private readonly keys:readonly {version:number;key:Buffer}[]){if(!keys.length||keys.some(k=>k.key.length!==32||!Number.isSafeInteger(k.version)||k.version<1))throw Error('CHOICE_KEYS_INVALID');}

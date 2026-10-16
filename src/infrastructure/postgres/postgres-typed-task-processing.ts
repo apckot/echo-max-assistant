@@ -26,7 +26,7 @@ import type {TurnTicket,AcceptedPlan} from '../../modules/agent/application/turn
 import type {GroupExecutor,GroupOutcome,QueryOutcome} from '../../modules/agent/application/group-runner.js';
 /** Sole bridge binds immutable accepted commands to the currently locked source and assistantTurnId. */
 export class PostgresAgentTaskProcessing implements GroupExecutor {
- constructor(private readonly authority:Pick<PostgresTurnAuthority,'guarded'>){}
+ constructor(private readonly authority:Pick<PostgresTurnAuthority,'guarded'>,private readonly choices?:import('./agent/pending-choice.js').PostgresPendingChoices){}
  async runGroup(ticket:TurnTicket,index:number):Promise<GroupOutcome>{
   if(!Number.isInteger(index)||index<0||index>=10)throw Error('GROUP_INDEX_INVALID');
   return this.authority.guarded(ticket,async(tx,event)=>{
@@ -34,7 +34,10 @@ export class PostgresAgentTaskProcessing implements GroupExecutor {
    const group=accepted?.plan.groups[index];if(!group)throw Error('GROUP_NOT_ACCEPTED');const label=group.labels.join(':');
    const [previous]=await tx.query<{result:GroupOutcome}>('SELECT result FROM public.turn_groups WHERE user_id=$1 AND turn_id=$2 AND label=$3',[event.userId,ticket.turnId,label]);if(previous)return previous.result;
    let outcome:GroupOutcome;
-   if(group.status!=='ready')outcome={label,outcome:group.status==='choice'?'choice':'blocked',receipt:null,reasons:group.reasons};
+   if(group.status==='choice'&&this.choices){
+    const options=choiceOptions(group,accepted!.plan.context,event.userId,new IanaTimeResolver());
+    outcome=options.length?{label,outcome:'choice',receipt:null,reasons:group.reasons,choice:await this.choices.saveWith(tx,event,ticket.turnId,label,options)}:{label,outcome:'blocked',receipt:null,reasons:['CHOICE_UNREPRESENTABLE']};
+   }else if(group.status!=='ready')outcome={label,outcome:group.status==='choice'?'choice':'blocked',receipt:null,reasons:group.reasons};
    else if(!group.commands.length)outcome={label,outcome:'respond',receipt:null,reasons:[]};
    else{
     const intents=group.commands.map(command=>({kind:command.kind,binding:command.kind==='create'?{created:command.localId}:command.target,affirmative:true,asserted:true,ownerAuthored:true,quoted:false}));
@@ -73,4 +76,11 @@ async function readAgentQueries(tx:DbTx,event:InboundEvent,plan:AcceptedPlan,lab
   results.push('error' in page?{kind:'unavailable',reason:page.error.code}:{kind:'tasks',day,items:page.items,asOf:page.asOf,nextCursor:page.nextCursor});
  }
  return results;
+}
+
+import {choiceOptions} from '../../modules/agent/application/choice-executor.js';
+export async function executeChoiceCommands(tx:DbTx,event:InboundEvent,commands:readonly import('../../modules/tasks/domain/commands.js').TaskCommand[],effectKey:string){
+ const intents=commands.map(c=>({kind:c.kind,binding:c.kind==='create'?{created:c.localId}:c.target,affirmative:true,asserted:true,ownerAuthored:true,quoted:false}));
+ const context=ownerTaskContext(event.userId,{kind:'turn',turnId:event.id},event.occurredAt.toISOString(),event.timezoneSnapshot,intents);
+ const result=await new TaskCommands(new PostgresBoundTaskSessionRunner(tx,event),new IanaTimeResolver()).execute(context,{contractVersion:1,effectKey,commands});if('error' in result)throw Error('CHOICE_TASK_ENVELOPE');return result.receipt;
 }

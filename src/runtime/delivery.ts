@@ -1,3 +1,4 @@
+import {ChoiceTokens} from '../infrastructure/postgres/agent/pending-choice.js';
 import { randomUUID } from 'node:crypto';
 import { createMaxSender } from '../infrastructure/max/max-client.js';
 import { createDatabase, type Database, type DbTx } from '../infrastructure/postgres/database.js';
@@ -68,7 +69,9 @@ export function createDelivery(environment: Record<string, unknown>,
     throw new Error('invalid_delivery_timing');
   }
   // Validate sender options before allocating a pool or starting any timer.
-  const sender = createMaxSender({ token: config.MAX_BOT_TOKEN, baseUrl: max.baseUrl, timeoutMs });
+  const choiceKeys=config.ASSISTANT_CHOICES_ENABLED?JSON.parse(config.ASSISTANT_DEDUP_KEYS_JSON??'null'):null;
+  const codec=choiceKeys?new ChoiceTokens(choiceKeys.map((k:{version:number;key:string})=>({version:k.version,key:Buffer.from(k.key,'base64')}))):null;
+  const sender = createMaxSender({ token: config.MAX_BOT_TOKEN, ...(codec?{encodeChoice:r=>codec.encode(r)}:{}), baseUrl: max.baseUrl, timeoutMs });
   const database = createDatabase({ delivery: config.DATABASE_URL_DELIVERY, poolSize: config.DELIVERY_CONCURRENCY,
     deliveryTransactionTimeoutMs: transactionMs });
   const guard = <T>(fn: (tx: DbTx) => Promise<T>) => async (tx: DbTx) => {

@@ -15,7 +15,7 @@ export type NormalizedInbound = BaseInbound & (
   | { kind: 'lifecycle'; lifecycleType: 'bot_started' | 'bot_stopped' }
   | { kind: 'text'; text: string; replyToMessageId?: string }
   | { kind: 'voice'; voice: { url: string; token: string }; replyToMessageId?: string }
-  | { kind: 'button'; callbackPayload: string; replyToMessageId?: string }
+  | { kind: 'button'; callbackPayload: string; callbackMessageId?:string; replyToMessageId?: string }
 );
 
 export class InvalidMaxUpdateError extends Error {
@@ -102,7 +102,7 @@ export function mapMaxUpdate(value: unknown, options: { expectedProviderUserId?:
       status: 'normalized', kind: 'button', providerUserId: update.callback.user.user_id,
       providerChatId: update.message.recipient.chat_id,
       providerEventKey: `callback:${canonicalHash([update.callback.callback_id, update.callback.user.user_id, update.message.body.mid, payload, update.callback.timestamp])}`,
-      callbackPayload: payload, occurredAt: update.callback.timestamp,
+      callbackPayload: payload, callbackMessageId:update.message.body.mid, occurredAt: update.callback.timestamp,
       ...(update.message.link?.type === 'reply' ? { replyToMessageId: update.message.link.message.mid } : {}),
     });
   }

@@ -10,7 +10,8 @@ import type {UserId} from '../../../shared/types/identity.js';
 import {createTask,transition} from '../../tasks/domain/transitions.js';
 import type {PlannedGroup,TurnTicket} from './turn-port.js';
 export type QueryOutcome={readonly kind:'tasks';readonly day:string|null;readonly items:readonly Task[];readonly asOf:string;readonly nextCursor:string|null}|{readonly kind:'history';readonly items:readonly TaskEvent[];readonly asOf:string}|{readonly kind:'capabilities';readonly text:string}|{readonly kind:'unavailable';readonly reason:string};
-export interface GroupOutcome {readonly label:string;readonly outcome:'applied'|'no_change'|'rejected'|'blocked'|'choice'|'respond';readonly receipt:TaskReceipt|null;readonly reasons:readonly string[];readonly queryResults?:readonly QueryOutcome[]}
+import type {SavedChoice} from './choice-executor.js';
+export interface GroupOutcome {readonly choice?:SavedChoice;readonly label:string;readonly outcome:'applied'|'no_change'|'rejected'|'blocked'|'choice'|'respond';readonly receipt:TaskReceipt|null;readonly reasons:readonly string[];readonly queryResults?:readonly QueryOutcome[]}
 export interface GroupExecutor {runGroup(ticket:TurnTicket,index:number):Promise<GroupOutcome>}
 export class GroupRunner {
  constructor(private readonly executor:GroupExecutor){}

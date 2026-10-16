@@ -5,7 +5,7 @@ export type InboundEventId = string & { readonly __inboundEventId: unique symbol
 export type InboundPayload =
   | { readonly kind: 'text'; readonly text: string; readonly replyToMessageId?: string }
   | { readonly kind: 'voice'; readonly media: { readonly url: string; readonly token: string }; readonly replyToMessageId?: string }
-  | { readonly kind: 'button'; readonly callbackPayload: string; readonly replyToMessageId?: string }
+  | { readonly kind: 'button'; readonly callbackPayload: string; readonly callbackMessageId?:string; readonly replyToMessageId?: string }
   | { readonly kind: 'lifecycle'; readonly lifecycleType: 'started' | 'stopped' };
 
 export type PreparationStatus = 'ready' | 'preparing' | 'failed';
@@ -55,7 +55,7 @@ export function validateInboundPayload(value: unknown): value is InboundPayload 
       break;
     }
     case 'button':
-      valid = own(payload, ['kind', 'callbackPayload', 'replyToMessageId']) && typeof payload.callbackPayload === 'string';
+      valid = own(payload, ['kind', 'callbackPayload', 'replyToMessageId','callbackMessageId']) && typeof payload.callbackPayload === 'string' && (payload.callbackMessageId===undefined||nonempty(payload.callbackMessageId));
       break;
     case 'lifecycle':
       valid = own(payload, ['kind', 'lifecycleType']) &&
@@ -65,7 +65,7 @@ export function validateInboundPayload(value: unknown): value is InboundPayload 
   // jsonb::text adds one space after each comma and colon. Every supported
   // object has two required keys; voice also has a two-key media object.
   const jsonbSeparatorBytes = (payload.kind === 'voice' ? 6 : 3) +
-    (payload.replyToMessageId === undefined ? 0 : 2);
+    (payload.replyToMessageId === undefined ? 0 : 2)+(payload.callbackMessageId===undefined?0:2);
   return valid && (payload.replyToMessageId === undefined || nonempty(payload.replyToMessageId)) &&
     Buffer.byteLength(JSON.stringify(value), 'utf8') + jsonbSeparatorBytes <= 128 * 1024;
 }

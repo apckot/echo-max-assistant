@@ -16,11 +16,14 @@ export class PostgresTurnFinalizer {
    if(!duplicate&&run?.phase==='accepted'&&(rows.length!==run.plan?.groups.length||run.plan.groups.some(g=>!rows.some(row=>row.result.label===g.labels.join(':')))))throw Error('FINALIZER_GROUPS_INCOMPLETE');
    const groups=rows.map(row=>{if(row.result.receipt&&!row.receipt)throw Error('FINALIZER_RECEIPT_MISSING');return {...row.result,receipt:row.receipt};});
    const rendered=duplicate?null:renderResponse(groups,run?.phase==='failed'?run.failure_code??'failed':null);
-   const result:AssistantInboundResult={receiptType:'assistant_turn_v1',receiptVersion:1,turnId:ticket.turnId,responseRevision:1,messages:rendered?[rendered.message]:[]};
+   const activeChoices=groups.flatMap(g=>g.choice?[g.choice]:[]);
+   const message=rendered&&activeChoices.length>0?{version:1 as const,kind:'choice' as const,text:rendered.message.text,buttons:activeChoices.flatMap(c=>c.options)}:rendered?.message;
+   const result:AssistantInboundResult={receiptType:'assistant_turn_v1',receiptVersion:1,turnId:ticket.turnId,responseRevision:1,messages:message?[message]:[]};
    await tx.query('INSERT INTO public.processing_receipts(user_id,conversation_id,inbound_event_id,receipt_type,receipt_version,result) VALUES($1,$2,$3,$4,1,$5)',[event.userId,event.conversationId,event.id,'assistant_turn_v1',JSON.stringify(result)]);
    if(rendered){
-    const [out]=await tx.query<{id:string}>(`INSERT INTO public.outbound_messages(user_id,conversation_id,source_inbound_event_id,provider,message_index,payload,dedupe_key,assistant_turn_id) VALUES($1,$2,$3,'max',0,$4,$5,$6) RETURNING id`,[event.userId,event.conversationId,event.id,JSON.stringify(rendered.message),'turn:'+ticket.turnId+':final:v1',ticket.turnId]);
+    const [out]=await tx.query<{id:string}>(`INSERT INTO public.outbound_messages(user_id,conversation_id,source_inbound_event_id,provider,message_index,payload,dedupe_key,assistant_turn_id) VALUES($1,$2,$3,'max',0,$4,$5,$6) RETURNING id`,[event.userId,event.conversationId,event.id,JSON.stringify(message),'turn:'+ticket.turnId+':final:v1',ticket.turnId]);
     await tx.query('INSERT INTO public.delivery_work(outbound_message_id,user_id) VALUES($1,$2)',[out!.id,event.userId]);
+    for(const choice of activeChoices)await tx.query('UPDATE public.pending_choices SET outbound_id=$3 WHERE user_id=$1 AND id=$2 AND outbound_id IS NULL',[event.userId,choice.id,out!.id]);
     if(rendered.tasks.length>0)await new PostgresContextReader(this.authority.database).saveAnchorWith(tx,event.userId,event.conversationId,out!.id,rendered.anchorKind,rendered.tasks);
    }
    await tx.query("INSERT INTO public.turn_response_intents(user_id,turn_id,state) SELECT $1,$2,'finalized' WHERE EXISTS(SELECT 1 FROM public.agent_turn_content WHERE user_id=$1 AND turn_id=$2) ON CONFLICT(user_id,turn_id) DO UPDATE SET state='finalized'",[event.userId,ticket.turnId]);

@@ -6,6 +6,7 @@ const invalidConfiguration = (): never => { throw new Error('invalid_max_sender_
 
 export interface MaxSenderOptions {
   readonly token: string;
+  readonly encodeChoice?:(ref:{choiceId:string;revision:number;option:number;keyVersion:number})=>string;
   readonly baseUrl?: string;
   readonly timeoutMs?: number;
   readonly maxResponseBytes?: number;
@@ -115,6 +116,8 @@ export function createMaxSender(options: MaxSenderOptions): OutboundSender {
       if (!validRecipient(recipientAddress) || !parsed.success || invalidUnicode.test(parsed.data.text) || [...parsed.data.text].length > 4000) {
         return { status: 'not_sent', code: 'invalid_input', retryable: false };
       }
+      let attachments:unknown;
+      if(parsed.data.kind==='choice'){const buttons=parsed.data.buttons;try{if(!options.encodeChoice)throw Error();attachments=[{type:'inline_keyboard',payload:{buttons:Array.from({length:Math.ceil(buttons.length/2)},(_,i)=>buttons.slice(i*2,i*2+2).map(b=>({type:'callback',text:b.label,payload:options.encodeChoice!(b.ref)})))}}];if(buttons.some(b=>invalidUnicode.test(b.label)))throw Error();}catch{return {status:'not_sent',code:'invalid_input',retryable:false};}}
       const url = new URL('/messages', base);
       url.searchParams.set('user_id', recipientAddress);
       const controller = new AbortController();
@@ -123,7 +126,7 @@ export function createMaxSender(options: MaxSenderOptions): OutboundSender {
       try {
         response = await fetcher(url, {
           method: 'POST', headers: { Authorization: options.token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: parsed.data.text }), redirect: 'manual', signal: controller.signal,
+          body: JSON.stringify({ text: parsed.data.text,...(attachments?{attachments}:{}) }), redirect: 'manual', signal: controller.signal,
         });
         if (response.status === 429) {
           const delay = retryAfter(response.headers.get('retry-after'));

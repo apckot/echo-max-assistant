@@ -34,3 +34,6 @@ export function choiceOptions(group:ResolvedGroup,context:ContextSnapshot,user:U
  const options=variants.map(v=>{const [compiled]=compileGroups([{...group,status:'ready',actions:v.actions}],context,user,time);return {label:[...v.labels.join(' / ')].slice(0,64).join('')||'Вариант',commands:compiled?.status==='ready'?compiled.commands:[]};});
  return options.some(o=>!o.commands.length)?[]:options;
 }
+
+export interface ChoiceReference {readonly choiceId:string;readonly revision:number;readonly option:number;readonly keyVersion:number}
+export interface SavedChoice {readonly id:string;readonly revision:number;readonly options:readonly {label:string;ref:ChoiceReference}[]}
