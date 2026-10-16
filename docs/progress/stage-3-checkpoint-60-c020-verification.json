@@ -1,0 +1,320 @@
+{
+  "kind": "checkpoint60_limited_c020_closure",
+  "date": "2026-10-16",
+  "baseSha": "9040985aa01dcaefa2f8a620c4b40614b8fe3da6",
+  "scope": "C020 / saved probe3 offline replay / native codec; no61 or full gate",
+  "anchorTargeted": {
+    "passed": 18,
+    "files": 3,
+    "applicationReplayExcludedFromGreenTarget": true
+  },
+  "resolverReplay": {
+    "cases": 12,
+    "correctResponsesRejected": 0,
+    "modelInvocations": 0
+  },
+  "applicationReplay": {
+    "kind": "offline_saved_probe3_application_replay",
+    "newAiCalls": 0,
+    "rows": [
+      {
+        "id": "C003",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": null,
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C024",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": "2026-09-12",
+                "scheduledAt": "2026-09-12T06:00:00.000Z",
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C025",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "update",
+                "patch": {
+                  "targetDate": "2026-09-12",
+                  "scheduledAt": "2026-09-11T06:00:00.000Z"
+                }
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C013",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [],
+        "outcomes": []
+      },
+      {
+        "id": "C015",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [],
+        "outcomes": []
+      },
+      {
+        "id": "C016",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "complete"
+              }
+            ],
+            "reasons": []
+          },
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "update",
+                "patch": {
+                  "targetDate": "2026-09-12"
+                }
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied",
+          "applied"
+        ]
+      },
+      {
+        "id": "C034",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": null,
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          },
+          {
+            "status": "choice",
+            "commands": [],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied",
+          "choice"
+        ]
+      },
+      {
+        "id": "C020",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "complete"
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C041",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": null,
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C043",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [],
+        "outcomes": []
+      },
+      {
+        "id": "C005",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": null,
+                "scheduledAt": "2026-09-11T08:00:00.000Z",
+                "deadline": null
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      },
+      {
+        "id": "C064",
+        "savedResponseReads": 1,
+        "newAiCalls": 0,
+        "groups": [
+          {
+            "status": "ready",
+            "commands": [
+              {
+                "kind": "create",
+                "targetDate": "2026-09-12",
+                "scheduledAt": null,
+                "deadline": {
+                  "kind": "instant",
+                  "at": "2026-09-12T06:00:00.000Z"
+                }
+              }
+            ],
+            "reasons": []
+          }
+        ],
+        "outcomes": [
+          "applied"
+        ]
+      }
+    ]
+  },
+  "applicationAcceptance": {
+    "result": "fail",
+    "casesTraversed": 12,
+    "passing": 11,
+    "failures": [
+      {
+        "id": "C025",
+        "kind": "temporal_normalization",
+        "expectedScheduledAt": "2026-09-12T06:00:00.000Z",
+        "actualScheduledAt": "2026-09-11T06:00:00.000Z",
+        "targetDate": "2026-09-12",
+        "savedResponseCorrect": true,
+        "fixAuthorized": false,
+        "status": "awaiting_owner_scope_decision"
+      }
+    ]
+  },
+  "nativeCodec": {
+    "kind": "native_sandbox_synthetic_wav",
+    "platform": "linux",
+    "uid": 1000,
+    "inputBytes": 32044,
+    "expectedDurationMs": 1000,
+    "network": "none",
+    "fallback": false,
+    "outcome": "blocked",
+    "productionError": "MEDIA_CODEC",
+    "namespaceExit": 1,
+    "namespaceSignal": null,
+    "namespaceStderr": "bwrap: No permissions to create new namespace, likely because the kernel does not allow non-privileged user namespaces. See <https://deb.li/bubblewrap> or <file:///usr/share/doc/bubblewrap/README.Debian.gz>.\n",
+    "image": "echo-max:checkpoint60-afaf7d19e93ebb0975b1d94a4693ea8d24155951",
+    "imageId": "sha256:15b2d41f87c61f4412ecbb38b0893e70ce7c10cb688e4358db49e5ec38273c7f",
+    "container": {
+      "readOnly": true,
+      "network": "none",
+      "capDrop": "ALL",
+      "noNewPrivileges": true,
+      "memory": "768m",
+      "pids": 96,
+      "cpus": 1,
+      "user": "node/1000"
+    },
+    "diagnostic": "Production SandboxCodec.inspect attempted once on 1s synthetic PCM WAV. After failure, a no-audio bwrap namespace probe in same container reported exact namespace-permission blocker. No privileged/capability/seccomp relaxation, no unsandboxed fallback."
+  },
+  "typecheck": true,
+  "architectureGuard": true,
+  "newExternalAiCalls": 0,
+  "newExternalSttCalls": 0,
+  "newFullGates": 0,
+  "newImagesBuilt": 0,
+  "serverChanges": 0,
+  "review": "same checkpoint60 reviewer requested explicit current-source whole-word guard; added and targeted RED/GREEN confirmed; final scoped confirmation pending",
+  "evidenceSha256": {
+    "red.log": "ae8b333f02bb9e11d629fe4f1bad60bad8c31d02684fb37b0d9b48b59d83e9d3",
+    "anchor-final.log": "59399eee2e47cd8f590c89627913606ad17d960cd0bb983fe5d447b0edae5f06",
+    "targeted-final.log": "e532ddcf5e4555a4097a666d954154e74b35531e289dd5a0922296e9c874b281",
+    "application-replay-before-c025.log": "d936a8631c012e4241e298c00b5e8111b6082edddf78d6b28df3a9ca9c7dc6e7",
+    "native-codec-result.json": "d2cb889319152e0faf2de656020b53c218079d9eadb2195922f295d65ea6542b",
+    "application-replay-final.log": "96eefff9b3e523123a9d95a74d1d8b46d3e64f81707f3c7c80c6983826c9f0d6",
+    "pronoun-boundary-red.log": "04f5461cbab70fc782702212a32d2b4889c5139f75b885e66fd0e5492ac66576"
+  },
+  "oracleFixtureNote": "C005 supplies a clock-only scheduledAt. targetDate remains null because no explicit calendar-date expression is supplied; scheduledAt source-day instant is asserted. A newly added unsupported targetDate expectation was corrected, not an accepted semantic criterion."
+}

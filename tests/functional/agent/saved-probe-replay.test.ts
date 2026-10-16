@@ -6,7 +6,7 @@ test('all twelve saved synthetic responses traverse current local validators wit
  expect(report.rows.every(r=>r.originalProbeAudit.exact&&r.originalProbeAudit.safety)).toBe(true);
  const reject=report.rows.filter(r=>r.groups.some(g=>g.status==='blocked')).map(r=>({id:r.id,reasons:r.groups.flatMap(g=>g.reasons)}));
  if(process.env.ECHO_LOCAL_REPLAY_REPORT)writeFileSync(process.env.ECHO_LOCAL_REPLAY_REPORT,JSON.stringify({...report,correctProbeResponsesRejectedLocally:reject},null,2)+'\n');
- expect(reject).toEqual([{id:'C020',reasons:['TARGET_NOT_FOUND']}]);
- // Rejections remain visible. This assertion does not turn them into semantic successes.
+ expect(reject).toEqual([]);
+ // Confirmed reply authority resolves C020; no saved decision is rewritten.
  expect(report.rows.find(r=>r.id==='C034')?.groups.map(g=>g.status)).toEqual(['ready','choice']);
 });

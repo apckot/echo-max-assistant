@@ -18,3 +18,15 @@ test('review: grounded candidate label cannot authorise an unrelated task title'
  expect(await resolver.resolve({kind:'candidate',label:'T1',evidence:[{sourceLabel:'S1',quote:'Заверши молоко',start:0,end:14}]})).toEqual({status:'not_found'});
  expect(await resolver.resolve({kind:'candidate',label:'T2',evidence:[{sourceLabel:'S1',quote:'Заверши молоко',start:0,end:14}]})).toEqual({status:'resolved',targets:[bindings.T2]});
 });
+
+test('reply-backed pronoun must be grounded in current source, never borrowed from history',async()=>{
+ const resolver=new TargetResolver({bindings,source:{sourceLabel:'S1',text:'Её заверши другую'},provider:{candidates:[{label:'T1',title:'Отчёт'},{label:'T2',title:'Молоко'}]},anchors:[{label:'R1',kind:'reply',tasks:[bindings.T1]}]},async()=>[]);
+ expect(await resolver.resolve({kind:'candidate',label:'T1',evidence:[{sourceLabel:'H1',quote:'Её',start:0,end:2},{sourceLabel:'S1',quote:'другую',start:11,end:17}]})).toEqual({status:'not_found'});
+ expect(await resolver.resolve({kind:'candidate',label:'T1',evidence:[{sourceLabel:'S1',quote:'Её',start:0,end:2}]})).toEqual({status:'resolved',targets:[bindings.T1]});
+});
+
+test.each(['Заверши сегодняшний договор','1её заверши','её2 заверши','её\u0301 заверши'])('pronoun substring/adjacent Unicode word characters grant no authority: %s',async text=>{
+ const quote=text.includes('сегодня')?'его':'её',start=[...text.slice(0,text.indexOf(quote))].length;
+ const resolver=new TargetResolver({bindings:{T1:bindings.T1},source:{sourceLabel:'S1',text},provider:{candidates:[{label:'T1',title:'Молоко'}]},anchors:[{label:'R1',kind:'reply',tasks:[bindings.T1]}]},async()=>[]);
+ expect(await resolver.resolve({kind:'candidate',label:'T1',evidence:[{sourceLabel:'S1',quote,start,end:start+[...quote].length}]})).toEqual({status:'not_found'});
+});
