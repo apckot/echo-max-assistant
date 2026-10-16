@@ -306,7 +306,13 @@
   "newFullGates": 0,
   "newImagesBuilt": 0,
   "serverChanges": 0,
-  "review": "same checkpoint60 reviewer requested explicit current-source whole-word guard; added and targeted RED/GREEN confirmed; final scoped confirmation pending",
+  "review": {
+    "result": "scoped_confirmation_no_remaining_actionable_C020_findings",
+    "sameReviewer": "checkpoint60_review",
+    "reviewedSha": "3d65b79c46b2508167c99bf4405a20d21f93020b",
+    "checksRerunByReviewer": false,
+    "newAudit": false
+  },
   "evidenceSha256": {
     "red.log": "ae8b333f02bb9e11d629fe4f1bad60bad8c31d02684fb37b0d9b48b59d83e9d3",
     "anchor-final.log": "59399eee2e47cd8f590c89627913606ad17d960cd0bb983fe5d447b0edae5f06",
@@ -316,5 +322,6 @@
     "application-replay-final.log": "96eefff9b3e523123a9d95a74d1d8b46d3e64f81707f3c7c80c6983826c9f0d6",
     "pronoun-boundary-red.log": "04f5461cbab70fc782702212a32d2b4889c5139f75b885e66fd0e5492ac66576"
   },
-  "oracleFixtureNote": "C005 supplies a clock-only scheduledAt. targetDate remains null because no explicit calendar-date expression is supplied; scheduledAt source-day instant is asserted. A newly added unsupported targetDate expectation was corrected, not an accepted semantic criterion."
+  "oracleFixtureNote": "C005 supplies a clock-only scheduledAt. targetDate remains null because no explicit calendar-date expression is supplied; scheduledAt source-day instant is asserted. A newly added unsupported targetDate expectation was corrected, not an accepted semantic criterion.",
+  "historicalApplicationFailure": "C025 was still RED at this C020-only evidence point; now superseded by stage-3-checkpoint-60-c025-verification.json after explicit owner approval."
 }

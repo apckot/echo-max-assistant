@@ -273,7 +273,13 @@
   ],
   "typecheck": true,
   "architectureGuard": true,
-  "review": "same checkpoint60 reviewer: C020 confirmed on3d65b79; C025 scoped confirmation pending",
+  "review": {
+    "result": "scoped_confirmation_no_actionable_C025_regressions",
+    "sameReviewer": "checkpoint60_review",
+    "reviewedSha": "1a14239c1ce62ff914edf6c2bdca358099736aa8",
+    "checksRerunByReviewer": false,
+    "newAudit": false
+  },
   "nativeCodecOutcome": "blocked; see stage-3-checkpoint-60-c020-verification.json; no second native attempt or bypass",
   "newFullGates": 0,
   "newApiCalls": 0,
