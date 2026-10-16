@@ -40,7 +40,7 @@ export function compileGroups(groups:readonly ResolvedGroup[],context:ContextSna
    }
    const target=action.target;if(!target||!['resolved','created'].includes(target.status))return reject('target');
    const bindings=target.status==='resolved'?target.targets:target.status==='created'?[{id:locals.get(target.actionLabel!)!,version:1}]:[];
-   for(const binding of bindings){const task=tasks.get(binding.id);if(!task)return reject('target_not_found');
+   for(const binding of bindings){const captured='snapshot' in binding?binding.snapshot:undefined;if(captured&&(captured.userId!==userId||captured.id!==binding.id||captured.version!==binding.version))return reject('target_snapshot');const task=tasks.get(binding.id)??captured;if(!task)return reject('target_not_found');
     const reference:TaskTarget=target.status==='created'?{created:target.actionLabel!}:{taskId:binding.id};
     // First use is checked against its captured (including delivered-anchor) version, later uses the domain's simulated version.
     const touched=commands.some(c=>c.kind!=='create'&&JSON.stringify(c.target)===JSON.stringify(reference));

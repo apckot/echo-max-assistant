@@ -30,3 +30,8 @@ test('stale generation, source changes, stopped account and restore fence cannot
   await f.migrator.query('UPDATE system_state SET restore_fence=false');await f.migrator.query("UPDATE users SET status='active' WHERE id=$1",[input.lease.userId]);
  }
 });
+
+test('accepted decision recovers its frozen profile after configuration changes without reinterpretation',async()=>{
+ const input=await f.admit(),staged=await f.coordinator().run(input.lease);if(staged.status!=='accepted')throw Error('stage');
+ const recovered=await f.authority.claim(input.lease,'c'.repeat(64));expect(recovered?.phase).toBe('accepted');expect(recovered?.profileDigest).toBe('b'.repeat(64));expect(recovered?.plan).toEqual(staged.ticket.plan);
+});

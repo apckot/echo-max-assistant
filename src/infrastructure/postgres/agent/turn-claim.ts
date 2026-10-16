@@ -20,7 +20,7 @@ export class PostgresTurnAuthority implements TurnAuthority {
    if(turn.completed)return {value:{turnId:turn.turnId,runId:'',event,lease,sourceDigest:sourceDigest(event),profileDigest,phase:'completed' as const,plan:null},disposition:{kind:'keep' as const}};
    await tx.query(`INSERT INTO public.agent_runs(user_id,turn_id,run_id,source_event_id,conversation_id,generation,source_digest,profile_digest,phase) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'claimed') ON CONFLICT(user_id,turn_id) DO NOTHING`,[event.userId,turn.turnId,randomUUID(),event.id,event.conversationId,lease.leaseGeneration.toString(),sourceDigest(event),profileDigest]);
    const [run]=await tx.query<{run_id:string;phase:TurnTicket['phase'];source_digest:string;profile_digest:string;plan:AcceptedPlan|null}>('SELECT r.*,d.plan FROM public.agent_runs r LEFT JOIN public.accepted_decisions d USING(user_id,turn_id) WHERE r.user_id=$1 AND r.turn_id=$2 FOR UPDATE OF r',[event.userId,turn.turnId]);
-   if(!run||run.source_digest!==sourceDigest(event)||run.profile_digest!==profileDigest)throw Error('AGENT_SOURCE_PROFILE_CHANGED');
+   if(!run||run.source_digest!==sourceDigest(event)||run.profile_digest!==profileDigest&&!['accepted','failed'].includes(run.phase))throw Error('AGENT_SOURCE_PROFILE_CHANGED');
    // A prior dispatch without durable acceptance is uncertain, even if its lease was still live.
    const phase=run.phase==='started'?'failed':run.phase;
    await tx.query("UPDATE public.agent_runs SET generation=$3,phase=$4,failure_code=CASE WHEN phase='started' THEN 'provider_uncertain' ELSE failure_code END WHERE user_id=$1 AND turn_id=$2",[event.userId,turn.turnId,lease.leaseGeneration.toString(),phase]);

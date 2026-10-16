@@ -36,6 +36,6 @@ export function taskTargetSearch(tasks:Pick<TaskQueries,'list'>,context:TaskRead
   if(!title.trim()||[...title].length>200)return [];
   const page=await tasks.list(context,{view:qualifiers.date?'day':'all',...(qualifiers.date?{day:qualifiers.date,timezone:context.timezone}:{}),...(qualifiers.status?{statuses:[qualifiers.status]}:{}),text:title,limit:Math.min(limit,6)});
   if('error' in page)throw new Error('TARGET_QUERY_UNAVAILABLE');
-  return page.items.map(t=>({id:t.id,version:t.version}));
+  return page.items.map(t=>({id:t.id,version:t.version,snapshot:t}));
  };
 }

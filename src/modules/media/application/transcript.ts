@@ -27,7 +27,7 @@ export class VoicePreparation implements TurnSourcePreparation {
    const consent=await this.jobs.consent(ticket);if(!audioRoute(consent,this.jobs.profile).allowed)return {kind:'denied',reason:'audio_denied'};
    await this.jobs.begin(ticket,consent!);if(ticket.event.payload.kind!=='voice')return {kind:'denied',reason:'media_source'};
    audio=await this.media.prepare(ticket.event.payload.media,consent,this.jobs.profile,()=>this.jobs.consent(ticket),signal);
-   await this.jobs.start(ticket,audio);const deadlineMs=audio.durationMs<=60000?18000:90000;
+   await this.jobs.start(ticket,audio);const deadlineMs=audio.durationMs<=120000?18000:90000;
    const result=await withDeadline(deadlineMs,signal=>this.stt.transcribe(audio!,new Date(Date.now()+deadlineMs),signal),signal);
    if(result.outcome!=='ok'){await this.jobs.fail(ticket,'stt_'+result.outcome);return {kind:'denied',reason:'stt_'+result.outcome};}
    try{await this.jobs.commit(ticket,result.transcript,result.durationMs,result.usage);}catch(error){const saved=await this.jobs.read(ticket);if(saved?.fact)return this.asSource(saved.fact);throw error;}

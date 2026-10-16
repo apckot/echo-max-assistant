@@ -50,6 +50,12 @@ Migration33 adds immutable FORCE-RLS transcript facts/composite checksum FK/acco
 
 Ruling: two active media/STT slots and two bounded waiters under four dialogue slots; process-memory-only raw audio means a pre-STT restart may re-download safely, but cannot repeat an admitted STT. Worker renewal failure/shutdown aborts external waits; all commit paths still require fresh DB authority. No new model/network experiments or additional executor.
 
+## Cumulative independent review and closure
+
+One read-only reviewer inspected b8b6f7d..99ab063, no tests/network/edits. Three confirmed findings fixed by original executor: complete MAX response≤4000CP (3900CP content budget plus explicit omission, anchors only displayed tasks); post-decision public Tasks query retains tenant-private full snapshot/id/version through compilation and execution outside initial pack; standard STT deadline18s includes duration≤120s, long90s only above120s. Regression checks cover90s/120s/120001ms without waiting or external calls. Removed misleading total-list display counts when response budget omits rows.
+
+Executor also confirmed recovery issue: accepted/failed runs can retain original frozen profile after configuration changes; unaccepted mismatched profiles still refuse, with no reinterpretation or redispatch. Targeted RED confirmed oversized response, missing retrieved snapshot, wrong deadline and profile recovery failures. GREEN4files/12tests, typecheck/architecture PASS. One initial retrieval test needed an isolated fixture to avoid unrelated identical titles; corrected RED then exposed missing snapshot as intended. No second reviewer/full audit. Evidence /tmp/echo-stage3-60/review-{red,boundary-red,green,type,arch}.log.
+
 ## Checkpoint60 pending
 
 Iterations56–60 complete in separate commits; next is the single cumulative read-only review, confirmed fixes by this executor, then one clean-clone gate (one image build/one npm test including functional/restore/image, no separate review-focus/probe). Stop before61 after report/push/SHA equality.

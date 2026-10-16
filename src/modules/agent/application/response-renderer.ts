@@ -20,11 +20,22 @@ export function renderResponse(groups:readonly GroupOutcome[],failureCode:string
    if(query.kind==='capabilities')line(query.text);
    if(query.kind==='unavailable')line('Не удалось надёжно выполнить запрос списка или истории.');
    if(query.kind==='history'){line('История задачи:');for(const e of query.items)if(historyShown++<20)line(`Версия ${e.afterVersion}: ${e.kind}.`);if(!query.items.length)line('Изменений нет.');}
-   if(query.kind==='tasks'){listed=true;line(query.day?'Задачи на '+query.day+':':'Задачи:');for(const t of query.items)taskLine(t.title,t.id,t.version);if(!query.items.length)line('Задач нет.');if(query.nextCursor)line('Показываю '+query.items.length+' задач. Есть ещё.');}
+   if(query.kind==='tasks'){listed=true;line(query.day?'Задачи на '+query.day+':':'Задачи:');for(const t of query.items)taskLine(t.title,t.id,t.version);if(!query.items.length)line('Задач нет.');if(query.nextCursor)line('В списке есть ещё задачи.');}
   }
  }
- if(omitted)line('Показаны первые 20 записей. Ещё '+omitted+' записей не показаны.');
+ if(omitted)line('Ещё '+omitted+' записей не показаны.');
  if(!lines.length)line('Задачи не изменены.');
- const numbered=listed||tasks.length>1,text=lines.map(l=>l.id&&numbered?`${tasks.findIndex(t=>t.id===l.id)+1}. ${l.text}`:l.text).join('\n');
- if([...text].length>12000)throw Error('RESPONSE_BUDGET');return {message:{version:1,kind:'text',text},tasks,anchorKind:numbered?'list':'reply'};
+ // Reserve room for an explicit omission notice; anchors follow only rendered rows.
+ const displayed:TaskBinding[]=[],rendered:string[]=[];let size=0,budgetOmitted=0;
+ const numbered=listed||tasks.length>1;
+ for(const entry of lines){
+  const binding=entry.id?tasks.find(t=>t.id===entry.id):undefined;
+  const ordinal=binding?(displayed.findIndex(t=>t.id===binding.id)>=0?displayed.findIndex(t=>t.id===binding.id)+1:displayed.length+1):0;
+  const value=binding&&numbered?`${ordinal}. ${entry.text}`:entry.text;
+  if(size+[...value].length+1>3900){budgetOmitted++;continue;}
+  rendered.push(value);size+=[...value].length+1;if(binding&&!displayed.some(t=>t.id===binding.id))displayed.push(binding);
+ }
+ if(budgetOmitted)rendered.push('Часть записей не показана из-за ограничения длины ответа.');
+ const text=rendered.join('\n');
+ return {message:{version:1,kind:'text',text},tasks:displayed,anchorKind:numbered?'list':'reply'};
 }

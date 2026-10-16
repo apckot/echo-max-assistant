@@ -22,3 +22,14 @@ test('received malformed UTF-8 is an invalid local parse, not transport uncertai
  const approved=await audio();const provider=new OpenAiSttProvider({apiKey:'fake-key'},async()=>new Response(new Uint8Array([255,254,253])));
  expect((await provider.transcribe(approved,new Date(Date.now()+1000),new AbortController().signal)).outcome).toBe('invalid');
 });
+
+test('voice preparation supplies standard STT deadline through120s and long deadline only above120s',async()=>{
+ const {VoicePreparation}=await import('../../../src/modules/media/application/transcript.js');
+ for(const [durationMs,expected] of [[90000,18000],[120000,18000],[120001,90000]]){
+ const media=new MediaService({load:async()=>syntheticWav()},new SandboxCodec(async()=>({encoded:syntheticFlac(),pcmBytes:durationMs!*32})));
+ const jobs={profile,read:async()=>null,consent:async()=>consent,begin:async()=>{},start:async()=>{},commit:async()=>{},fail:async()=>{},released:async()=>{}};
+ let supplied=0;const voice=new VoicePreparation(jobs,media,{transcribe:async(_audio,deadline)=>{supplied=deadline.getTime()-Date.now();return {outcome:'invalid',reason:'synthetic',durationMs:1,usage:null};}});
+ await voice.prepare({event:{payload:{kind:'voice',media:{url:'https://media.example.org/file',token:'synthetic'}}}} as any);
+ expect(supplied).toBeGreaterThanOrEqual(expected!-50);expect(supplied).toBeLessThanOrEqual(expected!);
+ }
+});
