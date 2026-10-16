@@ -14,12 +14,20 @@ export interface MediaJobsPort {
 }
 /** Two active media/STT slots, two bounded waiters; no additional provider invocation for recovery. */
 export class VoicePreparation implements TurnSourcePreparation {
- private active=0;private readonly waiting:(()=>void)[]=[];
+ private active=0;private readonly waiting:((acquired:boolean)=>void)[]=[];
  constructor(private readonly jobs:MediaJobsPort,private readonly media:MediaService,private readonly stt:SpeechToTextProvider){}
  private asSource(input:Transcript):PreparedSource{const fact=validateTranscript(input);return {kind:'text',text:fact.text,audioChecksum:fact.audioChecksum,criticalUncertainty:fact.criticalUncertainty};}
  async prepare(ticket:TurnTicket,signal:AbortSignal=new AbortController().signal):Promise<PreparedSource>{
   if(signal.aborted)return {kind:'denied',reason:'processing_cancelled'};
-  if(this.active>=2){if(this.waiting.length>=2)return {kind:'denied',reason:'media_busy'};await new Promise<void>(resolve=>this.waiting.push(resolve));}else this.active++;
+  if(this.active>=2){
+   if(this.waiting.length>=2)return {kind:'denied',reason:'media_busy'};
+   const acquired=await new Promise<boolean>(resolve=>{
+    const settle=(value:boolean)=>{clearTimeout(timer);signal.removeEventListener('abort',cancel);const i=this.waiting.indexOf(settle);if(i>=0)this.waiting.splice(i,1);resolve(value);};
+    const cancel=()=>settle(false),timer=setTimeout(cancel,7000);this.waiting.push(settle);signal.addEventListener('abort',cancel,{once:true});if(signal.aborted)cancel();
+   });
+   if(!acquired)return {kind:'denied',reason:signal.aborted?'processing_cancelled':'media_busy'};
+  }else this.active++;
+  if(signal.aborted){const next=this.waiting[0];if(next)next(true);else this.active--;return {kind:'denied',reason:'processing_cancelled'};}
   let audio:ApprovedAudio|undefined;
   try{
    const current=await this.jobs.read(ticket);if(current?.fact){await this.jobs.released(ticket);return this.asSource(current.fact);}
@@ -33,6 +41,6 @@ export class VoicePreparation implements TurnSourcePreparation {
    try{await this.jobs.commit(ticket,result.transcript,result.durationMs,result.usage);}catch(error){const saved=await this.jobs.read(ticket);if(saved?.fact)return this.asSource(saved.fact);throw error;}
    return this.asSource(result.transcript);
   }catch{await this.jobs.fail(ticket,'media_failed');return {kind:'denied',reason:'media_failed'};}
-  finally{if(audio)releaseAudio(audio);try{await this.jobs.released(ticket);}finally{const next=this.waiting.shift();if(next)next();else this.active--;}}
+  finally{if(audio)releaseAudio(audio);try{await this.jobs.released(ticket);}finally{const next=this.waiting[0];if(next)next(true);else this.active--;}}
  }
 }
