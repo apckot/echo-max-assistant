@@ -18,6 +18,10 @@ const runtimeConfigSchema = z.object({
   MAX_WEBHOOK_SECRET_VERSION: z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/).optional(),
   MAX_WEBHOOK_URL: z.url({ protocol: /^https$/ }),
   RESTORE_FENCE: z.enum(['on', 'off']).default('on'),
+  ASSISTANT_STAGE3_ENABLED:z.enum(['true','false']).default('false').transform(v=>v==='true'),
+  OPENAI_API_KEY:secret.optional(),
+  ASSISTANT_DEDUP_KEYS_JSON:secret.optional(),
+  ASSISTANT_MAP_KEY_BASE64:secret.optional(),
   FOUNDATION_ECHO_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   GATEWAY_DB_POOL_SIZE: positiveInteger(10, 100),
   WORKER_CONCURRENCY: positiveInteger(10, 100),
@@ -36,7 +40,7 @@ const runtimeConfigSchema = z.object({
   if (config.HANDLER_TIMEOUT_MS >= config.WORK_LEASE_MS || config.HANDLER_TIMEOUT_MS >= config.WORK_LEASE_RENEW_MS) {
     context.addIssue({ code: 'custom', path: ['HANDLER_TIMEOUT_MS'], message: 'Handler must finish before lease renewal' });
   }
-  if (config.NODE_ENV === 'production' && !config.FOUNDATION_ECHO_ENABLED) {
+  if (config.NODE_ENV === 'production' && !config.FOUNDATION_ECHO_ENABLED && !config.ASSISTANT_STAGE3_ENABLED) {
     context.addIssue({ code: 'custom', path: ['FOUNDATION_ECHO_ENABLED'], message: 'Foundation echo requires explicit production opt-in' });
   }
 });

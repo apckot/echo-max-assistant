@@ -1,3 +1,4 @@
+import {createAssistantRuntime} from './assistant.js';
 import { randomUUID } from 'node:crypto';
 import { createDatabase, type Database, type DbTx } from '../infrastructure/postgres/database.js';
 import { PostgresConversationQueue } from '../infrastructure/postgres/postgres-conversation-queue.js';
@@ -9,7 +10,7 @@ import { FoundationInboundHandler } from '../modules/intake/application/inbound-
 import { ProcessInbound } from '../modules/intake/application/process-inbound.js';
 import { parseRuntimeConfig } from '../shared/config/config.js';
 
-type WorkerOptions = { queue: ConversationQueue; process: Pick<ProcessInbound, 'run'>;
+type WorkerOptions = { queue: ConversationQueue; process: {run(lease:ConversationLease):Promise<unknown>};
   close: () => Promise<void>; concurrency: number; leaseMs: number; renewMs: number; enabled?: boolean };
 
 // Ports supplied here must settle; createWorker supplies bounded database operations.
@@ -69,9 +70,11 @@ export function createWorker(environment: Record<string, unknown>) {
     tenantTransaction: (role, userId, fn) => database.tenantTransaction(role, userId, guard(fn)),
     close: () => database.close(),
   };
+  const foundation=new ProcessInbound(new PostgresAtomicProcessing(new PostgresOrderedHead(new PostgresFencedConversation(guarded))),new FoundationInboundHandler(),config.HANDLER_TIMEOUT_MS);
+  const assistant=config.ASSISTANT_STAGE3_ENABLED?createAssistantRuntime(guarded,{apiKey:config.OPENAI_API_KEY??'',dedupKeysJson:config.ASSISTANT_DEDUP_KEYS_JSON??'',mapKeyBase64:config.ASSISTANT_MAP_KEY_BASE64??''}):null;
+  const processor=assistant?{run:async(lease:ConversationLease)=>{const kind=await assistant.authority.peek(lease);return kind==='text'||kind==='voice'?assistant.process.run(lease):kind?foundation.run(lease):undefined;}}:foundation;
   return startWorkerLoop({ queue: new PostgresConversationQueue(guarded),
-    process: new ProcessInbound(new PostgresAtomicProcessing(new PostgresOrderedHead(
-      new PostgresFencedConversation(guarded))), new FoundationInboundHandler(), config.HANDLER_TIMEOUT_MS),
-    close: () => guarded.close(), concurrency: config.WORKER_CONCURRENCY,
+    process:processor,
+    close: () => guarded.close(), concurrency: config.ASSISTANT_STAGE3_ENABLED?Math.min(4,config.WORKER_CONCURRENCY):config.WORKER_CONCURRENCY,
     leaseMs: config.WORK_LEASE_MS, renewMs: config.WORK_LEASE_RENEW_MS, enabled: config.RESTORE_FENCE === 'off' });
 }

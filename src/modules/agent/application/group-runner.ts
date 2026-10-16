@@ -2,12 +2,15 @@ import type {ResolvedGroup} from '../../semantic/application/decision-validator.
 import {TemporalNormalizer} from '../../semantic/application/temporal-normalizer.js';
 import type {ContextSnapshot} from '../../context/application/context-pack.js';
 import type {TemporalPort} from '../../tasks/application/temporal-port.js';
+import type {Task} from '../../tasks/domain/task.js';
+import type {TaskEvent} from '../../tasks/application/query-types.js';
 import type {TaskReceipt} from '../../tasks/application/task-commands.js';
 import type {TaskCommand,TaskPatch,TaskTarget} from '../../tasks/domain/commands.js';
 import type {UserId} from '../../../shared/types/identity.js';
 import {createTask,transition} from '../../tasks/domain/transitions.js';
 import type {PlannedGroup,TurnTicket} from './turn-port.js';
-export interface GroupOutcome {readonly label:string;readonly outcome:'applied'|'no_change'|'rejected'|'blocked'|'choice'|'respond';readonly receipt:TaskReceipt|null;readonly reasons:readonly string[];readonly queryResults?:readonly unknown[]}
+export type QueryOutcome={readonly kind:'tasks';readonly day:string|null;readonly items:readonly Task[];readonly asOf:string;readonly nextCursor:string|null}|{readonly kind:'history';readonly items:readonly TaskEvent[];readonly asOf:string}|{readonly kind:'capabilities';readonly text:string}|{readonly kind:'unavailable';readonly reason:string};
+export interface GroupOutcome {readonly label:string;readonly outcome:'applied'|'no_change'|'rejected'|'blocked'|'choice'|'respond';readonly receipt:TaskReceipt|null;readonly reasons:readonly string[];readonly queryResults?:readonly QueryOutcome[]}
 export interface GroupExecutor {runGroup(ticket:TurnTicket,index:number):Promise<GroupOutcome>}
 export class GroupRunner {
  constructor(private readonly executor:GroupExecutor){}

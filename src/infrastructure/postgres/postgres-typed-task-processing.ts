@@ -1,5 +1,5 @@
 import type {ProcessingContinuation} from './postgres-atomic-processing.js';
-import type {DbTx} from './database.js';
+import type {DbTx,Database} from './database.js';
 import type {InboundEvent} from '../../modules/intake/domain/inbound-event.js';
 import type {HandleInboundResult} from '../../modules/intake/application/inbound-handler.js';
 import type {ExplicitTaskIntent} from '../../modules/tasks/application/context.js';
@@ -23,7 +23,7 @@ export class PostgresTypedTaskProcessing implements ProcessingContinuation {
 
 import type {PostgresTurnAuthority} from './agent/turn-claim.js';
 import type {TurnTicket,AcceptedPlan} from '../../modules/agent/application/turn-port.js';
-import type {GroupExecutor,GroupOutcome} from '../../modules/agent/application/group-runner.js';
+import type {GroupExecutor,GroupOutcome,QueryOutcome} from '../../modules/agent/application/group-runner.js';
 /** Sole bridge binds immutable accepted commands to the currently locked source and assistantTurnId. */
 export class PostgresAgentTaskProcessing implements GroupExecutor {
  constructor(private readonly authority:Pick<PostgresTurnAuthority,'guarded'>){}
@@ -43,9 +43,34 @@ export class PostgresAgentTaskProcessing implements GroupExecutor {
     if('error' in result)throw Error('GROUP_TASK_ENVELOPE_REJECTED');
     outcome={label,outcome:result.receipt.outcome,receipt:result.receipt,reasons:result.receipt.error?[result.receipt.error.code]:[]};
    }
+   if(group.status==='ready'&&group.queryLabels.length&&outcome.outcome!=='rejected')outcome={...outcome,queryResults:await readAgentQueries(tx,event,accepted!.plan,group.queryLabels)};
    await tx.query('INSERT INTO public.turn_groups(user_id,turn_id,label,outcome,receipt_id,result) VALUES($1,$2,$3,$4,$5,$6)',[event.userId,ticket.turnId,label,outcome.outcome,outcome.receipt?.receiptId??null,JSON.stringify(outcome)]);
    await tx.query('INSERT INTO public.turn_response_intents(user_id,turn_id) VALUES($1,$2) ON CONFLICT(user_id,turn_id) DO UPDATE SET revision=public.turn_response_intents.revision+1',[event.userId,ticket.turnId]);
    return outcome;
   });
  }
+}
+
+import {TaskQueries} from '../../modules/tasks/application/task-queries.js';
+import {PostgresTaskReadRunner} from './tasks/task-read-model.js';
+import {TemporalNormalizer} from '../../modules/semantic/application/temporal-normalizer.js';
+import {TargetResolver,taskTargetSearch} from '../../modules/semantic/application/target-resolver.js';
+export const agentTaskQueries=(database:Pick<Database,'tenantTransaction'>)=>new TaskQueries(new PostgresTaskReadRunner(database),new IanaTimeResolver());
+async function readAgentQueries(tx:DbTx,event:InboundEvent,plan:AcceptedPlan,labels:readonly string[]):Promise<readonly QueryOutcome[]>{
+ const bound:Pick<Database,'tenantTransaction'>={tenantTransaction:async(role,user,fn)=>{if(role!=='worker'||user!==event.userId)throw Error('QUERY_TENANT_MISMATCH');return fn(tx);}};
+ const queries=agentTaskQueries(bound),time=new IanaTimeResolver(),normalizer=new TemporalNormalizer(time),context={userId:event.userId,capability:'task_read' as const,timezone:plan.context.source.timezone};
+ const resolver=new TargetResolver(plan.context,taskTargetSearch(queries,context));const results:QueryOutcome[]=[];
+ for(const label of labels){const q=plan.queries.find(q=>q.label===label);if(!q)throw Error('QUERY_NOT_ACCEPTED');
+  if(q.kind==='capabilities'){results.push({kind:'capabilities',text:'Могу создавать, изменять, завершать, отменять и восстанавливать задачи, показывать списки и историю.'});continue;}
+  if(q.kind==='history'){
+   if(!q.target){results.push({kind:'unavailable',reason:'target'});continue;}
+   const target=await resolver.resolve(q.target,label);if(target.status!=='resolved'||target.targets.length!==1){results.push({kind:'unavailable',reason:'target'});continue;}
+   const page=await queries.history(context,{taskId:target.targets[0]!.id,limit:20});results.push('error' in page?{kind:'unavailable',reason:page.error.code}:{kind:'history',items:page.items,asOf:page.asOf});continue;
+  }
+  const day=q.kind==='day'?(q.dayExpression?normalizer.dateExpression(q.dayExpression,plan.context.source):time.localDate(plan.context.source.sourceAt,context.timezone)):null;
+  if(q.kind==='day'&&!day||q.kind==='find'&&!q.text){results.push({kind:'unavailable',reason:'read_args'});continue;}
+  const page=await queries.list(context,{view:q.kind==='day'?'day':q.kind==='find'||q.statuses.length?'all':'open',...(day?{day,timezone:context.timezone}:{}),...(q.text?{text:q.text}:{}),...(q.statuses.length?{statuses:q.statuses}:{}),limit:20});
+  results.push('error' in page?{kind:'unavailable',reason:page.error.code}:{kind:'tasks',day,items:page.items,asOf:page.asOf,nextCursor:page.nextCursor});
+ }
+ return results;
 }

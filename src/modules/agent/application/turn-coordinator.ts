@@ -13,7 +13,7 @@ import {validateDecision,resolveDecision} from '../../semantic/application/decis
 import {TargetResolver,taskTargetSearch} from '../../semantic/application/target-resolver.js';
 import {TemporalNormalizer} from '../../semantic/application/temporal-normalizer.js';
 export interface CoordinatorProfile {readonly profileDigest:string;readonly externalAllowed:boolean;readonly deadlineMs:number}
-export type StagedTurn={readonly status:'accepted'|'failed';readonly ticket:TurnTicket}|{readonly status:'idle'|'busy'};
+export type StagedTurn={readonly status:'accepted'|'failed'|'duplicate';readonly ticket:TurnTicket}|{readonly status:'idle'|'busy'};
 export class TurnCoordinator {
  private active=0;
  constructor(private readonly authority:TurnAuthority,private readonly context:ContextBuilder,private readonly tasks:TaskQueries,private readonly time:TemporalPort,private readonly provider:AiDecisionProvider,private readonly profile:CoordinatorProfile){}
@@ -21,6 +21,7 @@ export class TurnCoordinator {
   if(this.active>=4)return {status:'busy'};this.active++;
   try{
    const ticket=await this.authority.claim(lease,this.profile.profileDigest);if(!ticket)return {status:'idle'};
+   if(ticket.phase==='completed')return {status:'duplicate',ticket};
    if(ticket.phase==='accepted'||ticket.phase==='failed')return {status:ticket.phase,ticket};
    const event=ticket.event;
    if(event.payload.kind!=='text'){await this.authority.fail(ticket,'unsupported_source');return {status:'failed',ticket};}
