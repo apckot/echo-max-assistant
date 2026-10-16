@@ -1,3 +1,4 @@
+import {queryShortcut} from './query-shortcut.js';
 import type {TurnSourcePreparation,PreparedSource} from '../../media/application/transcript.js';
 import {withDeadline} from '../../../shared/time/deadline.js';
 import {compileGroups} from './group-runner.js';
@@ -37,11 +38,12 @@ export class TurnCoordinator {
    let prepared:Awaited<ReturnType<ContextBuilder['build']>>;
    try{prepared=await this.context.build(event.userId,event.conversationId,{text:sourceInput.text,kind:sourceInput.audioChecksum?'transcript':'text',...(sourceInput.audioChecksum?{audioChecksum:sourceInput.audioChecksum}:{}),sourceLabel:'S1',sourceAt:event.occurredAt.toISOString(),timezone:event.timezoneSnapshot,...('replyToMessageId' in event.payload&&event.payload.replyToMessageId?{replyMessageId:event.payload.replyToMessageId}:{})});}
    catch{await this.authority.fail(ticket,'context_unavailable');return {status:'failed',ticket};}
-   const privacy=preparePrivacy(prepared.provider,{externalAllowed:this.profile.externalAllowed});
+   const shortcut=event.payload.kind==='text'?queryShortcut(sourceInput.text,prepared.source.sourceLabel):null;
+   const privacy=preparePrivacy(prepared.provider,{externalAllowed:shortcut!==null||this.profile.externalAllowed});
    if(privacy.route==='denied'){await this.authority.fail(ticket,'privacy_denied');return {status:'failed',ticket};}
    if(parentSignal.aborted){await this.authority.fail(ticket,'processing_cancelled');return {status:'failed',ticket};}
    await this.authority.start(ticket,prepared,privacy.sourceMap);
-   let result;try{result=await withDeadline(this.profile.deadlineMs,signal=>this.provider.decide(privacy.context,taskRegistry,2,new Date(Date.now()+this.profile.deadlineMs),signal),parentSignal);}catch{await this.authority.fail(ticket,'provider_uncertain');return {status:'failed',ticket};}
+   let result;try{result=shortcut?{outcome:'ok' as const,decision:shortcut}:await withDeadline(this.profile.deadlineMs,signal=>this.provider.decide(privacy.context,taskRegistry,2,new Date(Date.now()+this.profile.deadlineMs),signal),parentSignal);}catch{await this.authority.fail(ticket,'provider_uncertain');return {status:'failed',ticket};}
    if(result.outcome!=='ok'){await this.authority.fail(ticket,'provider_'+result.outcome);return {status:'failed',ticket};}
    try{
     const grounded=groundMeaningDraft(result.decision,privacy.sourceMap),normalizer=new TemporalNormalizer(this.time);

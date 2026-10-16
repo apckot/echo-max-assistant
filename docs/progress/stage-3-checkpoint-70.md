@@ -1,0 +1,9 @@
+# SDD ledger — plan: docs/superpowers/plans/2026-10-14-max-assistant-stage-3-understanding.md
+
+Owner accepts65 automated part and authorises66–70. One executor, separate iteration commits, targeted checks, one cumulative independent reviewer and one clean-clone gate. Base18b201a6a7996d8759c3623d05ae2b1c003d3d7c. External AI/STT/MAX/deployment/server-permission changes NOT authorised. Stage3 acceptance remains open pending real callback, native codec and final real semantic/audio evidence. Untracked diagnostic SHA256 d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade must remain unchanged.
+
+Ruling: reuse accepted branch/checkout and executor; no fresh worktree/implementation agents. User authorisation to complete code/readiness does not authorise external verification. Missing prerequisites are reported at the start, not deferred to block completion. Frozen full regression inventory distinguishes78R/7V/9F/7P; H20 is absent, never renamed from regressions. Raw audio assets are absent. Existing stopped TEST infrastructure is proposed from35 evidence, not remotely inspected/reopened.
+
+##66 — unified conversations
+
+Targeted RED read shortcut wrongly dispatched FakeAI; implemented exact explicit /tasks,/today,/help as local query drafts through the same grounding/compile/read/finalizer. Natural language remains whole-utterance one semantic call. GREEN2files/3tests, typecheck/architecture PASS. Self-correction produces one timed Task; quoted completion/unsupported capability produce no new Task. Existing saved-response, mixedgroups, voice uncertainty and fresh-choice E2Es stay in the single final gate, not copied/rerun per iteration. Ruling: only exact slash shortcuts bypass external route, never arbitrary natural-language matching; they share durable turn/receipt recovery and require no local model. External request prepared early in stage-3-acceptance.md; H/audio/codec/recipient/billing prerequisites open, no remote/API calls.
