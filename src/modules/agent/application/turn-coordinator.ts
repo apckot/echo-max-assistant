@@ -1,4 +1,5 @@
 import {withDeadline} from '../../../shared/time/deadline.js';
+import {compileGroups} from './group-runner.js';
 import type {TurnAuthority,TurnTicket,AcceptedPlan} from './turn-port.js';
 import type {ConversationLease} from '../../intake/application/conversation-queue.js';
 import type {ContextBuilder} from '../../context/application/context-builder.js';
@@ -38,7 +39,7 @@ export class TurnCoordinator {
     const validated=validateDecision(grounded,prepared.source.sourceLabel,{source:prepared.source,time:normalizer});
     const resolver=new TargetResolver(prepared,taskTargetSearch(this.tasks,{userId:event.userId,capability:'task_read',timezone:prepared.source.timezone}));
     const groups=await resolveDecision(validated,resolver,normalizer,prepared.source);
-    plan={version:1,context:prepared,groups,queries:grounded.decision.queries};
+    plan={version:1,context:prepared,groups:compileGroups(groups,prepared,event.userId,this.time),queries:grounded.decision.queries};
    }catch{await this.authority.fail(ticket,'invalid_decision');return {status:'failed',ticket};}
    await this.authority.accept(ticket,plan);return {status:'accepted',ticket:{...ticket,phase:'accepted',plan}};
   }finally{this.active--;}

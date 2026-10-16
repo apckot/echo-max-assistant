@@ -35,9 +35,9 @@ async function taskSession(tx:DbTx,context:TaskExecutionContext):Promise<TaskCom
 // Infrastructure-only adapter: source authority is the locked ordered head, never caller JSON.
 export class PostgresBoundTaskSessionRunner implements TaskSessionRunner {
  readonly acceptsTurnSource=true as const;
- constructor(private readonly tx:DbTx,private readonly event:import('../../../modules/intake/domain/inbound-event.js').InboundEvent){}
+ constructor(private readonly tx:DbTx,private readonly event:import('../../../modules/intake/domain/inbound-event.js').InboundEvent,private readonly assistantTurnId:string=event.id){}
  async run<T>(context:TaskExecutionContext,fn:(session:TaskCommandSession)=>Promise<T>):Promise<T|{error:TaskError}>{
-  if(context.userId!==this.event.userId||context.source.kind!=='turn'||context.source.turnId!==this.event.id||
+  if(context.userId!==this.event.userId||context.source.kind!=='turn'||context.source.turnId!==this.assistantTurnId||
    context.sourceOccurredAt!==this.event.occurredAt.toISOString()||context.timezoneSnapshot!==new IanaTimeResolver().canonicalTimezone(this.event.timezoneSnapshot))
    return {error:{code:'invalid_evidence'}};
   return fn(await taskSession(this.tx,context));

@@ -67,3 +67,4 @@ export class TaskCommands {
   });
  }
 }
+export type {TaskReceipt,TaskExecutionResult} from './ports.js';

@@ -25,6 +25,7 @@ export class ContextBuilder {
   const auxiliary={candidates,anchors:projected,history,pendingChoices:[]};
   // UTF-8 bytes bound token count conservatively; no model tokenizer or source truncation.
   if(Buffer.byteLength(JSON.stringify(auxiliary),'utf8')>6000||Buffer.byteLength(JSON.stringify({...auxiliary,...source}),'utf8')>24000)throw new Error('CONTEXT_BUDGET');
-  return freeze({source,provider:{text:source.text,sourceLabel:source.sourceLabel,sourceAt:source.sourceAt,timezone:source.timezone,candidates,anchors:projected,history,pendingChoices:[]},bindings,anchors});
+  if(Buffer.byteLength(JSON.stringify(selected),'utf8')>200000)throw new Error('CONTEXT_BUDGET');
+  return freeze({taskSnapshots:selected,source,provider:{text:source.text,sourceLabel:source.sourceLabel,sourceAt:source.sourceAt,timezone:source.timezone,candidates,anchors:projected,history,pendingChoices:[]},bindings,anchors});
  }
 }
