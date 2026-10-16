@@ -10,13 +10,15 @@ import {PostgresOutbox} from '../postgres-outbox.js';
 import type {PostgresPendingChoices} from './pending-choice.js';
 export class PostgresChoiceProcessor{
  constructor(private readonly ordered:PostgresOrderedHead,private readonly choices:PostgresPendingChoices){}
- async run(lease:ConversationLease){return this.ordered.run(lease,async({event},tx)=>{
+ async run(lease:ConversationLease){return this.ordered.run(lease,async({event,kind},tx)=>{
   if(event.payload.kind!=='button')throw Error('CHOICE_CALLBACK_REQUIRED');
-  const [choice]=await tx.query<{id:string;revision:number;state:string;selected:number|null;result:GroupOutcome|null;ordinal:number;commands:TaskCommand[];live:boolean;delivered:boolean}>(`SELECT c.*,o.ordinal,o.commands,c.expires_at>clock_timestamp() AS live,
+  const [conversation]=await tx.query<{state:string}>('SELECT state FROM public.conversations WHERE user_id=$1 AND id=$2',[event.userId,event.conversationId]);
+  const active=conversation?.state==='active'&&kind==='ready';
+  const [choice]=active?await tx.query<{id:string;revision:number;state:string;selected:number|null;result:GroupOutcome|null;ordinal:number;commands:TaskCommand[];live:boolean;delivered:boolean}>(`SELECT c.*,o.ordinal,o.commands,c.expires_at>clock_timestamp() AS live,
    public.verified_choice_delivery(c.id,$4,$2) AS delivered
    FROM public.pending_choices c JOIN public.pending_choice_options o ON o.user_id=c.user_id AND o.choice_id=c.id
-   WHERE c.user_id=$1 AND c.conversation_id=$2 AND o.token_hash=$3 FOR UPDATE OF c`,[event.userId,event.conversationId,/^ch1\.[a-f0-9]{64}$/.test(event.payload.callbackPayload)?event.payload.callbackPayload.slice(4):'',event.payload.callbackMessageId??'']);
-  let message:string|undefined='Кнопка устарела или недоступна. Задачи не изменены.',canonical:{id:string;revision:number}|undefined;
+   WHERE c.user_id=$1 AND c.conversation_id=$2 AND o.token_hash=$3 FOR UPDATE OF c`,[event.userId,event.conversationId,/^ch1\.[a-f0-9]{64}$/.test(event.payload.callbackPayload)?event.payload.callbackPayload.slice(4):'',event.payload.callbackMessageId??'']):[];
+  let message:string|undefined=active?'Кнопка устарела или недоступна. Задачи не изменены.':undefined,canonical:{id:string;revision:number}|undefined;
   if(choice?.delivered){
    if(['consumed','cancelled'].includes(choice.state)&&choice.selected===choice.ordinal)message=undefined;
    else if(choice.state==='pending'&&choice.live){
@@ -33,7 +35,7 @@ export class PostgresChoiceProcessor{
    await tx.query('INSERT INTO public.delivery_work(outbound_message_id,user_id) VALUES($1,$2)',[out!.id,event.userId]);
   }else await new PostgresOutbox(tx).save(event,result.messages);
   const [next]=await tx.query<{more:boolean}>('UPDATE public.conversations SET next_apply_sequence=next_apply_sequence+1 WHERE user_id=$1 AND id=$2 AND next_apply_sequence=$3 RETURNING next_apply_sequence<next_inbound_sequence AS more',[event.userId,event.conversationId,event.sequence.toString()]);if(!next)throw Error('CHOICE_HEAD_LOST');
-  await tx.query("UPDATE public.inbound_events SET processing_status='applied',processed_at=clock_timestamp(),updated_at=clock_timestamp() WHERE user_id=$1 AND id=$2",[event.userId,event.id]);
+  await tx.query("UPDATE public.inbound_events SET processing_status=$3,processed_at=clock_timestamp(),updated_at=clock_timestamp() WHERE user_id=$1 AND id=$2",[event.userId,event.id,active?'applied':'ignored']);
   return {value:result,disposition:next.more?{kind:'ready' as const}:{kind:'sleep' as const}};
  });}
 }
