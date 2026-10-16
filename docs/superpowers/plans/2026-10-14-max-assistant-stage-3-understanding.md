@@ -128,40 +128,41 @@ Review focus: (1) отрицание в цитируемом title против 
 
 ### 61. Pending choice как конечный компонент
 **Файлы:** src/modules/agent/application/choice-executor.ts; src/infrastructure/postgres/agent/pending-choice.ts; migrations/0034_pending_choices.sql; tests/functional/agent/pending-choice.test.ts.
-**Результат:** сохранённые typed options,2–5+cancel, token128bit/hash-only, revision/TTL24h; новое сообщение — новый turn.
-- [ ] RED S08/S18: C041–C051/C100, unbound«да/второй», exact reply new intent supersedes aftercommit; sameoption new callbackId replay, foreign token/versionconflict/expired0effect.
-- [ ] Callback consume+Tasks+receipt+group result+response intent/outbox атомарны. Обычные clear commands без кнопок. Не реализовывать глобальный pending capture.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/pending-choice.test.ts`; static; commit `feat(agent): resolve finite choices without capturing new input`.
+**Результат:** сохранённые typed options,2–5+cancel, token256bit/hash-only, revision/TTL24h; новое сообщение — новый turn.
+- [x] RED S08/S18: C041–C051/C100, unbound«да/второй», exact reply new intent supersedes aftercommit; sameoption new callbackId replay, foreign token/versionconflict/expired0effect.
+- [x] Callback consume+Tasks+receipt+group result+response intent/outbox атомарны. Обычные clear commands без кнопок. Не реализовывать глобальный pending capture.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/pending-choice.test.ts`; static; commit `feat(agent): resolve finite choices without capturing new input`.
 
 ### 62. Versioned MAX buttons и callback binding
 **Файлы:** src/modules/delivery/domain/outbound-message.ts; src/infrastructure/max/{update-mapper.ts,max-client.ts}; migrations/0035_choice_delivery_contract.sql; tests/functional/max/choice-delivery.test.ts; docs/runbooks/stage-3-canary.md.
 **Результат:** messageId/user/conversation/revision binding и rich drafts; внутренние defaultoff кнопки готовы к real canary checkpoint65.
-- [ ] RED S18/S23: button encoding, callbacks exact message source, noID/token content leaks, confirmed/uncertain delivery, duplicate callback IDs and stale options.
-- [ ] Проверить актуальный официальный MAX contract при реализации; plain draft остаётся совместимым. Callback идёт без AI, произвольный внешний command payload запрещён. Synthetic callbacks не закрывают Stage1 exception.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/max/choice-delivery.test.ts`; static; commit `feat(max): bind inline choices to authentic callbacks`.
+- [x] RED S18/S23: button encoding, callbacks exact message source, noID/token content leaks, confirmed/uncertain delivery, duplicate callback IDs and stale options.
+- [x] Проверить актуальный официальный MAX contract при реализации; plain draft остаётся совместимым. Callback идёт без AI, произвольный внешний command payload запрещён. Synthetic callbacks не закрывают Stage1 exception.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/max/choice-delivery.test.ts`; static; commit `feat(max): bind inline choices to authentic callbacks`.
 
 ### 63. Накопительные authority/erase/recovery races
 **Файлы:** migrations/0036_stage3_privacy_restore.sql; tests/functional/agent/{authority-races.test.ts,privacy-lifecycle.test.ts}; owner cleanup adapters, docs/runbooks/account-deletion.md.
 **Результат:** S15–S19 cumulative proof на real PG; own cleanup уже внедрён предыдущими content migrations.
-- [ ] RED/proof: concurrent version edits, двух conversations/renewal/fence/erase during network, PG termination beforecommit, committed receipt lostACK, finalizer restart, retention removes content but not input tombstone, no cross-tenant refs.
-- [ ] Для каждой фазы проверить0late effects после authority loss, отсутствие resurrection/content logs; audio erasure intents удаляют bytes восстанавливаемо. Не запускать physical restore пока.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/authority-races.test.ts tests/functional/agent/privacy-lifecycle.test.ts`; static; commit `test(agent): prove authority privacy and recovery atomicity`.
+- [x] RED/proof: concurrent version edits, двух conversations/renewal/fence/erase during network, PG termination beforecommit, committed receipt lostACK, finalizer restart, retention removes content but not input tombstone, no cross-tenant refs.
+- [x] Для каждой фазы проверить0late effects после authority loss, отсутствие resurrection/content logs; audio erasure intents удаляют bytes восстанавливаемо. Не запускать physical restore пока.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/authority-races.test.ts tests/functional/agent/privacy-lifecycle.test.ts`; static; commit `test(agent): prove authority privacy and recovery atomicity`.
 
 ### 64. Oracle collector и измерения без внешних calls
 **Файлы:** tests/semantic/{corpus-runner.ts,oracle.ts,qualification-report.ts}; tests/unit/semantic/eval-collector.test.ts; tests/fixtures/stage3/regressions.json.
 **Результат:** first divergent boundary, точные effects/unchanged/choices, quality/call/latency denominator; regression vs независимый H отдельные reports.
-- [ ] RED S20–S22: collector read failure не PASS; partial multi-action≠full success; R/V/F/P/unsupported/denied/errors отдельные denominators; missing controls не «независимая оценка».
-- [ ] Все runtime tests FakeAI/FakeSTT; sampler counts wire attempts/semantic/STT/cost и queues. Не читать контроль для debugging; materialize/audio scripts только permission metadata, не production recordings.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/semantic/eval-collector.test.ts`; static; commit `test(ai): audit semantic quality and latency without hidden retries`.
+- [x] RED S20–S22: collector read failure не PASS; partial multi-action≠full success; R/V/F/P/unsupported/denied/errors отдельные denominators; missing controls не «независимая оценка».
+- [x] Все runtime tests FakeAI/FakeSTT; sampler counts wire attempts/semantic/STT/cost и queues. Не читать контроль для debugging; materialize/audio scripts только permission metadata, не production recordings.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/semantic/eval-collector.test.ts`; static; commit `test(ai): audit semantic quality and latency without hidden retries`.
 
 ### 65. Кнопочный acceptance и обязательный реальный callback-canary
 **Файлы:** tests/e2e/stage3-choice-flow.test.ts; docs/runbooks/stage-3-canary.md; docs/progress/stage-3-checkpoint-65.md.
 **Результат:** new text/voice не захватываются old choice; реальный callback exception закрывается только настоящим MAX evidence.
-- [ ] Targeted S08/S18/S23: text/voice while3choices, exactreplynewintent, expiry/revision/foreign/version conflict; truthful no extraAI response.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/e2e/stage3-choice-flow.test.ts`; static; commit `test(max): complete finite-choice acceptance contracts`.
-- [ ] Одно накопительное review и один clean-clone gate. Затем отдельно разрешённый TEST MAX canary: настоящий пользовательский callback, private exact webhook replay, sameoption/newcallbackId и stale choice; count Task events/receipts/outbox/confirmed reply, cleanup.
-- [ ] Process-local fixed FakeSemantic допустим только в изолированном TEST bot profile для создания choices; MAX/DB/Task/delivery настоящие. Public test injection отсутствует. Это proof callback, не OpenAI quality. Без разрешения bot/endpoint/recipient не запускать, оставить exception/partial checkpoint и остановиться. Deploy не разрешён автоматически.
-- [ ] Publish evidence/push/SHA после обязательных gates, остановка перед66. Не повторять callback-canary в70 при неизменном callback contract.
+- [x] Targeted S08/S18/S23: text/voice while3choices, exactreplynewintent, expiry/revision/foreign/version conflict; truthful no extraAI response.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/e2e/stage3-choice-flow.test.ts`; static; commit `test(max): complete finite-choice acceptance contracts`.
+- [x] Одно накопительное review и один clean-clone gate (evidence: docs/progress/stage-3-checkpoint-65.md).
+- [ ] Отдельно разрешённый TEST MAX canary: настоящий пользовательский callback, private exact webhook replay, sameoption/newcallbackId и stale choice; count Task events/receipts/outbox/confirmed reply, cleanup.
+- [x] Process-local fixed FakeSemantic допустим только в изолированном TEST bot profile для создания choices; MAX/DB/Task/delivery настоящие. Public test injection отсутствует. Это proof callback, не OpenAI quality. Без разрешения bot/endpoint/recipient не запускать, оставить exception/partial checkpoint и остановиться. Deploy не разрешён автоматически.
+- [x] Publish evidence/push/SHA после обязательных gates, остановка перед66. Не повторять callback-canary в70 при неизменном callback contract.
 
 ## Блок66–70 — финальная проверка OpenAI Stage3
 

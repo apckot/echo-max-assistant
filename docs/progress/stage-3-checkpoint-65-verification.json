@@ -1,0 +1,87 @@
+{
+  "kind": "checkpoint65_single_clean_clone_gate",
+  "clientDate": "2026-10-16",
+  "baseSha": "d7654c46b2fd1611582e2279c049050eefcfcf95",
+  "codeSha": "a2c61b09624063e8720772a5533436fd393328bc",
+  "node": "22.23.3",
+  "npm": "11.16.0",
+  "fullRun": {
+    "invocations": 1,
+    "testFiles": 103,
+    "total": 823,
+    "passed": 823,
+    "failed": 0,
+    "durationSeconds": 238.46,
+    "exitCode": 0
+  },
+  "functionalSuiteRepeated": false,
+  "reviewFocusRepeated": false,
+  "restoreRepeated": false,
+  "imageBuilds": 1,
+  "independentReviews": 1,
+  "reviewFindings": {
+    "P2": 3,
+    "closed": 3,
+    "confirmation": "same reviewer, findings-only diff; no second audit or reviewer tests"
+  },
+  "checks": {
+    "install": true,
+    "typecheck": true,
+    "architecture": true,
+    "build": true,
+    "containerSmoke": true,
+    "cleanClone": true,
+    "whitespace": true,
+    "gitleaksHistory": true,
+    "gitleaksTrackedTree": true,
+    "todoScan": true
+  },
+  "gitleaks": {
+    "historyCommits": 139,
+    "leaks": 0
+  },
+  "restore": {
+    "taskFixtureRestored": true,
+    "taskPostBaseWALMutationRecovered": true,
+    "taskSurvivingReceiptReplay": true,
+    "lostTaskNotReplayed": true,
+    "taskCounts": {
+      "tasks": 1,
+      "events": 2,
+      "receipts": 2
+    },
+    "postBaseAcknowledgedMarkerRecovered": true,
+    "recoverySource": "authenticated encrypted archived WAL",
+    "kind": "isolated_physical_restore",
+    "postgres": 17,
+    "authenticatedEncryption": true,
+    "pgVerifybackup": true,
+    "replayEligibleOldOutbound": 0,
+    "rpoMs": 0,
+    "rtoMs": 9939,
+    "productionStorageVerified": false
+  },
+  "externalAiCalls": 0,
+  "externalSttCalls": 0,
+  "realMaxCalls": 0,
+  "deployment": false,
+  "untrackedDiagnosticSha256": "d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade",
+  "acceptance": {
+    "automated": "pass",
+    "realCallbackCanary": "not run; bot/server/recipient authorisation required; Stage1 exception open",
+    "voiceRelease": "blocked; actual sandbox decoder namespace qualification required; no bypass",
+    "nextIteration": "66 not started"
+  },
+  "evidenceSha256": {
+    "gate.log": "a4037355c02d0a04f5c8c513d0fb7c47dcf11d6e5f30eb4c8bec31eb83994929",
+    "gate-results.json": "665a8d10421996319db82db60cfe4eceb59dde4fe64336f47ccaf02da24616c6",
+    "restore-report.json": "34a3de1aa97956380610a28b451848a22842f81d2cf9e7c3235af98659c0c08e",
+    "gitleaks-history.log": "835394db3918d225c2fe7a2519b7700fe73a0b0babaaf9debb746b14e2e2dc6b",
+    "gitleaks-tree.log": "75b794e57fca37e5565c16c6360188be293985dd7987d85daf2a27379ce837a7",
+    "review-red.log": "3ffc85fd41f89454093925a81283ab396ff5ffc9336bbae3b28069883c264e17",
+    "review-green.log": "be8440e01124fda88aa8d6071632313baa5c518bb4bba8a70924bee3a83b04ee",
+    "review-anchor-final.log": "cdb333070e0eb9ce7001499f15aca79c3842f326b95a1970e907daff5fcbff14",
+    "review-typecheck.log": "87da77fb0b396898e1089b76807cc5e579a0ee68cc0641962f30e326f4980ae0",
+    "review-architecture.log": "62fcfd43bfe023e8daecfe7f44b545f57893257304f3bf3ac06486b96be8ca46"
+  }
+}
