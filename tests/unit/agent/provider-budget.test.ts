@@ -19,5 +19,8 @@ test('cancelled STT waiter leaves bounded queue immediately and never starts med
  expect(state).toEqual({kind:'denied',reason:'processing_cancelled'});expect(reads).toBe(2);
 });
 test('load harness smoke covers two tenants, text/local-query/voice in ten actual staged operations',async()=>{
- const {stage3Load}=await import('../../support/stage3-load.js');const r=await stage3Load();expect(r.counts.processed).toBe(10);expect(r.failures).toBe(0);expect(r.sttCalls).toBe(3);expect(r.calls).toBeLessThanOrEqual(10);expect(r.stats.every(s=>s.maxAi<=4&&s.maxStt<=2)).toBe(true);
+ const {stage3Load,acceptStage3Load}=await import('../../support/stage3-load.js');const r=await stage3Load();expect(acceptStage3Load(r)).toBe(true);expect(r.counts.processed).toBe(10);expect(r.failures).toBe(0);expect(r.sttCalls).toBe(3);expect(r.calls).toBeLessThanOrEqual(10);expect(r.stats.every(s=>s.maxAi<=4&&s.maxStt<=2)).toBe(true);
+},120000);
+test('load failure is terminal but never successful: an injected semantic refusal must fail acceptance',async()=>{
+ const {stage3Load,acceptStage3Load}=await import('../../support/stage3-load.js');const r=await stage3Load(false,{failSemanticAt:1});expect(r.counts.processed).toBe(10);expect(r.failedTurns).toBe(1);expect(acceptStage3Load(r)).toBe(false);
 },120000);

@@ -1,6 +1,6 @@
 # Stage3 final acceptance — external checks NOT authorised / NOT RUN
 
-Code readiness and external acceptance are separate. Continue66–70 locally; do not announce Stage3 complete while any external row is open. Reuse [callback procedure](stage-3-canary.md), [provider admission](stage-3-provider-admission.md), [audio policy](stage-3-audio-policy.md), [backup/restore](backup-restore.md). No new bot/key/server is requested automatically.
+Local final-eval preparation is currently INCOMPLETE: full typed78R fixtures and application observation collector wiring are not yet supplied. Passing local gates proves the current code candidate only; codeReady and Stage3 completion remain false until this local prerequisite is closed. Code readiness and external acceptance are separate. Continue66–70 locally; do not announce Stage3 complete while any external row is open. Reuse [callback procedure](stage-3-canary.md), [provider admission](stage-3-provider-admission.md), [audio policy](stage-3-audio-policy.md), [backup/restore](backup-restore.md). No new bot/key/server is requested automatically.
 
 ## One concrete external authorisation request (prepared at start of66)
 
@@ -19,3 +19,19 @@ This is one prepared request, not current permission. Missing bot/recipient conf
 - S21 actual permitted recordings: cleanWER≤15%, critical-span accuracy≥98%,0unsafe critical effects; standard/long/refusal denominators separate. A successful transcript cannot prove loss of an undetectable negation is safe; record that limit honestly.
 - S22 all-turn and success-only latency/count/cost/queues/errors separately; textp95≤5s; standardvoicep95≤30s, long separately. Failed cases cannot be removed to improve completion rate.
 - S23 genuine MAX callback/duplicate proof and sandbox qualification are mandatory external rows. Real MAX text/voice acceptance additionally needs approved endpoint/data/audio route. Stage4/deploy never follows automatically.
+
+## Automatic evidence map (final results in checkpoint70 ledger)
+
+|Requirements|Local evidence|External remainder|
+|---|---|---|
+|S01–S06 meaning/evidence/temporal/independent groups|semantic contracts/action-boundary/temporal-intent, saved probe3 application replay, mixed-groups and conversation E2E|Full frozen78R live pass; typed fixtures beyond12 must be completed before dispatch|
+|S07–S08 delivered references/new topic|C020 anchor, choice E2E, callback confirmation anchor|Live conversational MAX proof|
+|S09–S10 minimisation/refusal|token-map, egress-contract, provider FakeHTTP; fake fields cannot approve a raw context|Operator route/privacy admission; no exhaustivePII claim|
+|S11–S13 audio boundary/transcript|audio policy/media boundary, FakeHTTP STT/voice E2E, saved transcript restart|Native isolated decoder qualification, permitted assets and actual STT quality|
+|S14/S22 budgets/deadlines/load|provider-budget, cancellable STT queue, one fixed two-worker fake load|Live latency/error/usage and proven hard billing cap|
+|S15–S17 runs/groups/finalizer|authority-races, final-recovery, text E2E and one extended physical restore fixture|Production backup qualification is outside local proof|
+|S18–S19 finite choices/RLS/erase|choice-delivery, privacy lifecycle, retention, restore fixture; no second effect|Genuine callback + duplicate; existing exception remains|
+|S20–S21 quality|collector negative tests and historical12-case feasibility only|Independent unused H20, full real R and permitted audio evaluation|
+|S23–S24 real MAX/opt-in|Default-off runtime, one path, strict callbacks, prepared runbook|Explicit bot/server/recipient, update/reopen permission and real text/voice/callback checks|
+
+Local automatic PASS will establish a tested code candidate, not that the real eval package or Stage3 release is complete. Missing local typed R materialisation must be resolved as local preparation, not delegated to the owner as a requirement to write regression oracles. Independent H and audio permissions/assets do need separate provenance and consent.
