@@ -1,6 +1,6 @@
 # Echo MAX Stage3 — план реализации 51–70
 
-> **Исполнение:** superpowers:executing-plans. Один исполнитель на разрешённый блок из пяти итераций, без делегирования реализации. Отдельный коммит на итерацию; одно накопительное независимое ревью на checkpoint. Базовые документы приняты; попытки1/2 probe53 сохранены FAIL, разрешённая попытка3 PASS12/12. Checkpoint55 принят. Владелец разрешил56–60; они реализованы, checkpoint60 review/gate фиксируются в progress ledger. Блок61+ не разрешён.
+> **Исполнение:** superpowers:executing-plans. Один исполнитель на разрешённый блок из пяти итераций, без делегирования реализации. Отдельный коммит на итерацию; одно накопительное независимое ревью на checkpoint. Базовые документы приняты; попытки1/2 probe53 сохранены FAIL, разрешённая попытка3 PASS12/12. Checkpoint55 принят. Владелец разрешил56–60; они реализованы, checkpoint60: одно review, один общий прогон и точечное закрытие упавших fixture-проверок зафиксированы в progress ledger. Блок61+ не разрешён.
 
 **Цель:** понимание текста и голоса через OpenAI, управление Tasks через MAX, сохранение смысла и контекста, Privacy Gateway и восстановление без повторного эффекта.
 **Архитектура:** Context/Privacy → один внешний MeaningDraftV2 → QuoteGrounder → внутренний MeaningDecisionV1 → validator/resolver → durable groups → публичный Tasks API → response intent/final outbox. OpenAI semantic/STT — заменяемые adapters; сеть вне DB locks.
@@ -91,38 +91,38 @@ Review focus: (1) отрицание в цитируемом title против 
 ### 56. Claim, внешний вызов вне DB locks и staged decision
 **Файлы:** src/modules/agent/application/turn-coordinator.ts; src/infrastructure/postgres/agent/{turn-claim.ts,decision-stage.ts}; migrations/0029_turn_authority.sql; tests/functional/agent/staging-authority.test.ts.
 **Результат:** `stage/run(turnId)` с short guarded claim, независимым renewal, accepted immutable decision до effects.
-- [ ] RED S14/S15: long FakeAI не держит row locks; stale generation/user/fence/source discard, started uncertain0redispatch, head ordering, duplicate turn reuses accepted decision.
-- [ ] Внедрить phases claim→Context/Privacy/provider вне transaction→fresh authority stage; slots4/worker; run/profile digests immutable. Не увеличивать typed-handler DB timeout ради AI.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/staging-authority.test.ts`; static; commit `feat(agent): stage meaning outside database locks`.
+- [x] RED S14/S15: long FakeAI не держит row locks; stale generation/user/fence/source discard, started uncertain0redispatch, head ordering, duplicate turn reuses accepted decision.
+- [x] Внедрить phases claim→Context/Privacy/provider вне transaction→fresh authority stage; slots4/worker; run/profile digests immutable. Не увеличивать typed-handler DB timeout ради AI.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/staging-authority.test.ts`; static; commit `feat(agent): stage meaning outside database locks`.
 
 ### 57. Trusted Tasks bridge и атомарные группы
 **Файлы:** src/infrastructure/postgres/postgres-typed-task-processing.ts, src/infrastructure/postgres/tasks/task-session.ts; src/modules/agent/application/group-runner.ts; migrations/0030_turn_groups.sql; tests/functional/agent/{task-binding.test.ts,mixed-groups.test.ts}.
 **Результат:** `runGroup` вызывает только bound public Task commands, stable effect keys; command effects/events/receipt/group result/response intent в одной guarded DbTx.
-- [ ] RED S03/S05/S16: trusted assistantTurn source принадлежит locked inbound/user; provider source IDs запрещены; C032–C039,20commands, independent partial success; rollback на любом insert failure.
-- [ ] Сохранять accepted intents неизменно, dependent actions atomic. Tasks не читает Agent tables; только sole infrastructure binding доказывает authority. Repeated/lostACK group возвращает original receipt.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/task-binding.test.ts tests/functional/agent/mixed-groups.test.ts`; static; commit `feat(agent): execute atomic task groups with durable response intent`.
+- [x] RED S03/S05/S16: trusted assistantTurn source принадлежит locked inbound/user; provider source IDs запрещены; C032–C039,20commands, independent partial success; rollback на любом insert failure.
+- [x] Сохранять accepted intents неизменно, dependent actions atomic. Tasks не читает Agent tables; только sole infrastructure binding доказывает authority. Repeated/lostACK group возвращает original receipt.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/task-binding.test.ts tests/functional/agent/mixed-groups.test.ts`; static; commit `feat(agent): execute atomic task groups with durable response intent`.
 
 ### 58. Finalizer и правдивый MAX text response
 **Файлы:** src/modules/agent/application/{turn-finalizer.ts,response-renderer.ts}; src/infrastructure/postgres/agent/response-intent.ts; src/runtime/worker.ts; src/shared/config/config.ts; migrations/0031_assistant_processing_result.sql; tests/e2e/stage3-text-flow.test.ts.
 **Результат:** один final outbox из committed group outcomes, assistant_turn_v1 совместим с foundation/task_commands_v1.
-- [ ] RED S17/S24: C080, crash между группой и finalizer, false success, query-only/source-local day/asOf, partial mixed response, processing indicator only if verified MAX capability.
-- [ ] Finalizer under lock читает receipts/statuses, one final effect key+processing receipt/outbox/pointer. Response intents private finalizer queue, не второй sender. Runtime flags defaultoff; no extra styling AI.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/e2e/stage3-text-flow.test.ts`; static; commit `feat(max): deliver truthful staged task responses`.
+- [x] RED S17/S24: C080, crash между группой и finalizer, false success, query-only/source-local day/asOf, partial mixed response, processing indicator only if verified MAX capability.
+- [x] Finalizer under lock читает receipts/statuses, one final effect key+processing receipt/outbox/pointer. Response intents private finalizer queue, не второй sender. Runtime flags defaultoff; no extra styling AI.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/e2e/stage3-text-flow.test.ts`; static; commit `feat(max): deliver truthful staged task responses`.
 
 ### 59. Audio policy, безопасная загрузка и codec
 **Файлы:** src/modules/media/application/{audio-policy.ts,media-service.ts}; src/infrastructure/media/{max-audio-loader.ts,sandbox-codec.ts}; migrations/0032_media_preparation.sql; tests/functional/media/audio-boundary.test.ts.
 **Результат:** VerifiedAudio→ApprovedAudio либо denied; без локального ASR/модели, с явным disclosure передачи записи внешнему STT.
-- [ ] RED S11/S12: C078, нет/отозвано audio consent, declared prohibited content, policy requiring content analysis, SSRF/privateDNS/redirect/oversize/badcodec, account stop/erase/fence.
-- [ ] Технические checks и policy защищают маршрут, не гарантируют PII detection. Декларацию записывать отдельно от результата проверок. Private temporary bytes/cleanup≤30min, token никогда не пересылается чужому origin.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/media/audio-boundary.test.ts`; static; commit `feat(media): admit external audio through explicit privacy policy`.
+- [x] RED S11/S12: C078, нет/отозвано audio consent, declared prohibited content, policy requiring content analysis, SSRF/privateDNS/redirect/oversize/badcodec, account stop/erase/fence.
+- [x] Технические checks и policy защищают маршрут, не гарантируют PII detection. Декларацию записывать отдельно от результата проверок. Private temporary bytes/cleanup≤30min, token никогда не пересылается чужому origin.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/media/audio-boundary.test.ts`; static; commit `feat(media): admit external audio through explicit privacy policy`.
 
 ### 60. OpenAI STT, durable transcript и единый voice pipeline
 **Файлы:** src/modules/media/application/{stt-port.ts,transcript.ts}; src/infrastructure/media/openai-stt-provider.ts; src/infrastructure/postgres/media/{media-jobs.ts,transcript-store.ts,cleanup.ts}; migrations/0033_media_transcripts.sql; tests/unit/media/stt-contract.test.ts; tests/e2e/stage3-voice-flow.test.ts.
 **Результат:** заменяемый STT port, только OpenAI implementation; transcript reuse→тот же Context/Privacy/Semantic/Tasks.
-- [ ] RED S13/S14: C042/C079, nullable confidence, критическое ambiguity блокирует компонент, no mandatory repeated voice, no secondSTT after commit; external sent/ACK uncertainty без retry, cleanup crash recovery.
-- [ ] FakeHTTP проверяет реальный STT request contract без аудио/ключа/сети. Audio bytes удаляются после transcript commit; transcript перед semantic вызовом проходит text Gateway. Не придумывать confidence/детектор потерянного отрицания при отсутствующем signal.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/media/stt-contract.test.ts tests/e2e/stage3-voice-flow.test.ts`; static; commit `feat(media): reuse OpenAI transcripts in the common task pipeline`.
-- [ ] Checkpoint60: одно review/gate, push/SHA, остановка перед61. Реальный audio eval ещё не разрешён.
+- [x] RED S13/S14: C042/C079, nullable confidence, критическое ambiguity блокирует компонент, no mandatory repeated voice, no secondSTT after commit; external sent/ACK uncertainty без retry, cleanup crash recovery.
+- [x] FakeHTTP проверяет реальный STT request contract без аудио/ключа/сети. Audio bytes удаляются после transcript commit; transcript перед semantic вызовом проходит text Gateway. Не придумывать confidence/детектор потерянного отрицания при отсутствующем signal.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/media/stt-contract.test.ts tests/e2e/stage3-voice-flow.test.ts`; static; commit `feat(media): reuse OpenAI transcripts in the common task pipeline`.
+- [x] Checkpoint60: одно review/gate, push/SHA, остановка перед61. Реальный audio eval ещё не разрешён.
 
 ## Блок61–65 — необходимые кнопки и callback-canary
 

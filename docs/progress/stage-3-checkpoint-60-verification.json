@@ -1,0 +1,89 @@
+{
+  "kind": "checkpoint60_single_full_run_with_targeted_failure_closure",
+  "clientDate": "2026-10-16",
+  "baseSha": "b8b6f7d90e7f2dc28a54a89874bc9c54b7283bc5",
+  "fullRunSha": "afaf7d19e93ebb0975b1d94a4693ea8d24155951",
+  "testFixtureClosureSha": "b0f58a5bb63fe28eac6c645635b9bf07951d801d",
+  "runtimeSourceUnchangedAfterFullRun": true,
+  "node": "22.23.3",
+  "npm": "11.16.0",
+  "testFiles": 96,
+  "fullRun": {
+    "invocations": 1,
+    "total": 770,
+    "passed": 742,
+    "failed": 28,
+    "exitCode": 1,
+    "durationSeconds": 245.8
+  },
+  "targetedClosure": {
+    "httpIngress": {
+      "passed": 27,
+      "fix": "serialize Stage3 boolean when converting RuntimeConfig back into environment"
+    },
+    "recovery": {
+      "passed": 1,
+      "fix": "await termination acknowledgement separately from connection-loss rejection"
+    },
+    "diagnosticRecoveryFailure": 1,
+    "passedTestsRerun": 0
+  },
+  "distinctChecksWithPassingEvidence": 770,
+  "fullRunRepeated": false,
+  "functionalSuiteRepeated": false,
+  "restoreRepeated": false,
+  "imageBuilds": 1,
+  "independentReviews": 1,
+  "checks": {
+    "install": true,
+    "typecheck": true,
+    "architecture": true,
+    "build": true,
+    "containerSmoke": true,
+    "cleanClone": true,
+    "whitespace": true,
+    "gitleaksHistory": true,
+    "gitleaksTrackedTree": true,
+    "todoScan": true
+  },
+  "restore": {
+    "taskFixtureRestored": true,
+    "taskPostBaseWALMutationRecovered": true,
+    "taskSurvivingReceiptReplay": true,
+    "lostTaskNotReplayed": true,
+    "taskCounts": {
+      "tasks": 1,
+      "events": 2,
+      "receipts": 2
+    },
+    "postBaseAcknowledgedMarkerRecovered": true,
+    "recoverySource": "authenticated encrypted archived WAL",
+    "kind": "isolated_physical_restore",
+    "postgres": 17,
+    "authenticatedEncryption": true,
+    "pgVerifybackup": true,
+    "replayEligibleOldOutbound": 0,
+    "rpoMs": 0,
+    "rtoMs": 11164,
+    "productionStorageVerified": false
+  },
+  "externalAiCalls": 0,
+  "externalSttCalls": 0,
+  "realMaxCanary": false,
+  "deployment": false,
+  "limits": [
+    "C020 correct saved response rejected locally with TARGET_NOT_FOUND; guards unchanged",
+    "Native codec Linux namespace qualification not run; fakes only",
+    "No real audio/STT quality or latency evidence",
+    "Stop before61"
+  ],
+  "evidenceSha256": {
+    "gate.log": "38e146c6932bc6c1c07ef357cf43c6fb261944d8f9dc0cf5d6ce7de0896163e2",
+    "gate-results.json": "dae5b9a6b6c396f9f2c0885e5ef9c279f86c1230273a3fa2bb6e6ce4ad3d6f42",
+    "gate-failures-targeted.log": "4ae6cb78d6ee4d8f2a0307ba6f98df8faf1a48673450b7ffd4445b4857e3ec69",
+    "gate-recovery-targeted.log": "7132dd9d16c40b79647baed887b2e5fa8f9071b01305e3580d3ec01a39d8621b",
+    "gate-resume.log": "ade94ec4d977366021b1d72fcd32f073fd8b9597bc8b526e2ff5af24ca5808de",
+    "gitleaks-history.log": "e661d0714a724853cdbb4db88963e30af91b25487052eb990898dd9c84d0c79d",
+    "gitleaks-tree.log": "ebf6912fd11f7825b4106ef45228025709ed8a77a2dae3b2bc2a12279f1ee3a6"
+  }
+}

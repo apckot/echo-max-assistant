@@ -56,6 +56,20 @@ One read-only reviewer inspected b8b6f7d..99ab063, no tests/network/edits. Three
 
 Executor also confirmed recovery issue: accepted/failed runs can retain original frozen profile after configuration changes; unaccepted mismatched profiles still refuse, with no reinterpretation or redispatch. Targeted RED confirmed oversized response, missing retrieved snapshot, wrong deadline and profile recovery failures. GREEN4files/12tests, typecheck/architecture PASS. One initial retrieval test needed an isolated fixture to avoid unrelated identical titles; corrected RED then exposed missing snapshot as intended. No second reviewer/full audit. Evidence /tmp/echo-stage3-60/review-{red,boundary-red,green,type,arch}.log.
 
-## Checkpoint60 pending
+## Checkpoint60 — verification and handoff, 2026-10-16
 
-Iterations56–60 complete in separate commits; next is the single cumulative read-only review, confirmed fixes by this executor, then one clean-clone gate (one image build/one npm test including functional/restore/image, no separate review-focus/probe). Stop before61 after report/push/SHA equality.
+**56–60 complete; owner acceptance pending. Stop before61.** Separate commits:56 e1fc392,57 a9e30c2,58 639790d,59 dba234c,60 99ab063; cumulative review fixes afaf7d1. Only one executor and one cumulative independent reviewer.
+
+[Durable verification summary](stage-3-checkpoint-60-verification.json) records the actual split results and evidence hashes. One full run in clean clone /tmp/echo-max-checkpoint60.tDJyiE/repo at afaf7d19e93ebb0975b1d94a4693ea8d24155951: Node22.23.3/npm11.16.0; npm ci, typecheck, architecture, build, one Docker image build, one npm test. **Initial result742PASS/28FAIL,96files/770tests,245.80s; this was not a green single-command run.** All Stage3 text/voice/media, container smoke and physical restore tests passed in that run.
+
+Two fixture failures were closed only with targeted checks in the same isolated clone; the full suite/functional/review-focus/restore/image build were not repeated:
+- HTTP ingress27 failures: RuntimeConfig→environment helper needed String(ASSISTANT_STAGE3_ENABLED), just as for existing Foundation flag. Corrected helper:27PASS.
+- Recovery1 failure: connection-loss rejection can precede the administrative pg_terminate_backend acknowledgement. First narrow diagnostic reproduced DB_UNAVAILABLE with the old late boolean assertion; fixture now captures and awaits the actual termination result independently. Final narrow check1PASS, other3 tests skipped. Production code unchanged; no sleep/retry or weakened rollback/effect checks.
+
+Fixture closure b0f58a5bb63fe28eac6c645635b9bf07951d801d changes only those two tests. src/migrations/deploy byte-identical to full-run SHA. **All770 distinct tests have passing evidence**, composed of742 original successes plus28 targeted closures; no claim that all770 passed in a second full run. Typecheck after fixture changes PASS. Clone reset to the committed closure SHA and clean; broad scans performed once there: Gitleaks8.30.1 pinned image,129commit history and tracked archive both0leaks; whitespace/TODO/cleanliness PASS. Original failed evidence retained, not overwritten.
+
+Single isolated physical PostgreSQL17 restore: authenticated encrypted archived WAL, pg_verifybackup, post-base Task mutation and surviving receipt replay recovered, lost Task not replayed;1Task/2events/2receipts; RPO0ms/RTO11164ms. This is existing Tasks/foundation physical-restore evidence, not a seeded Media WAL drill or production-storage qualification.
+
+User-visible result: opted-in staged text and voice orchestration can apply independent or atomic Task groups and issue one committed-receipt response; decisions/transcripts survive restart without redispatch, accepted profile is frozen. Audio transmission is separately denied by default until consent/operator policy/origin admission. No external AI/STT requests, real user data/audio/MAX canary or deployment in this block. Raw audio is ephemeral; no local semantic/ASR/classifier model added. Historical probe attempts/results/markers unchanged. C020 local safe false rejection and native Linux codec qualification remain explicitly open; real quality/latency/buttons/callback acceptance belongs to later authorised work.
+
+Untracked network diagnostic preserved, SHA256 d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade. Publication is docs-only after verified code/test closure; push and local/remote SHA equality confirmed in final handoff. No61 work started.
