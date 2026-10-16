@@ -15,11 +15,19 @@ export async function choiceFixture(){
  const group=await new PostgresAgentTaskProcessing(f.authority,choices).runGroup(staged.ticket,0);
  await new PostgresTurnFinalizer(f.authority).finalize(staged.ticket);
  const out=(await f.migrator.query('SELECT id,payload FROM outbound_messages WHERE source_inbound_event_id=$1',[input.event.id])).rows[0];
- async function confirm(mid='synthetic-choice-message'){
- const owner=randomUUID();await f.migrator.query(`INSERT INTO delivery_attempts(outbound_message_id,user_id,attempt_number,phase,lease_owner,lease_generation) VALUES($1,$2,1,'started',$3,1)`,[out.id,f.a,owner]);
- await f.migrator.query(`INSERT INTO delivery_attempts(outbound_message_id,user_id,attempt_number,phase,lease_owner,lease_generation,certainty,external_message_id) VALUES($1,$2,1,'completed',$3,1,'sent',$4)`,[out.id,f.a,owner,mid]);return mid;
+ async function confirm(mid='synthetic-choice-message',outboundId=out.id){
+ const owner=randomUUID();await f.migrator.query(`INSERT INTO delivery_attempts(outbound_message_id,user_id,attempt_number,phase,lease_owner,lease_generation) VALUES($1,$2,1,'started',$3,1)`,[outboundId,f.a,owner]);
+ await f.migrator.query(`INSERT INTO delivery_attempts(outbound_message_id,user_id,attempt_number,phase,lease_owner,lease_generation,certainty,external_message_id) VALUES($1,$2,1,'completed',$3,1,'sent',$4)`,[outboundId,f.a,owner,mid]);return mid;
  }
  const processor=new PostgresChoiceProcessor(f.authority.ordered,choices);
  async function callback(option=1,mid='synthetic-choice-message',user='301',chat=input.chat){const ref=group.choice!.options[option]!.ref;return f.admit('',chat,user,{kind:'button',callbackPayload:'ch1.'+tokens.hash(tokens.encode(ref)),callbackMessageId:mid});}
- return {...f,tokens,choices,tasks,input,group,out,confirm,processor,callback};
+ async function anotherChoice(extraCreate=false){
+  const extraEvidence=[{sourceLabel:'S1',quote:'Купи молоко'}];
+  const nextDecision=extraCreate?parseMeaningDraft({...decision,units:[...decision.units,{label:'u2',kind:'action',speechAct:'request',polarity:'positive',modality:'asserted',authoredByOwner:true,evidence:extraEvidence,uncertainty:null}],actions:[...decision.actions,{label:'a2',unitLabel:'u2',kind:'create',target:null,fields:{title:'Молоко',description:null,clearFields:[]},times:[],evidence:extraEvidence}],groups:[...decision.groups,{label:'g2',unitLabels:['u2'],actionLabels:['a2'],queryLabels:[],outcome:'execute',reason:null}]}):decision;
+  const next=await f.admit(extraCreate?'Купи молоко и '+text:text,input.chat),staged=await f.coordinator({decide:async()=>({outcome:'ok',decision:nextDecision,model:'fake',durationMs:0,usage:null})}).run(next.lease);if(staged.status!=='accepted')throw Error('choice');
+  const group=await new PostgresAgentTaskProcessing(f.authority,choices).runGroup(staged.ticket,0);
+  for(let i=1;i<staged.ticket.plan!.groups.length;i++)await new PostgresAgentTaskProcessing(f.authority,choices).runGroup(staged.ticket,i);
+  await new PostgresTurnFinalizer(f.authority).finalize(staged.ticket);const out=(await f.migrator.query('SELECT id,payload FROM outbound_messages WHERE source_inbound_event_id=$1',[next.event.id])).rows[0];return {input:next,group,out};
+ }
+ return {...f,anotherChoice,tokens,choices,tasks,input,group,out,confirm,processor,callback};
 }

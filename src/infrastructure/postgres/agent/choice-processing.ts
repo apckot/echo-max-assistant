@@ -1,3 +1,4 @@
+import {activeTurnSource} from './turn-claim.js';
 import type {PostgresOrderedHead} from '../postgres-ordered-head.js';
 import type {DbTx} from '../database.js';
 import type {InboundEvent} from '../../../modules/intake/domain/inbound-event.js';
@@ -12,9 +13,8 @@ export class PostgresChoiceProcessor{
  constructor(private readonly ordered:PostgresOrderedHead,private readonly choices:PostgresPendingChoices){}
  async run(lease:ConversationLease){return this.ordered.run(lease,async({event,kind},tx)=>{
   if(event.payload.kind!=='button')throw Error('CHOICE_CALLBACK_REQUIRED');
-  const [conversation]=await tx.query<{state:string}>('SELECT state FROM public.conversations WHERE user_id=$1 AND id=$2',[event.userId,event.conversationId]);
-  const active=conversation?.state==='active'&&kind==='ready';
-  const [choice]=active?await tx.query<{id:string;revision:number;state:string;selected:number|null;result:GroupOutcome|null;ordinal:number;commands:TaskCommand[];live:boolean;delivered:boolean}>(`SELECT c.*,o.ordinal,o.commands,c.expires_at>clock_timestamp() AS live,
+  const active=kind==='ready'&&await activeTurnSource(tx,event);
+  const [choice]=active?await tx.query<{id:string;turn_id:string;revision:number;state:string;selected:number|null;result:GroupOutcome|null;ordinal:number;commands:TaskCommand[];live:boolean;delivered:boolean}>(`SELECT c.*,o.ordinal,o.commands,c.expires_at>clock_timestamp() AS live,
    public.verified_choice_delivery(c.id,$4,$2) AS delivered
    FROM public.pending_choices c JOIN public.pending_choice_options o ON o.user_id=c.user_id AND o.choice_id=c.id
    WHERE c.user_id=$1 AND c.conversation_id=$2 AND o.token_hash=$3 FOR UPDATE OF c`,[event.userId,event.conversationId,/^ch1\.[a-f0-9]{64}$/.test(event.payload.callbackPayload)?event.payload.callbackPayload.slice(4):'',event.payload.callbackMessageId??'']):[];
@@ -22,7 +22,7 @@ export class PostgresChoiceProcessor{
   if(choice?.delivered){
    if(['consumed','cancelled'].includes(choice.state)&&choice.selected===choice.ordinal)message=undefined;
    else if(choice.state==='pending'&&choice.live){
-    const receipt=choice.ordinal===0?null:await executeChoiceCommands(tx,event,choice.commands,'choice:'+choice.id+':'+choice.revision);
+    const receipt=choice.ordinal===0?null:await executeChoiceCommands(tx,event,choice.commands,'choice:'+choice.id+':'+choice.revision,choice.turn_id);
     const result:GroupOutcome={label:'choice',outcome:receipt?.outcome??'no_change',receipt,reasons:[]};
     message=receipt?renderResponse([result]).message.text:'Выбор отменён. Задачи не изменены.';
     await tx.query('UPDATE public.pending_choices SET state=$3,selected=$4,result=$5,receipt_id=$6 WHERE user_id=$1 AND id=$2',[event.userId,choice.id,choice.ordinal===0?'cancelled':'consumed',choice.ordinal,JSON.stringify(result),receipt?.receiptId??null]);canonical={id:choice.id,revision:choice.revision};

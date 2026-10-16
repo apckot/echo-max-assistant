@@ -24,14 +24,15 @@ export function choiceOptions(group:ResolvedGroup,context:ContextSnapshot,user:U
   const next:typeof variants=[];
   for(const previous of variants)for(const target of targets)for(const resolvedTime of times){
    const binding=target?.status==='resolved'?target.targets[0]:undefined;
-   const title=binding?(binding.snapshot??context.taskSnapshots?.find(t=>t.id===binding.id))?.title:undefined;
+   const task=binding?(binding.snapshot??context.taskSnapshots?.find(t=>t.id===binding.id)):undefined;
+   const title=action.target?.status==='choice'&&task?(task.targetDate??(task.scheduledAt?time.localDate(task.scheduledAt,task.timezone):'без даты'))+' · '+({open:'Открыта',completed:'Выполнена',cancelled:'Отменена'}[task.status])+' · '+[...task.title].slice(0,48).join(''):undefined;
    const clock=action.time.status==='choice'&&resolvedTime.status==='resolved'?resolvedTime.values.find(v=>'at' in v):undefined;
-   next.push({actions:[...previous.actions,{...action,target,time:resolvedTime}],labels:[...previous.labels,...(title?[title]:[]),...(clock&&'at' in clock?[clock.at]:[])]});
+   next.push({actions:[...previous.actions,{...action,target,time:resolvedTime}],labels:[...previous.labels,...(title?[title]:[]),...(clock&&'at' in clock?[new Intl.DateTimeFormat('ru-RU',{timeZone:context.source.timezone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(clock.at))+' UTC'+(action.time.status==='choice'?action.time.options.find(o=>o.at===clock.at)?.offset??'':'')]:[])]});
   }
   variants=next;
  }
  if(variants.length<2)return [];
- const options=variants.map(v=>{const [compiled]=compileGroups([{...group,status:'ready',actions:v.actions}],context,user,time);return {label:[...v.labels.join(' / ')].slice(0,64).join('')||'Вариант',commands:compiled?.status==='ready'?compiled.commands:[]};});
+ const options=variants.map((v,i)=>{const [compiled]=compileGroups([{...group,status:'ready',actions:v.actions}],context,user,time);return {label:[...(String(i+1)+'. '+v.labels.join(' / '))].slice(0,128).join('')||'Вариант',commands:compiled?.status==='ready'?compiled.commands:[]};});
  return options.some(o=>!o.commands.length)?[]:options;
 }
 

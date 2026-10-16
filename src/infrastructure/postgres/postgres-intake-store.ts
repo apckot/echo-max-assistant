@@ -36,7 +36,7 @@ export async function acceptMaxInbound(database: GatewayDatabase, event: Normali
   switch (event.kind) {
     case 'text': payload = { kind: 'text', text: event.text, ...reply }; break;
     case 'voice': payload = { kind: 'voice', media: event.voice, ...reply }; break;
-    case 'button': payload = { kind: 'button', callbackPayload:/^c1\.[A-Za-z0-9_-]{43}$/.test(event.callbackPayload)?'ch1.'+createHash('sha256').update(event.callbackPayload).digest('hex'):event.callbackPayload,...(event.callbackMessageId?{callbackMessageId:event.callbackMessageId}:{}), ...reply }; break;
+    case 'button': payload = { kind: 'button', callbackPayload:/^c1\.[A-Za-z0-9_-]{43}$/.test(event.callbackPayload)?'ch1.'+createHash('sha256').update(event.callbackPayload).digest('hex'):event.callbackPayload.startsWith('ch1.')?'':event.callbackPayload,...(event.callbackMessageId?{callbackMessageId:event.callbackMessageId}:{}), ...reply }; break;
     case 'lifecycle': payload = { kind: 'lifecycle', lifecycleType: event.lifecycleType === 'bot_started' ? 'started' : 'stopped' }; break;
   }
   return new IntakeService(new PostgresIntakeStore(database, {

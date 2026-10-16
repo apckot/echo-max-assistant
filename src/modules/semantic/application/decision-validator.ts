@@ -55,6 +55,7 @@ export function validateDecision(grounded:GroundedMeaning,currentSourceLabel:str
      if(target.qualifiers.status&&target.qualifiers.status!=='open'&&!targetEvidence.some(e=>({open:/открыт|активн/iu,completed:/заверш[её]н|выполн[её]н/iu,cancelled:/отмен[её]н/iu}[target.qualifiers.status!]).test(e.quote)))reasons.push('TARGET_STATUS_UNPROVEN');
     }
    }
+   if(/^(?:да|нет|ок|ага|угу|первый|первая|первое|второй|вторая|второе|третий|третья|третье|четв[её]ртый|пятый)[.!?\s]*$/iu.test(source.trim()))reasons.push('UNBOUND_REFERENCE');
    if(/ничего\s+не\s+(?:сохраня|записыва|создава)|это\s+я\s+цитирую/iu.test(withoutQuotes(source)))reasons.push('SOURCE_RETRACTED');
    for(const e of action.evidence.filter(e=>e.sourceLabel===currentSourceLabel)){const before=[...source].slice(0,e.start).join('');if((before.match(/«/gu)?.length??0)>(before.match(/»/gu)?.length??0)||(before.match(/["“”]/gu)?.length??0)%2===1)reasons.push('QUOTED_ACTION');}
    const prefix=evidence.map(e=>[...source].slice(Math.max(0,e.start-24),e.start).join('').split(/[.!?;\n]/u).at(-1)).join(' ');

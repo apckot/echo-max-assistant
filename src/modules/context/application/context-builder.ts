@@ -8,7 +8,8 @@ export class ContextBuilder {
   const source=structuredClone(input);
   if([...source.text].length>(source.kind==='transcript'?32000:16000)||Buffer.byteLength(source.text,'utf8')>(source.kind==='transcript'?128000:65536)||!source.text||!Number.isFinite(Date.parse(source.sourceAt)))throw new Error('CONTEXT_SOURCE_INVALID');
   const anchor=source.replyMessageId?await this.reader.anchor(userId,conversationId,source.replyMessageId):null;
-  if(source.replyMessageId&&!anchor)throw new Error('CONTEXT_ANCHOR_MISSING');
+  const replyChoices=source.replyMessageId&&this.reader.replyChoices?await this.reader.replyChoices(userId,conversationId,source.replyMessageId):[];
+  if(source.replyMessageId&&!anchor&&!replyChoices.length)throw new Error('CONTEXT_ANCHOR_MISSING');
   const ctx={userId,capability:'task_read' as const,timezone:source.timezone};
   const page=await this.tasks.list(ctx,{view:'all',limit:50});if('error' in page)throw new Error('CONTEXT_TASKS_UNAVAILABLE');
   const selected=[...page.items];
@@ -22,10 +23,11 @@ export class ContextBuilder {
   const anchors=anchor?[anchor]:[];
   const projected=anchors.map(a=>({label:a.label,kind:a.kind,candidateLabels:a.tasks.map(t=>Object.keys(bindings).find(k=>bindings[k]!.id===t.id)!)}));
   if(projected.some(a=>a.candidateLabels.some(l=>!l)))throw new Error('CONTEXT_ANCHOR_BUDGET');
-  const auxiliary={candidates,anchors:projected,history,pendingChoices:[]};
+  const pendingChoices=this.reader.pending?await this.reader.pending(userId,conversationId):[];
+  const auxiliary={candidates,anchors:projected,history,pendingChoices};
   // UTF-8 bytes bound token count conservatively; no model tokenizer or source truncation.
   if(Buffer.byteLength(JSON.stringify(auxiliary),'utf8')>6000||Buffer.byteLength(JSON.stringify({...auxiliary,...source}),'utf8')>24000)throw new Error('CONTEXT_BUDGET');
   if(Buffer.byteLength(JSON.stringify(selected),'utf8')>200000)throw new Error('CONTEXT_BUDGET');
-  return freeze({taskSnapshots:selected,source,provider:{text:source.text,sourceLabel:source.sourceLabel,sourceAt:source.sourceAt,timezone:source.timezone,candidates,anchors:projected,history,pendingChoices:[]},bindings,anchors});
+  return freeze({...(replyChoices.length?{replyHasChoices:true}:{}),...(replyChoices.length===1?{replyChoice:replyChoices[0]!}:{}),taskSnapshots:selected,source,provider:{text:source.text,sourceLabel:source.sourceLabel,sourceAt:source.sourceAt,timezone:source.timezone,candidates,anchors:projected,history,pendingChoices},bindings,anchors});
  }
 }

@@ -17,5 +17,6 @@ test('gateway persists callback token digest and dedicated source message, never
  const f=await choiceFixture(),db=createDatabase({gateway:f.gateway.options.connectionString});try{
  const token=f.tokens.encode(f.group.choice!.options[1]!.ref);const result=await acceptMaxInbound(db,{status:'normalized',kind:'button',providerUserId:'301',providerChatId:f.input.chat,providerEventKey:'callback:synthetic-hash-ingress',occurredAt:'2',callbackPayload:token,callbackMessageId:'synthetic-choice-message'},'b'.repeat(64));
  const payload=(await f.migrator.query('SELECT payload FROM inbound_events WHERE id=$1',[result.inboundEventId])).rows[0].payload;expect(payload).toEqual({kind:'button',callbackPayload:'ch1.'+f.tokens.hash(token),callbackMessageId:'synthetic-choice-message'});expect(JSON.stringify(payload)).not.toContain(token);
+ const forged=await acceptMaxInbound(db,{status:'normalized',kind:'button',providerUserId:'301',providerChatId:f.input.chat,providerEventKey:'callback:synthetic-wire-hash-forgery',occurredAt:'3',callbackPayload:'ch1.'+f.tokens.hash(token),callbackMessageId:'synthetic-choice-message'},'c'.repeat(64));expect((await f.migrator.query('SELECT payload FROM inbound_events WHERE id=$1',[forged.inboundEventId])).rows[0].payload.callbackPayload).toBe('');
  }finally{await db.close();await f.close();}
 },120000);

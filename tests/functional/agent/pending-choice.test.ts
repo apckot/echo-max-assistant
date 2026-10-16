@@ -14,7 +14,7 @@ test('C034 retains dated finite alternatives and versions; new independent text 
  const bindings=tasks.map(t=>({id:t.id,version:t.version,snapshot:t}));
  const group={...choice,actions:choice.actions.map(a=>({...a,target:{status:'choice' as const,options:bindings}}))};
  const input=await f.admit(),staged=await f.coordinator().run(input.lease);if(staged.status!=='accepted')throw Error('stage');
- const options=choiceOptions(group,{...staged.ticket.plan!.context,taskSnapshots:tasks},f.a,f.time);expect(options).toHaveLength(2);expect(options.map(o=>o.commands[0])).toEqual(tasks.map(t=>({kind:'update',target:{taskId:t.id},expectedVersion:1,patch:{targetDate:'2026-09-12'}})));
+ const options=choiceOptions(group,{...staged.ticket.plan!.context,taskSnapshots:tasks},f.a,f.time);expect(options).toHaveLength(2);expect(options[0]!.label).toContain('без даты');expect(options[0]!.label).toContain('Открыта');expect(options[0]!.label).toMatch(/^1\./);expect(options.map(o=>o.commands[0])).toEqual(tasks.map(t=>({kind:'update',target:{taskId:t.id},expectedVersion:1,patch:{targetDate:'2026-09-12'}})));
  const tokens=new ChoiceTokens([{version:1,key:syntheticKey}]),store=new PostgresPendingChoices(tokens);
  const saved=await f.authority.guarded(staged.ticket,tx=>store.saveWith(tx,staged.ticket.event,staged.ticket.turnId,'g2',options));
  expect(saved.options).toHaveLength(3);expect(JSON.stringify(saved)).not.toContain('c1.');

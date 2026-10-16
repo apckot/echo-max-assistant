@@ -1,7 +1,7 @@
 import type {TargetBasis} from '../domain/meaning-decision.js';
 import type {DeliveredAnchor,TaskBinding} from '../../context/application/context-pack.js';
 export type TargetResolution={readonly status:'resolved';readonly targets:readonly TaskBinding[]}|{readonly status:'choice';readonly options:readonly TaskBinding[]}|{readonly status:'not_found'|'narrow'|'budget'|'created';readonly actionLabel?:string};
-export interface TargetSnapshot {readonly bindings:Readonly<Record<string,TaskBinding>>;readonly anchors:readonly DeliveredAnchor[];readonly source?:{readonly sourceLabel:string;readonly text?:string};readonly provider?:{readonly sourceLabel?:string;readonly text?:string;readonly candidates:readonly {readonly label:string;readonly title:string}[]}}
+export interface TargetSnapshot {readonly replyHasChoices?:boolean;readonly bindings:Readonly<Record<string,TaskBinding>>;readonly anchors:readonly DeliveredAnchor[];readonly source?:{readonly sourceLabel:string;readonly text?:string};readonly provider?:{readonly sourceLabel?:string;readonly text?:string;readonly candidates:readonly {readonly label:string;readonly title:string}[]}}
 export type TargetSearch=(title:string,qualifiers:{date:string|null;status:'open'|'completed'|'cancelled'|null},limit:number)=>Promise<readonly TaskBinding[]>;
 /** A resolver is scoped to one turn; its search budget cannot be reset between groups. */
 export class TargetResolver {
@@ -20,13 +20,13 @@ export class TargetResolver {
    const word=/[\p{L}\p{M}\p{N}_]/u;
    const pronoun=!!points&&!!sourceLabel&&target.evidence.some(e=>e.sourceLabel===sourceLabel&&/^(?:е[её]|его|их|эту|этот|эта|эти)$/iu.test(e.quote)&&points.slice(e.start,e.end).join('')===e.quote&&!word.test(points[e.start-1]??'')&&!word.test(points[e.end]??''));
    const anchors=this.snapshot.anchors;
-   if(!pronoun||anchors.length!==1||anchors[0]!.kind!=='reply'||anchors[0]!.tasks.length!==1)return {status:'not_found'};
+   if(this.snapshot.replyHasChoices||!pronoun||anchors.length!==1||anchors[0]!.kind!=='reply'||anchors[0]!.tasks.length!==1)return {status:'not_found'};
    const anchored=anchors[0]!.tasks[0]!;
    return anchored.id===binding.id?{status:'resolved',targets:[anchored]}:{status:'not_found'};
   }
   if(target.kind==='reply'||target.kind==='list_index'){
    const anchor=this.snapshot.anchors.find(a=>a.label===target.anchorLabel);if(!anchor)return {status:'not_found'};
-   if(target.kind==='reply')return anchor.kind==='reply'&&anchor.tasks.length===1?{status:'resolved',targets:anchor.tasks}:{status:'not_found'};
+   if(target.kind==='reply')return !this.snapshot.replyHasChoices&&anchor.kind==='reply'&&anchor.tasks.length===1?{status:'resolved',targets:anchor.tasks}:{status:'not_found'};
    if(anchor.kind!=='list')return {status:'not_found'};
    const tasks=target.indices.map(i=>anchor.tasks[i-1]);return tasks.every((t):t is TaskBinding=>!!t)?{status:'resolved',targets:tasks}:{status:'not_found'};
   }

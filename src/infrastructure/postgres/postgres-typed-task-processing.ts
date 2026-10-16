@@ -1,3 +1,4 @@
+import {activeTurnSource} from './agent/turn-claim.js';
 import type {ProcessingContinuation} from './postgres-atomic-processing.js';
 import type {DbTx,Database} from './database.js';
 import type {InboundEvent} from '../../modules/intake/domain/inbound-event.js';
@@ -34,7 +35,8 @@ export class PostgresAgentTaskProcessing implements GroupExecutor {
    const group=accepted?.plan.groups[index];if(!group)throw Error('GROUP_NOT_ACCEPTED');const label=group.labels.join(':');
    const [previous]=await tx.query<{result:GroupOutcome}>('SELECT result FROM public.turn_groups WHERE user_id=$1 AND turn_id=$2 AND label=$3',[event.userId,ticket.turnId,label]);if(previous)return previous.result;
    let outcome:GroupOutcome;
-   if(group.status==='choice'&&this.choices){
+   if(!await activeTurnSource(tx,event))outcome={label,outcome:'blocked',receipt:null,reasons:['CONVERSATION_STOPPED']};
+   else if(group.status==='choice'&&this.choices){
     const options=choiceOptions(group,accepted!.plan.context,event.userId,new IanaTimeResolver());
     outcome=options.length?{label,outcome:'choice',receipt:null,reasons:group.reasons,choice:await this.choices.saveWith(tx,event,ticket.turnId,label,options)}:{label,outcome:'blocked',receipt:null,reasons:['CHOICE_UNREPRESENTABLE']};
    }else if(group.status!=='ready')outcome={label,outcome:group.status==='choice'?'choice':'blocked',receipt:null,reasons:group.reasons};
@@ -79,8 +81,8 @@ async function readAgentQueries(tx:DbTx,event:InboundEvent,plan:AcceptedPlan,lab
 }
 
 import {choiceOptions} from '../../modules/agent/application/choice-executor.js';
-export async function executeChoiceCommands(tx:DbTx,event:InboundEvent,commands:readonly import('../../modules/tasks/domain/commands.js').TaskCommand[],effectKey:string){
+export async function executeChoiceCommands(tx:DbTx,event:InboundEvent,commands:readonly import('../../modules/tasks/domain/commands.js').TaskCommand[],effectKey:string,assistantTurnId:string){
  const intents=commands.map(c=>({kind:c.kind,binding:c.kind==='create'?{created:c.localId}:c.target,affirmative:true,asserted:true,ownerAuthored:true,quoted:false}));
- const context=ownerTaskContext(event.userId,{kind:'turn',turnId:event.id},event.occurredAt.toISOString(),event.timezoneSnapshot,intents);
- const result=await new TaskCommands(new PostgresBoundTaskSessionRunner(tx,event),new IanaTimeResolver()).execute(context,{contractVersion:1,effectKey,commands});if('error' in result)throw Error('CHOICE_TASK_ENVELOPE');return result.receipt;
+ const context=ownerTaskContext(event.userId,{kind:'turn',turnId:assistantTurnId},event.occurredAt.toISOString(),event.timezoneSnapshot,intents);
+ const result=await new TaskCommands(new PostgresBoundTaskSessionRunner(tx,event,assistantTurnId),new IanaTimeResolver()).execute(context,{contractVersion:1,effectKey,commands});if('error' in result)throw Error('CHOICE_TASK_ENVELOPE');return result.receipt;
 }

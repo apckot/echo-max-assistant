@@ -8,6 +8,7 @@ import type {InboundEvent} from '../../../modules/intake/domain/inbound-event.js
 import {TurnStore} from './turn-store.js';
 import {sealSourceMap} from '../privacy/token-map.js';
 export const sourceDigest=(event:InboundEvent)=>createHash('sha256').update(JSON.stringify([event.rawSha256,event.occurredAt.toISOString(),event.timezoneSnapshot,event.payload])).digest('hex');
+export async function activeTurnSource(tx:DbTx,event:InboundEvent){const [row]=await tx.query<{active:boolean}>("SELECT state='active' AND $3::bigint>delivery_cancelled_through_sequence AS active FROM public.conversations WHERE user_id=$1 AND id=$2",[event.userId,event.conversationId,event.sequence.toString()]);return row?.active===true;}
 export class PostgresTurnAuthority implements TurnAuthority {
  readonly ordered:PostgresOrderedHead;
  constructor(readonly database:Database,private readonly turns:TurnStore,private readonly mapKey:Buffer){this.ordered=new PostgresOrderedHead(new PostgresFencedConversation(database));}
@@ -22,7 +23,8 @@ export class PostgresTurnAuthority implements TurnAuthority {
    const [run]=await tx.query<{run_id:string;phase:TurnTicket['phase'];source_digest:string;profile_digest:string;plan:AcceptedPlan|null}>('SELECT r.*,d.plan FROM public.agent_runs r LEFT JOIN public.accepted_decisions d USING(user_id,turn_id) WHERE r.user_id=$1 AND r.turn_id=$2 FOR UPDATE OF r',[event.userId,turn.turnId]);
    if(!run||run.source_digest!==sourceDigest(event)||run.profile_digest!==profileDigest&&!['accepted','failed'].includes(run.phase))throw Error('AGENT_SOURCE_PROFILE_CHANGED');
    // A prior dispatch without durable acceptance is uncertain, even if its lease was still live.
-   const phase=run.phase==='started'?'failed':run.phase;
+   const active=await activeTurnSource(tx,event);
+   const phase=run.phase==='started'||!active&&run.phase==='claimed'?'failed':run.phase;
    await tx.query("UPDATE public.agent_runs SET generation=$3,phase=$4,failure_code=CASE WHEN phase='started' THEN 'provider_uncertain' ELSE failure_code END WHERE user_id=$1 AND turn_id=$2",[event.userId,turn.turnId,lease.leaseGeneration.toString(),phase]);
    return {value:{turnId:turn.turnId,runId:run.run_id,event,lease,sourceDigest:run.source_digest,profileDigest:run.profile_digest,phase,plan:run.plan},disposition:{kind:'keep' as const}};
   });return result.kind==='actionable'?result.value:null;
@@ -37,10 +39,12 @@ export class PostgresTurnAuthority implements TurnAuthority {
   },{id:ticket.event.id,sequence:ticket.event.sequence});if(result.kind!=='actionable')throw Error('AGENT_HEAD_LOST');return result.value;
  }
  async start(ticket:TurnTicket,context:unknown,sourceMap:unknown){await this.guarded(ticket,async tx=>{
+  if(!await activeTurnSource(tx,ticket.event))throw Error('AGENT_SOURCE_STOPPED');
   const rows=await tx.query("UPDATE public.agent_runs SET phase='started',prepared_context=$3 WHERE user_id=$1 AND turn_id=$2 AND phase='claimed' RETURNING run_id",[ticket.event.userId,ticket.turnId,JSON.stringify(context)]);if(rows.length!==1)throw Error('AGENT_DISPATCH_ALREADY_STARTED');
   const expires=Date.now()+30*60000;await tx.query('INSERT INTO public.run_token_maps(user_id,run_id,ciphertext,expires_at) VALUES($1,$2,$3,$4)',[ticket.event.userId,ticket.runId,JSON.stringify(sealSourceMap(sourceMap,this.mapKey,expires)),new Date(expires)]);
  });}
  async accept(ticket:TurnTicket,plan:AcceptedPlan){await this.guarded(ticket,async tx=>{
+  if(!await activeTurnSource(tx,ticket.event))throw Error('AGENT_SOURCE_STOPPED');
   const changed=await tx.query("UPDATE public.agent_runs SET phase='accepted' WHERE user_id=$1 AND turn_id=$2 AND phase='started' RETURNING run_id",[ticket.event.userId,ticket.turnId]);if(changed.length!==1)throw Error('AGENT_STAGE_CLOSED');
   await tx.query('INSERT INTO public.accepted_decisions(user_id,turn_id,run_id,plan) VALUES($1,$2,$3,$4)',[ticket.event.userId,ticket.turnId,ticket.runId,JSON.stringify(plan)]);
   await tx.query('DELETE FROM public.run_token_maps WHERE user_id=$1 AND run_id=$2',[ticket.event.userId,ticket.runId]);

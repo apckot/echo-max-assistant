@@ -27,6 +27,8 @@ export class PostgresTurnFinalizer {
     if(rendered.tasks.length>0)await new PostgresContextReader(this.authority.database).saveAnchorWith(tx,event.userId,event.conversationId,out!.id,rendered.anchorKind,rendered.tasks);
    }
    await tx.query("INSERT INTO public.turn_response_intents(user_id,turn_id,state) SELECT $1,$2,'finalized' WHERE EXISTS(SELECT 1 FROM public.agent_turn_content WHERE user_id=$1 AND turn_id=$2) ON CONFLICT(user_id,turn_id) DO UPDATE SET state='finalized'",[event.userId,ticket.turnId]);
+   const replaced=run?.plan?.context.replyChoice;
+   if(replaced&&groups.some(g=>g.choice||g.receipt&&['applied','no_change'].includes(g.receipt.outcome)))await tx.query("UPDATE public.pending_choices SET state='superseded' WHERE user_id=$1 AND conversation_id=$2 AND id=$3 AND revision=$4 AND state='pending'",[event.userId,event.conversationId,replaced.id,replaced.revision]);
    await tx.query("UPDATE public.agent_turn_keys SET completed=true WHERE user_id=$1 AND turn_id=$2",[event.userId,ticket.turnId]);
    await tx.query('UPDATE public.agent_turn_content SET finalized_at=COALESCE(finalized_at,clock_timestamp()) WHERE user_id=$1 AND turn_id=$2',[event.userId,ticket.turnId]);
    await tx.query("UPDATE public.inbound_events SET processing_status=$3,failure_code=$4,processed_at=clock_timestamp(),updated_at=clock_timestamp() WHERE user_id=$1 AND id=$2",[event.userId,event.id,duplicate?'ignored':run?.phase==='failed'?'failed':'applied',run?.phase==='failed'?'processing_error':null]);
