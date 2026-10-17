@@ -1,6 +1,6 @@
 # Stage3 final acceptance — external checks NOT authorised / NOT RUN
 
-Local final-eval preparation is currently INCOMPLETE: full typed78R fixtures and application observation collector wiring are not yet supplied. Passing local gates proves the current code candidate only; codeReady and Stage3 completion remain false until this local prerequisite is closed. Code readiness and external acceptance are separate. Continue66–70 locally; do not announce Stage3 complete while any external row is open. Reuse [callback procedure](stage-3-canary.md), [provider admission](stage-3-provider-admission.md), [audio policy](stage-3-audio-policy.md), [backup/restore](backup-restore.md). No new bot/key/server is requested automatically.
+Local public R preparation is complete: all78 typed synthetic fixtures and the collector observing actual application/Tasks/history/receipts/outbox are wired; all78 trusted-plan mechanisms pass. This is not model-quality evidence. The unchanged1000tenant/5000Task/160event fake orchestration profile passed once after the owner-authorised repair. Final clean-clone gate PASS115files/849tests; final secret scans pending; current evidence is in [local preparation](../progress/stage-3-local-preparation.md). Code readiness and external Stage3 acceptance remain separate. Reuse [callback procedure](stage-3-canary.md), [provider admission](stage-3-provider-admission.md), [audio policy](stage-3-audio-policy.md), [backup/restore](backup-restore.md). No bot/key/server access is implied.
 
 ## One concrete external authorisation request (prepared at start of66)
 
@@ -24,7 +24,7 @@ This is one prepared request, not current permission. Missing bot/recipient conf
 
 |Requirements|Local evidence|External remainder|
 |---|---|---|
-|S01–S06 meaning/evidence/temporal/independent groups|semantic contracts/action-boundary/temporal-intent, saved probe3 application replay, mixed-groups and conversation E2E|Full frozen78R live pass; typed fixtures beyond12 must be completed before dispatch|
+|S01–S06 meaning/evidence/temporal/independent groups|semantic contracts/action-boundary/temporal-intent, saved probe3 application replay, mixed-groups and conversation E2E|Full frozen78R live pass; all78 local typed mechanism fixtures now exist|
 |S07–S08 delivered references/new topic|C020 anchor, choice E2E, callback confirmation anchor|Live conversational MAX proof|
 |S09–S10 minimisation/refusal|token-map, egress-contract, provider FakeHTTP; fake fields cannot approve a raw context|Operator route/privacy admission; no exhaustivePII claim|
 |S11–S13 audio boundary/transcript|audio policy/media boundary, FakeHTTP STT/voice E2E, saved transcript restart|Native isolated decoder qualification, permitted assets and actual STT quality|
@@ -34,8 +34,8 @@ This is one prepared request, not current permission. Missing bot/recipient conf
 |S20–S21 quality|collector negative tests and historical12-case feasibility only|Independent unused H20, full real R and permitted audio evaluation|
 |S23–S24 real MAX/opt-in|Default-off runtime, one path, strict callbacks, prepared runbook|Explicit bot/server/recipient, update/reopen permission and real text/voice/callback checks|
 
-Local automatic PASS will establish a tested code candidate, not that the real eval package or Stage3 release is complete. Missing local typed R materialisation must be resolved as local preparation, not delegated to the owner as a requirement to write regression oracles. Independent H and audio permissions/assets do need separate provenance and consent.
+Local automatic PASS will establish a tested code candidate, not that independent/live/audio prerequisites or the Stage3 release are complete. Local typed R materialisation is complete and remains developer-owned; it is never delegated to the owner as a request to author regression oracles. Independent H and audio permissions/assets do need separate provenance and consent.
 
-## Current checkpoint70 result,2026-10-17
+## Current local completion cycle,2026-10-17
 
-Not ready: local typed78R/application collector preparation is incomplete and the one full fake load timed out without final metrics. One clean-clone suite plus narrow timeout closure yields passing evidence for838distinct tests; the original whole-run exit remains1. History/tree secret scans exit1 on the same authored synthetic privacy-refusal fixture; no real credential exposure was established and no allowlist was added. See [actual checkpoint evidence](../progress/stage-3-checkpoint-70.md). CodeReady=false; external approval alone cannot close these local gaps. No second full gate/load is requested by executing this runbook automatically; retain failures and agree any additional bounded cycle explicitly.
+The historical failed gate/load/scans are preserved in [checkpoint70](../progress/stage-3-checkpoint-70.md). Owner separately authorised the local67/70 completion cycle. Public78R materialisation and application collector are complete; full fake load retry PASS160/160,143fake semantic/40fake STT/17local queries,0errors,cleanup complete. [Load evidence](../progress/stage-3-final-load-evidence.json). One final clean-clone gate PASS115files/849tests; final history/tree scans pending; no duplicate functional/review-focus set and no external call. Stage3 remains incomplete; native codec, genuine callback/duplicate, independent H20, permitted audio assets/routes and live acceptance are open.

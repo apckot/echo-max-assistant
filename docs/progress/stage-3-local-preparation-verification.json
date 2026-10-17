@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-17",
+  "codeSha": "b1d30d6deca1e0743a6b4619df42ca06081a5db4",
+  "scope": "owner_authorised_unfinished_67_70_local_completion_only",
+  "codeReady": false,
+  "pendingLocal": [
+    "final_secret_scan"
+  ],
+  "stageComplete": false,
+  "review": {
+    "reviewer": "/root/checkpoint70_review",
+    "kind": "same_reviewer_scoped_delta_and_findings_confirmation",
+    "findings": 4,
+    "closed": 4,
+    "confirmedCommit": "b1d30d6deca1e0743a6b4619df42ca06081a5db4",
+    "newGeneralAudit": false
+  },
+  "load": {
+    "exit": 0,
+    "sameProfile": true,
+    "oneAuthorisedRetry": true,
+    "evidence": "stage-3-final-load-evidence.json",
+    "journal": "stage-3-final-load-phases.jsonl"
+  },
+  "gate": {
+    "exit": 0,
+    "cleanClone": "/tmp/echo-max-checkpoint70-final.gA2lkj/repo",
+    "node": "22.23.3",
+    "frozenSha": "b1d30d6deca1e0743a6b4619df42ca06081a5db4",
+    "install": true,
+    "typecheck": true,
+    "architecture": true,
+    "build": true,
+    "imageBuilds": 1,
+    "npmTestRuns": 1,
+    "testFiles": 115,
+    "tests": 849,
+    "passed": 849,
+    "failed": 0,
+    "pending": 0,
+    "testDurationSeconds": 277.31,
+    "separateFunctionalRuns": 0,
+    "separateReviewFocusRuns": 0,
+    "separateRestoreRuns": 0,
+    "workingTreeCleanAtStartAndEnd": true,
+    "diffCheck": true,
+    "todoScan": true,
+    "logSha256": "fb9e0ca9827549823c221511ab52477dacc6ed30752d744338e7ebd8851bc6a9",
+    "jsonReportSha256": "0c0a231ab4d9690dbc97ab75d5fc6f571fc9504d95c524382b23911d61b64fd8"
+  },
+  "rMechanism": {
+    "materialized": 78,
+    "observed": 78,
+    "exact": 78,
+    "safety": 78,
+    "fakeOnly": true,
+    "modelEligible": 0,
+    "qualityQualified": false,
+    "report": "stage-3-final-r-mechanism.json"
+  },
+  "restore": {
+    "report": "stage-3-final-restore.json",
+    "rpoMs": 0,
+    "rtoMs": 11174,
+    "semanticCalls": 0,
+    "sttCalls": 0,
+    "secondEffects": 0,
+    "productionStorageQualified": false
+  },
+  "external": {
+    "semanticCalls": 0,
+    "sttCalls": 0,
+    "maxCalls": 0,
+    "realRecordings": 0,
+    "serverChanges": 0,
+    "deployments": 0
+  },
+  "openExternal": [
+    "genuine_MAX_callback_and_exact_duplicate",
+    "native_sandbox_codec_qualification_before_voice",
+    "independent_unused_H001_H020",
+    "permitted_A01_A30_assets_manifests_consent",
+    "audio_route_and_hard_billing_bound",
+    "full_live_R_H_audio_quality_latency",
+    "real_MAX_text_voice_acceptance"
+  ],
+  "stage4Started": false,
+  "untrackedDiagnosticSha256": "d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade",
+  "evidenceDirectory": "/tmp/echo-stage3-70-local",
+  "historyPreserved": "stage-3-checkpoint-70-verification.json"
+}

@@ -162,7 +162,7 @@ Review focus: (1) отрицание в цитируемом title против 
 - [x] Одно накопительное review и один clean-clone gate (evidence: docs/progress/stage-3-checkpoint-65.md).
 - [ ] Отдельно разрешённый TEST MAX canary: настоящий пользовательский callback, private exact webhook replay, sameoption/newcallbackId и stale choice; count Task events/receipts/outbox/confirmed reply, cleanup.
 - [x] Process-local fixed FakeSemantic допустим только в изолированном TEST bot profile для создания choices; MAX/DB/Task/delivery настоящие. Public test injection отсутствует. Это proof callback, не OpenAI quality. Без разрешения bot/endpoint/recipient не запускать, оставить exception/partial checkpoint и остановиться. Deploy не разрешён автоматически.
-- [x] Publish evidence/push/SHA после обязательных gates, остановка перед66. Не повторять callback-canary в70 при неизменном callback contract.
+- [x] Publish evidence/push/SHA после обязательных gates, остановка перед66. Успешный реальный callback-canary можно переиспользовать при неизменном contract; сейчас он не выполнен и остаётся открытым условием.
 
 ## Блок66–70 — финальная проверка OpenAI Stage3
 
@@ -177,7 +177,8 @@ Review focus: (1) отрицание в цитируемом title против 
 **Файлы:** tests/functional/privacy/egress-contract.test.ts; tests/semantic/stage3-eval.config.ts; tests/unit/semantic/qualification-report.test.ts; docs/runbooks/stage-3-provider-admission.md.
 **Результат:** frozen profiles/cost estimates; регрессии, независимый контроль и audio quality оцениваются раздельно.
 - [x] RED S09/S10/S20/S21: C071–C078, quote/title negatives, forgedTOKEN, raw identifiers in candidates; no claim exhaustivePII detection, deniedroute0effect. Экспериментальные fixtures synthetic; scope flags не разрешают реальные данные.
-- [ ] Закрепить model/prompt/API/privacy/profile hashes, independent H provenance/non-tuning evidence, разрешённые audio manifests; requested final budget≤150semantic dispatches/≤30STT, monetary ceiling фиксируется и согласуется до запуска70. Если H уже использовался для настройки — новая независимая выборка, не переименование.
+- [x] Локальная часть67: все78R материализованы, application collector читает реальные Tasks/history/receipts/outbox; модель/prompt/schema/privacy/runtime/oracles/runner/R hashes замораживаются в gate. Fake/typed механизм исключён из model-quality evidence.
+- [ ] Внешняя часть67: independent H20 provenance/non-tuning, разрешённые audio manifests/routes, native codec, billing cap и отдельное разрешение. Запрос125semantic/27STT/USD10; если H использовался для настройки — новая независимая выборка, не переименование.
 - [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/privacy/egress-contract.test.ts tests/unit/semantic/qualification-report.test.ts`; static; commit `test(privacy): freeze measurable OpenAI acceptance boundaries`.
 
 ### 68. Bounded queues и нагрузочный harness
@@ -198,15 +199,17 @@ Review focus: (1) отрицание в цитируемом title против 
 **Файлы:** docs/progress/stage-3-checkpoint-70.md; docs/runbooks/stage-3-acceptance.md; targeted acceptance fixtures при необходимости.
 **Результат:** S01–S24 evidence, real OpenAI quality и latency, audio consent/STT evidence, truthful ready/blocked status.
 - [x] Целевая final contract проверка/static; commit `test(stage3): complete OpenAI task acceptance contracts`.
-- [ ] Одно cumulative review66–70 плюс согласованность S01–S24 всего этапа; fixes targeted, freezecode/profiles. Один clean-clone full gate с functional/e2e/image/physicalrestore внутри; не отдельный functional/review-focus/restore rerun.
-- [ ] Один FakeAI/FakeSTT load profile из68; не повторять Stage2 A24/foundation load. Prep estimate и stop threshold до начала; дополнительных полных прогона нет.
-- [ ] Только после отдельного согласования final budget/data/audio routes: один проход R-регрессий и один H001–H020 контроль, один audio gate по30 сценариям записей/отказов OpenAI STT→Privacy→semantic→Tasks.≤150semantic/≤30STT dispatches, утверждённый money ceiling; никаких best-of-three/скрытых retries. Latency/quality/calls/errors/cost публиковать раздельно по наборам.
+- [x] Одно cumulative review66–70; тот же reviewer проверил согласованные67/70 доработки и подтвердил закрытие4findings. Один отдельно разрешённый финальный clean-clone gate PASS115files/849tests с functional/e2e/image/physicalrestore внутри; отдельные functional/review-focus/restore не запускались. Code freeze b1d30d6; финальные secret scans ещё ожидаются.
+- [x] Один FakeAI/FakeSTT load profile из68: исходная попытка завершилась тайм-аутом при sleep269s; после диагностики/phase evidence/smoke — один отдельно разрешённый повтор PASS160/160, исходные профиль и240s сохранены. Stage2 A24/foundation load не повторялись.
+- [ ] Только после отдельного согласования final budget/data/audio routes: один проход R-регрессий и один H001–H020 контроль, один audio gate по30 сценариям записей/отказов OpenAI STT→Privacy→semantic→Tasks.125semantic/27STT maximum dispatches, отдельно утверждённый USD10 ceiling с доказанным ограничением расходов; никаких best-of-three/скрытых retries. Latency/quality/calls/errors/cost публиковать раздельно по наборам.
 - [ ] S20: safety100%, full exact≥90% overall и create/update/lifecycle/query/multi-action, precision≥98%/recall≥95%; контроль отдельно safety100%/exact≥90%, small sample uncertainty явно. S21: cleanWER≤15%, critical-span≥98%, unsafe critical effect0; deniedpolicy recordings не входят в WER/semantic denominator, refusal отдельно.
-- [ ] Реальный MAX text/voice/create→update→complete/restart/delivery требует разрешённого TEST endpoint/bot/recipient и audio. Closed callback65 evidence использовать без повторного canary, если contract не изменён; иначе согласовать affected callback check. Deployment/realuserdata этим планом не разрешены.
+- [ ] Реальный MAX text/voice/create→update→complete/restart/delivery требует разрешённого TEST endpoint/bot/recipient и audio. Callback65 остаётся открытым: нужен отдельно разрешённый реальный callback-canary и его точный повтор; synthetic checks это условие не закрывают. Deployment/realuserdata этим планом не разрешены.
 - [x] Итоговый отчёт:фактические checks/SHA/profiles/sample counts/limitations, unresolved external evidence явным blocker; docs-only publication/push/local=remoteSHA. **Остановиться для принятия Stage3. Stage4/сервер не начинать.**
 
 
-Checkpoint70 status2026-10-17: [actual report](../../progress/stage-3-checkpoint-70.md). One full gate attempted (833PASS/1timeout/4unexecuted), narrow closure5PASS without code change;838distinct tests with passing evidence. One fake load timed out, no successful metrics or repeat. Full typed78R/application collector remains unfinished LOCAL preparation; codeReady=false. History/tree scans each flag the same synthetic refusal test, not green zero-finding scans. Stage3 incomplete; Stage4 not started.
+Historical checkpoint70 status before separately authorised completion cycle2026-10-17: [actual report](../../progress/stage-3-checkpoint-70.md). One full gate attempted (833PASS/1timeout/4unexecuted), narrow closure5PASS without code change;838distinct tests with passing evidence. One fake load timed out, no successful metrics or repeat. Full typed78R/application collector remains unfinished LOCAL preparation; codeReady=false. History/tree scans each flag the same synthetic refusal test, not green zero-finding scans. Stage3 incomplete; Stage4 not started.
+
+Current local67/70 completion: [local preparation](../../progress/stage-3-local-preparation.md), [unchanged full load PASS](../../progress/stage-3-final-load-evidence.json). All78R mechanisms materialised and wired; one scoped confirmation by the same reviewer closed four harness findings. Final clean-clone gate PASS115files/849tests; final secret scans pending. External Stage3 acceptance and Stage4 remain blocked.
 
 ## Карта покрытия
 

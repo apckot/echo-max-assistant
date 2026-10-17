@@ -1,0 +1,30 @@
+{
+  "model": "gpt-4.1-2025-04-14",
+  "sttModel": "gpt-4o-mini-transcribe-2025-12-15",
+  "api": "responses/v1 + audio/transcriptions/v1",
+  "hashes": {
+    "materializedR": "c58d0060a4c550af85c9641c0aec93afe25a28b2d7f1ba370e7723d5be5984f0",
+    "applicationCollector": "429c35d299c7d37be71deff71760c9986ea10cfe63a5696075e7b6504acb6ed4",
+    "sourceTree": "e8397fc3eb498545b6ae81a1847c8eb6e6b5629060116f6e926532f46d6bedd8",
+    "prompt": "00981f8e03598b474ad6da89f5b77b00755f0a12595345760326b130981d4312",
+    "schema": "7e1ebadcf62cbcc5e92cc6512435f310a475a9155b47bba977016071f07bcb9a",
+    "inventory": "e979556217af23d2ef4a5b1cad1e49f29c6bd9835eb22526d0fd3820ec9e7e62",
+    "privacy": "53d79d574aefce0c674d06c213940252e6d6eb47cd748e799f3857567eb9eb02",
+    "runtime": "5f2f180850120ccf78bf0467bc671af6be66536ec63a2698d93f3d5eef2196d9",
+    "oracles": "27bfd27600ba283980fdef306a14583b7eb581a95a9f6a546866dc23e752acf1",
+    "runner": "786f8eeda8486b077343be33b3cd31567c6e19ee1695b47b90ad15a77703fbf6"
+  },
+  "request": {
+    "semanticMax": 125,
+    "sttMax": 27,
+    "maxUsd": 10,
+    "maxInputTokens": 12000,
+    "maxOutputTokens": 2000,
+    "semanticWorstUsd": 5,
+    "audioMaxMinutes": 90,
+    "audioEstimatedUsd": 0.27,
+    "priceEvidence": "https://developers.openai.com/api/docs/pricing",
+    "checkedAt": "2026-10-16",
+    "retries": 0
+  }
+}

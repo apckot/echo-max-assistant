@@ -1,0 +1,2477 @@
+{
+  "kind": "fake_orchestration_only",
+  "codeSha": "b1d30d6deca1e0743a6b4619df42ca06081a5db4",
+  "attempt": "one_owner_authorised_retry_after_failed_original",
+  "profileChanged": false,
+  "timeoutMs": 240000,
+  "exit": 0,
+  "metrics": {
+    "kind": "fake_stage3_orchestration_load",
+    "full": true,
+    "tenants": 1000,
+    "seedTasks": 5000,
+    "operations": 160,
+    "workers": 2,
+    "aiMs": 1000,
+    "sttMs": 5000,
+    "prepMs": 29774,
+    "durationMs": 128093,
+    "calls": 143,
+    "sttCalls": 40,
+    "failures": 0,
+    "failedTurns": 0,
+    "blockedGroups": 0,
+    "localQueries": 17,
+    "counts": {
+      "processed": 160,
+      "transcripts": 40,
+      "created": 143
+    },
+    "stats": [
+      {
+        "ai": 0,
+        "stt": 0,
+        "maxAi": 3,
+        "maxStt": 2
+      },
+      {
+        "ai": 0,
+        "stt": 0,
+        "maxAi": 3,
+        "maxStt": 2
+      }
+    ],
+    "p95Ms": 20259,
+    "externalCalls": 0
+  },
+  "finalPhase": {
+    "status": "completed",
+    "phase": "cleanup",
+    "elapsedMs": 128319,
+    "maxHeartbeatGapMs": 1001,
+    "containerReady": true,
+    "transitions": [
+      {
+        "phase": "seeding",
+        "elapsedMs": 1603
+      },
+      {
+        "phase": "workers_start",
+        "elapsedMs": 29775
+      },
+      {
+        "phase": "admission",
+        "elapsedMs": 29899
+      },
+      {
+        "phase": "drain",
+        "elapsedMs": 99801
+      },
+      {
+        "phase": "completed",
+        "elapsedMs": 128093
+      },
+      {
+        "phase": "cleanup",
+        "elapsedMs": 128094
+      }
+    ],
+    "seededTenants": 1000,
+    "seededTasks": 5000,
+    "prepMs": 29774,
+    "admitted": 160,
+    "calls": 143,
+    "sttCalls": 40,
+    "completed": 160,
+    "activity": "processing",
+    "failures": 0,
+    "failedTurns": 0,
+    "blockedGroups": 0,
+    "localQueries": 17,
+    "stats": [
+      {
+        "ai": 0,
+        "stt": 0,
+        "maxAi": 3,
+        "maxStt": 2
+      },
+      {
+        "ai": 0,
+        "stt": 0,
+        "maxAi": 3,
+        "maxStt": 2
+      }
+    ],
+    "queue": [
+      {
+        "state": "ready",
+        "n": 159
+      },
+      {
+        "state": "leased",
+        "n": 1
+      }
+    ],
+    "counts": {
+      "processed": 160,
+      "transcripts": 40,
+      "created": 143
+    },
+    "cleanup": "complete"
+  },
+  "progress": [
+    {
+      "status": "running",
+      "phase": "preparation",
+      "elapsedMs": 0,
+      "maxHeartbeatGapMs": 0
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 1603,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 4162,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 100,
+      "seededTasks": 500
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 6969,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 200,
+      "seededTasks": 1000
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 9863,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 300,
+      "seededTasks": 1500
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 12724,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 400,
+      "seededTasks": 2000
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 15537,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 500,
+      "seededTasks": 2500
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 18313,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 600,
+      "seededTasks": 3000
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 21172,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 700,
+      "seededTasks": 3500
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 24063,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 800,
+      "seededTasks": 4000
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 26885,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 900,
+      "seededTasks": 4500
+    },
+    {
+      "status": "running",
+      "phase": "seeding",
+      "elapsedMs": 29690,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000
+    },
+    {
+      "status": "running",
+      "phase": "workers_start",
+      "elapsedMs": 29775,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 29899,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 38904,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 10,
+      "calls": 6,
+      "sttCalls": 3,
+      "completed": 7,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 1,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 1,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 7
+        },
+        {
+          "state": "leased",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 41903,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 12,
+      "calls": 10,
+      "sttCalls": 3,
+      "completed": 10,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 1,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 1,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 9
+        },
+        {
+          "state": "leased",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 48908,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 20,
+      "calls": 16,
+      "sttCalls": 5,
+      "completed": 17,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 2,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 1,
+          "maxAi": 1,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 16
+        },
+        {
+          "state": "leased",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 51903,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 23,
+      "calls": 18,
+      "sttCalls": 6,
+      "completed": 20,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 2,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 0,
+          "maxAi": 1,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 19
+        },
+        {
+          "state": "leased",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 58906,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 30,
+      "calls": 24,
+      "sttCalls": 8,
+      "completed": 27,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 3,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 26
+        },
+        {
+          "state": "leased",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 61905,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 33,
+      "calls": 28,
+      "sttCalls": 8,
+      "completed": 30,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 3,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 30
+        },
+        {
+          "state": "leased",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 68905,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 40,
+      "calls": 34,
+      "sttCalls": 10,
+      "completed": 37,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 4,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 36
+        },
+        {
+          "state": "leased",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 72903,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 44,
+      "calls": 37,
+      "sttCalls": 11,
+      "completed": 42,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 4,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 39
+        },
+        {
+          "state": "leased",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 78903,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 50,
+      "calls": 42,
+      "sttCalls": 13,
+      "completed": 47,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 5,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 2,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 47
+        },
+        {
+          "state": "leased",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 81908,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 53,
+      "calls": 45,
+      "sttCalls": 13,
+      "completed": 50,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 6,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 49
+        },
+        {
+          "state": "leased",
+          "n": 3
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 88904,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 60,
+      "calls": 52,
+      "sttCalls": 15,
+      "completed": 57,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 6,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 55
+        },
+        {
+          "state": "leased",
+          "n": 4
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 90402,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 66,
+      "calls": 55,
+      "sttCalls": 17,
+      "completed": 60,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 6,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 1,
+          "maxAi": 2,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 59
+        },
+        {
+          "state": "leased",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 90803,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 70,
+      "calls": 58,
+      "sttCalls": 17,
+      "completed": 60,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 6,
+      "stats": [
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 2,
+          "maxStt": 2
+        },
+        {
+          "ai": 3,
+          "stt": 1,
+          "maxAi": 3,
+          "maxStt": 1
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 59
+        },
+        {
+          "state": "leased",
+          "n": 2
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 91800,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 80,
+      "calls": 61,
+      "sttCalls": 19,
+      "completed": 66,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 7,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 63
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 92801,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 90,
+      "calls": 64,
+      "sttCalls": 19,
+      "completed": 69,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 8,
+      "stats": [
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 73
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 92900,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 91,
+      "calls": 64,
+      "sttCalls": 19,
+      "completed": 70,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 8,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 73
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 93803,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 100,
+      "calls": 66,
+      "sttCalls": 19,
+      "completed": 73,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 9,
+      "stats": [
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 83
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 94800,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 110,
+      "calls": 68,
+      "sttCalls": 19,
+      "completed": 75,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 9,
+      "stats": [
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 93
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 95801,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 120,
+      "calls": 71,
+      "sttCalls": 21,
+      "completed": 77,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 9,
+      "stats": [
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 103
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 96501,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 127,
+      "calls": 73,
+      "sttCalls": 21,
+      "completed": 80,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 9,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 1,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 113
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 96800,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 130,
+      "calls": 76,
+      "sttCalls": 22,
+      "completed": 80,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 9,
+      "stats": [
+        {
+          "ai": 3,
+          "stt": 1,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 113
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 97801,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 140,
+      "calls": 78,
+      "sttCalls": 23,
+      "completed": 85,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 9,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 123
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 98800,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 150,
+      "calls": 81,
+      "sttCalls": 23,
+      "completed": 88,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 10,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 133
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 99602,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 158,
+      "calls": 82,
+      "sttCalls": 23,
+      "completed": 90,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 10,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 143
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "admission",
+      "elapsedMs": 99800,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 82,
+      "sttCalls": 23,
+      "completed": 90,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 10,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 143
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 99801,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 82,
+      "sttCalls": 23,
+      "completed": 90,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 10,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 143
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 102968,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 92,
+      "sttCalls": 27,
+      "completed": 100,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 12,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 152
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 106969,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 102,
+      "sttCalls": 30,
+      "completed": 112,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 12,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 152
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 109975,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 110,
+      "sttCalls": 31,
+      "completed": 122,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 14,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 152
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 112979,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 119,
+      "sttCalls": 35,
+      "completed": 131,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 15,
+      "stats": [
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 153
+        },
+        {
+          "state": "leased",
+          "n": 7
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 116983,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 131,
+      "sttCalls": 38,
+      "completed": 144,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 16,
+      "stats": [
+        {
+          "ai": 1,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 2,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 152
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 118985,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 137,
+      "sttCalls": 38,
+      "completed": 151,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 17,
+      "stats": [
+        {
+          "ai": 3,
+          "stt": 1,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 2,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 152
+        },
+        {
+          "state": "leased",
+          "n": 8
+        }
+      ]
+    },
+    {
+      "status": "running",
+      "phase": "drain",
+      "elapsedMs": 128084,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 143,
+      "sttCalls": 40,
+      "completed": 160,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 17,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 159
+        },
+        {
+          "state": "leased",
+          "n": 1
+        }
+      ]
+    },
+    {
+      "status": "completed",
+      "phase": "completed",
+      "elapsedMs": 128093,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        },
+        {
+          "phase": "completed",
+          "elapsedMs": 128093
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 143,
+      "sttCalls": 40,
+      "completed": 160,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 17,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 159
+        },
+        {
+          "state": "leased",
+          "n": 1
+        }
+      ],
+      "counts": {
+        "processed": 160,
+        "transcripts": 40,
+        "created": 143
+      }
+    },
+    {
+      "status": "completed",
+      "phase": "cleanup",
+      "elapsedMs": 128094,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        },
+        {
+          "phase": "completed",
+          "elapsedMs": 128093
+        },
+        {
+          "phase": "cleanup",
+          "elapsedMs": 128094
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 143,
+      "sttCalls": 40,
+      "completed": 160,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 17,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 159
+        },
+        {
+          "state": "leased",
+          "n": 1
+        }
+      ],
+      "counts": {
+        "processed": 160,
+        "transcripts": 40,
+        "created": 143
+      },
+      "cleanup": "started"
+    },
+    {
+      "status": "completed",
+      "phase": "cleanup",
+      "elapsedMs": 128319,
+      "maxHeartbeatGapMs": 1001,
+      "containerReady": true,
+      "transitions": [
+        {
+          "phase": "seeding",
+          "elapsedMs": 1603
+        },
+        {
+          "phase": "workers_start",
+          "elapsedMs": 29775
+        },
+        {
+          "phase": "admission",
+          "elapsedMs": 29899
+        },
+        {
+          "phase": "drain",
+          "elapsedMs": 99801
+        },
+        {
+          "phase": "completed",
+          "elapsedMs": 128093
+        },
+        {
+          "phase": "cleanup",
+          "elapsedMs": 128094
+        }
+      ],
+      "seededTenants": 1000,
+      "seededTasks": 5000,
+      "prepMs": 29774,
+      "admitted": 160,
+      "calls": 143,
+      "sttCalls": 40,
+      "completed": 160,
+      "activity": "processing",
+      "failures": 0,
+      "failedTurns": 0,
+      "blockedGroups": 0,
+      "localQueries": 17,
+      "stats": [
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        },
+        {
+          "ai": 0,
+          "stt": 0,
+          "maxAi": 3,
+          "maxStt": 2
+        }
+      ],
+      "queue": [
+        {
+          "state": "ready",
+          "n": 159
+        },
+        {
+          "state": "leased",
+          "n": 1
+        }
+      ],
+      "counts": {
+        "processed": 160,
+        "transcripts": 40,
+        "created": 143
+      },
+      "cleanup": "complete"
+    }
+  ],
+  "rawJournal": {
+    "localPath": "/tmp/echo-stage3-70-local/load-phases.json.jsonl",
+    "rows": 754,
+    "sha256": "ede452b6137b39882c5676df00740565f7f0c1bbb88892bcbc02c8172aec6b51",
+    "publishedPath": "docs/progress/stage-3-final-load-phases.jsonl"
+  },
+  "externalCalls": 0
+}

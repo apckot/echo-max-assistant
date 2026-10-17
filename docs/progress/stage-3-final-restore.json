@@ -1,0 +1,31 @@
+{
+  "stage3": {
+    "expiredChoiceRetired": true,
+    "acceptedDecisionReused": true,
+    "committedGroupReused": true,
+    "transcriptReused": true,
+    "semanticCalls": 0,
+    "sttCalls": 0,
+    "secondEffects": 0,
+    "expiredChoicePreserved": true
+  },
+  "taskFixtureRestored": true,
+  "taskPostBaseWALMutationRecovered": true,
+  "taskSurvivingReceiptReplay": true,
+  "lostTaskNotReplayed": true,
+  "taskCounts": {
+    "tasks": 2,
+    "events": 3,
+    "receipts": 3
+  },
+  "postBaseAcknowledgedMarkerRecovered": true,
+  "recoverySource": "authenticated encrypted archived WAL",
+  "kind": "isolated_physical_restore",
+  "postgres": 17,
+  "authenticatedEncryption": true,
+  "pgVerifybackup": true,
+  "replayEligibleOldOutbound": 0,
+  "rpoMs": 0,
+  "rtoMs": 11174,
+  "productionStorageVerified": false
+}

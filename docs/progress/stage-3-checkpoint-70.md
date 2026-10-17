@@ -1,3 +1,5 @@
+> Historical checkpoint70 evidence is retained below. The separately authorised local67/70 completion cycle is recorded in [local preparation](stage-3-local-preparation.md); consult its final status for the current local readiness. Historical failed attempts are not relabelled as passing.
+
 # SDD ledger — plan: docs/superpowers/plans/2026-10-14-max-assistant-stage-3-understanding.md
 
 Owner accepts65 automated part and authorises66–70. One executor, separate iteration commits, targeted checks, one cumulative independent reviewer and one clean-clone gate. Base18b201a6a7996d8759c3623d05ae2b1c003d3d7c. External AI/STT/MAX/deployment/server-permission changes NOT authorised. Stage3 acceptance remains open pending real callback, native codec and final real semantic/audio evidence. Untracked diagnostic SHA256 d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade must remain unchanged.
