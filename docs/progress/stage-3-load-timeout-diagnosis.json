@@ -1,0 +1,13 @@
+{
+  "cause": "host_system_sleep_exhausted_unchanged_test_deadline",
+  "previousLoadStart": "2026-10-16T18:41:11+03:00",
+  "sleepStart": "2026-10-16T18:41:52+03:00",
+  "sleepReason": "Sleep Service Back to Sleep",
+  "reportedSleepSeconds": 269,
+  "darkWake": "2026-10-16T18:46:21+03:00",
+  "previousLoadTimeoutMs": 240000,
+  "previousTestReportedDurationMs": 308610,
+  "evidence": "pmset -g log read-only timestamp/event extraction; no power settings changed",
+  "limits": "original harness had no phase metrics, so no claim to exclude every separate pre-sleep bottleneck",
+  "nextRun": "one authorised identical profile, temporary caffeinate process assertion; same timeout, no server/OS permissions changed"
+}

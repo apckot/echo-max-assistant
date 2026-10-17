@@ -4,7 +4,7 @@ import type {taskFixture} from './task-fixture.js';
 import type {UserId} from '../../src/shared/types/identity.js';
 export const loadSeed='echo-task-domain-v1';
 export function seedId(value:string){const hex=createHash('md5').update(loadSeed+':'+value).digest('hex').split('');hex[12]='4';hex[16]='8';const s=hex.join('');return `${s.slice(0,8)}-${s.slice(8,12)}-${s.slice(12,16)}-${s.slice(16,20)}-${s.slice(20)}`;}
-export async function seedTaskLoad(f:Awaited<ReturnType<typeof taskFixture>>,tenants:number,perTenant:number){
+export async function seedTaskLoad(f:Awaited<ReturnType<typeof taskFixture>>,tenants:number,perTenant:number,onProgress?:(tenants:number)=>void){
  const users=Array.from({length:tenants},(_,n)=>seedId('user:'+n) as UserId);
  // Independent tenants seed concurrently; each checked-out connection owns its temporary table.
  // Set-based fixture seeding keeps every real constraint/trigger enabled.
@@ -36,7 +36,7 @@ export async function seedTaskLoad(f:Awaited<ReturnType<typeof taskFixture>>,ten
   }finally{client.release();}
  }
  const preparationClients=Math.min(10,tenants);
- for(let start=0;start<tenants;start+=preparationClients)await Promise.all(Array.from({length:Math.min(preparationClients,tenants-start)},(_,i)=>seedTenant(start+i)));
+ for(let start=0;start<tenants;start+=preparationClients){await Promise.all(Array.from({length:Math.min(preparationClients,tenants-start)},(_,i)=>seedTenant(start+i)));onProgress?.(Math.min(tenants,start+preparationClients));}
  await f.migrator.query('ANALYZE public.work_items');await f.migrator.query('ANALYZE public.work_item_events');await f.migrator.query('ANALYZE public.task_command_receipts');
  return users;
 }
