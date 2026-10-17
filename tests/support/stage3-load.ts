@@ -1,3 +1,4 @@
+import {loadQueueProbe} from './load-probe.js';
 import {LoadEvidence} from './load-evidence.js';
 import {randomUUID} from 'node:crypto';
 import {agentFixture} from './agent-fixture.js';
@@ -15,7 +16,7 @@ const profile={version:1,externalAllowed:true,regionAllowed:true,categoryAllowed
 const consent={revision:1,policyVersion:1,processor:'openai' as const,granted:true,disclosureAccepted:true,ownDictation:true,noProhibitedData:true,noUnconsentedThirdParties:true,revoked:false};
 export async function stage3Load(full=false,fault?:{failSemanticAt:number},evidencePath?:string){
  const evidence=new LoadEvidence(evidencePath);const began=Date.now();let f:Awaited<ReturnType<typeof agentFixture>>|undefined;
- let sample:ReturnType<typeof setInterval>|undefined;
+ let sample:ReturnType<typeof setInterval>|undefined;let probe:ReturnType<typeof loadQueueProbe>|undefined;
  const loops:ReturnType<typeof startWorkerLoop>[]=[];
  const tenants=full?1000:2,operations=full?160:10,aiMs=full?1000:0,sttMs=full?5000:0;let calls=0,sttCalls=0,failures=0,failedTurns=0,blockedGroups=0,localQueries=0;const stats=Array.from({length:2},()=>({ai:0,stt:0,maxAi:0,maxStt:0}));
  try{
@@ -34,7 +35,7 @@ export async function stage3Load(full=false,fault?:{failSemanticAt:number},evide
  const coordinator=fixture.coordinator({decide:async(...args)=>{const callNumber=++calls;s.ai++;s.maxAi=Math.max(s.maxAi,s.ai);try{await sleep(aiMs);if(callNumber===fault?.failSemanticAt)return {outcome:'http_error' as const,durationMs:aiMs};return await fixture.fake.decide(...args);}finally{s.ai--;}}},voice);
  loops.push(startWorkerLoop({queue:fixture.queue,concurrency:4,leaseMs:15000,renewMs:1000,close:async()=>{},process:{run:async(lease,signal)=>{try{evidence.update({activity:'processing',calls,sttCalls});const staged=await coordinator.run(lease,signal);if('ticket' in staged){if(staged.status==='failed')failedTurns++;if(staged.status==='accepted'){blockedGroups+=staged.ticket.plan!.groups.filter(g=>g.status!=='ready').length;if(staged.ticket.plan!.queries.length)localQueries++;}if(staged.status==='accepted')for(let i=0;i<staged.ticket.plan!.groups.length;i++)await new PostgresAgentTaskProcessing(fixture.authority).runGroup(staged.ticket,i);await new PostgresTurnFinalizer(fixture.authority).finalize(staged.ticket);const at=admitted.get(staged.ticket.event.providerEventKey);if(at!==undefined)latencies.push(Date.now()-at);}}catch{failures++;throw Error('LOAD_PROCESSING_FAILED');}}}}));
  }
- let probing=false;sample=setInterval(()=>{evidence.update({calls,sttCalls,failures,failedTurns,blockedGroups,localQueries,completed:latencies.length,stats});if(probing)return;probing=true;void fixture.migrator.query("SELECT state,count(*)::int n FROM conversation_work GROUP BY state").then(r=>evidence.update({queue:r.rows})).catch(()=>evidence.update({queueReadError:true})).finally(()=>{probing=false;});},1000);
+ probe=loadQueueProbe(fixture.migrator.options.connectionString!);let probing=false;sample=setInterval(()=>{evidence.update({calls,sttCalls,failures,failedTurns,blockedGroups,localQueries,completed:latencies.length,stats});if(probing)return;probing=true;void probe!.sample().then(rows=>evidence.update({queue:rows})).catch(()=>evidence.update({queueReadError:true})).finally(()=>{probing=false;});},1000);
  const productionStart=Date.now();evidence.update({phase:'admission'});
  for(let i=0;i<operations;i++){
  const due=full?(i<60?i*1000:60000+(i-60)*100):0;if(due>Date.now()-productionStart)await sleep(due-(Date.now()-productionStart));
@@ -53,7 +54,7 @@ export async function stage3Load(full=false,fault?:{failSemanticAt:number},evide
  const sorted=latencies.sort((a,b)=>a-b);
  evidence.update({phase:'completed',status:'completed',counts});
  return {kind:'fake_stage3_orchestration_load',full,tenants,seedTasks:tenants*(full?5:1),operations,workers:2,aiMs,sttMs,prepMs,durationMs:Date.now()-began,calls,sttCalls,failures,failedTurns,blockedGroups,localQueries,counts,stats,p95Ms:sorted[Math.ceil(sorted.length*.95)-1],externalCalls:0};
- }catch(error){clearInterval(sample);evidence.update({status:'failed',failure:error instanceof Error?error.message:'unknown'});throw error;}finally{evidence.update({phase:'cleanup',cleanup:'started'});try{await Promise.all(loops.map(l=>l.stop()));await f?.close();evidence.update({cleanup:'complete'});}finally{evidence.close();}}
+ }catch(error){clearInterval(sample);evidence.update({status:'failed',failure:error instanceof Error?error.message:'unknown'});throw error;}finally{evidence.update({phase:'cleanup',cleanup:'started'});try{clearInterval(sample);await probe?.close();await Promise.all(loops.map(l=>l.stop()));await f?.close();evidence.update({cleanup:'complete'});}finally{evidence.close();}}
 }
 
 export function acceptStage3Load(r:Awaited<ReturnType<typeof stage3Load>>){const expected=r.full?{semantic:143,voice:40,queries:17}:{semantic:9,voice:3,queries:1};return r.failures===0&&r.failedTurns===0&&r.blockedGroups===0&&r.counts.processed===r.operations&&r.calls===expected.semantic&&r.counts.created===expected.semantic&&r.sttCalls===expected.voice&&r.counts.transcripts===expected.voice&&r.localQueries===expected.queries&&r.stats.every(s=>s.maxAi<=4&&s.maxStt<=2);}

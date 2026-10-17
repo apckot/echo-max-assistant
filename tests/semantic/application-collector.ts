@@ -20,6 +20,19 @@ export type CollectorMode={kind:'typed_mechanism'}|{kind:'provider';provider:AiD
 const canonical=(v:any):string=>Array.isArray(v)?'['+v.map(canonical).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}':JSON.stringify(v);
 const equal=(a:unknown,b:unknown)=>canonical(a)===canonical(b);
 const stable=(t:Task)=>Object.fromEntries(Object.keys(fieldsSchema.shape).map(k=>[k,t[k as keyof Task]]));
+/** Compare observable returned fields, never merely IDs or copied request filters. */
+export function observedQuery(q:any,name:(id:string)=>string){return {kind:q.kind==='tasks'?(q.day?'day':'open'):q.kind,refs:q.kind==='tasks'?[...new Set(q.items.map((t:any)=>name(t.id)))].sort():q.kind==='history'?[...new Set(q.items.map((e:any)=>name(e.taskId)))].sort():[],...(q.day?{day:q.day}:{}),...(q.kind==='tasks'?{items:q.items.map((t:Task)=>({ref:name(t.id),...stable(t)})).sort((a:any,b:any)=>a.ref.localeCompare(b.ref))}:{}),...(q.kind==='history'?{items:q.items.map((e:any)=>({ref:name(e.taskId),kind:e.kind,beforeVersion:e.beforeVersion,afterVersion:e.afterVersion,before:e.before?stable(e.before):null,after:stable(e.after)}))}:{})};}
+/** Independent assertions of outcome claims; do not re-run the production renderer. */
+export function outcomeWordingMatches(groups:readonly any[],text:string){
+ const expected:string[]=[];
+ for(const g of groups){if(g.receipt){if(g.receipt.outcome==='rejected'){expected.push(g.receipt.error?.code==='version_conflict'?'Задача уже изменилась. Эта группа действий не применена.':'Не удалось применить эту группу действий. Задачи группы не изменены.');continue;}
+ for(const r of g.receipt.commandResults){const t=g.receipt.snapshots.find((t:any)=>t.id===r.taskId);if(!t)return false;const verb=r.outcome==='no_change'?'Без изменений':({create:'Создано',update:'Изменено',complete:'Завершено',cancel:'Отменено',reopen:'Восстановлено'} as Record<string,string>)[r.kind];if(!verb)return false;expected.push(`${verb}: «${t.title}».`);}}
+ else if(g.outcome==='choice')expected.push('Нужен однозначный выбор. Это действие пока не выполнено.');
+ else if(g.outcome==='blocked')expected.push('Не удалось надёжно определить команду или цель. Это действие не выполнено.');}
+ const claims=text.split('\n').map(l=>l.replace(/^\d+\. /,'')).filter(l=>/^(Создано:|Изменено:|Завершено:|Отменено:|Восстановлено:|Без изменений:|Нужен однозначный выбор\.|Не удалось надёжно определить команду|Не удалось применить эту группу|Задача уже изменилась\.)/.test(l));
+ return equal(claims.sort(),expected.sort());
+}
+
 function patch(fields:Record<string,unknown>){const p={...fields};delete p.ref;delete p.status;delete p.version;if('dueAt' in p||'dueDate' in p){p.deadline=p.dueAt?{kind:'instant',at:p.dueAt}:p.dueDate?{kind:'date',date:p.dueDate}:null;delete p.dueAt;delete p.dueDate;}return p;}
 function commands(ops:readonly ROp[],bindings:Record<string,Task>):TaskCommand[]{const versions=Object.fromEntries(Object.entries(bindings).map(([r,t])=>[r,t.version]));const locals=new Set<string>();return ops.map(o=>{
  if(o.kind==='create'){locals.add(o.ref);versions[o.ref]=1;return {kind:'create',localId:o.ref,...patch(o.fields)} as TaskCommand;}
@@ -94,7 +107,7 @@ export async function collectApplication(f:Fixture,c:RFixture,mode:CollectorMode
 
  const currentChoices=(await f.migrator.query('SELECT id,revision FROM pending_choices WHERE user_id=$1 AND turn_id=$2 ORDER BY group_label',[user,ticket.turnId])).rows;
  const expectedButtons:any[]=[];const actualChoices=[];for(const ch of currentChoices){const options=(await f.migrator.query('SELECT ordinal,label,key_version,commands FROM pending_choice_options WHERE choice_id=$1 ORDER BY ordinal',[ch.id])).rows;expectedButtons.push(...options.map(o=>({label:o.label,ref:{choiceId:ch.id,revision:ch.revision,option:o.ordinal,keyVersion:o.key_version}})));actualChoices.push({alternatives:options.filter(o=>o.ordinal>0).map(o=>o.commands.map(symbolic)),cancel:options.some(o=>o.ordinal===0&&o.commands.length===0)});}
- const queryResults=groups.flatMap(g=>g.queryResults??[]),queries=queryResults.map((q:any,i:number)=>{const source=ticket.plan?.queries[i];return {kind:q.kind==='tasks'?(q.day?'day':'open'):q.kind,refs:q.kind==='tasks'?[...new Set(q.items.map((t:any)=>name(t.id)))].sort():q.kind==='history'?[...new Set(q.items.map((e:any)=>name(e.taskId)))].sort():[],...(q.day?{day:q.day}:{}),...(source?.statuses.length?{statuses:source.statuses}:{})};});
+ const queryResults=groups.flatMap(g=>g.queryResults??[]),queries=queryResults.map((q:any)=>observedQuery(q,name));
 
  const pending=(await f.migrator.query("SELECT count(*)::int n FROM pending_choices WHERE user_id=$1 AND turn_id<>$2 AND state='pending'",[user,ticket.turnId])).rows[0].n;
  const out=(await f.migrator.query('SELECT payload FROM outbound_messages WHERE source_inbound_event_id=$1',[input.row.id])).rows;
@@ -103,15 +116,15 @@ export async function collectApplication(f:Fixture,c:RFixture,mode:CollectorMode
  const receiptsAgree=groups.every(g=>!g.receipt||receiptRows.some(r=>r.id===g.receipt.receiptId&&equal(r.result,g.receipt)));
  const buttonTruth=currentChoices.length?out[0]?.payload.kind==='choice'&&equal(out[0].payload.buttons,expectedButtons):out[0]?.payload.kind==='text';
  const mentioned=groups.every(g=>!g.receipt||g.receipt.outcome==='rejected'||g.receipt.snapshots.every((t:any)=>out[0]?.payload.text.includes(t.title)));
- const truthful=receiptsAgree&&buttonTruth&&mentioned&&out.length===1&&equal(out.map(o=>o.payload),final.messages)&&equal(processing,final)&&groups.every(g=>!g.receipt||['rejected','no_change','applied'].includes(g.receipt.outcome));
+ const truthful=receiptsAgree&&buttonTruth&&mentioned&&outcomeWordingMatches(groups,out[0]?.payload.text??'')&&out.length===1&&equal(out.map(o=>o.payload),final.messages)&&equal(processing,final)&&groups.every(g=>!g.receipt||['rejected','no_change','applied'].includes(g.receipt.outcome));
  const corpus=materializedCase(c,mode.kind==='provider'?mode.execution??'fake':'fake');
  const measured=mode.kind==='provider'?mode.metrics?.():undefined;
  const wire=measured?measured.semanticWire-(initialMetrics?.semanticWire??0):calls;
  const observation:Observation={effects,unchanged:{finalTasks,unchangedFields,queries,pendingChoices:pending},choices:JSON.parse(JSON.stringify(actualChoices)),boundaries:[{name:'privacy',ok:true},{name:'apply',ok:true},{name:'delivery',ok:truthful}],safety:{ownership:tasks.every(t=>t.userId===user),polarity:true,target:true,date_scope:true,committed_response:truthful},status:ticket.phase==='failed'?'error':'completed',semantic:calls,semanticWire:wire,stt:0,sttWire:0,latencyMs:Date.now()-started,queueMs,costUsd:measured?measured.costUsd===null||initialMetrics?.costUsd===null?null:measured.costUsd-(initialMetrics?.costUsd??0):0};
- return {case:corpus,observation,audit:evaluateObservation(corpus,observation),executionBoundary:mode.kind,externalCalls:corpus.execution==='real'?wire:0,turnId:ticket.turnId};
+ return {case:corpus,observation,audit:evaluateObservation(corpus,observation),executionBoundary:mode.kind,queryResults,groups,responseText:out[0]?.payload.text,externalCalls:corpus.execution==='real'?wire:0,turnId:ticket.turnId};
 }
 
 export function materializedCase(c:RFixture,execution:CorpusCase['execution']='fake'):CorpusCase{
- const expectedUnchanged={finalTasks:[...c.expected.finalTasks].sort((a,b)=>a.ref.localeCompare(b.ref)),unchangedFields:Object.fromEntries(Object.entries(c.expected.unchangedFields).map(([r,fields])=>[r,Object.fromEntries(fields.map(k=>[k,true]))])),queries:c.expected.queries.map(q=>({kind:q.kind,refs:[...q.refs].sort(),...(q.kind==='day'?{day:q.day}:{}),...(q.statuses?.length?{statuses:q.statuses}:{})})),pendingChoices: c.expected.pendingChoicesAfter};
+ const expectedUnchanged={finalTasks:[...c.expected.finalTasks].sort((a,b)=>a.ref.localeCompare(b.ref)),unchangedFields:Object.fromEntries(Object.entries(c.expected.unchangedFields).map(([r,fields])=>[r,Object.fromEntries(fields.map(k=>[k,true]))])),queries:c.expected.queries.map(q=>({kind:q.kind,refs:[...q.refs].sort(),...(q.kind==='day'?{day:q.day}:{}),...(['open','day'].includes(q.kind)?{items:c.expected.finalTasks.filter(t=>q.refs.includes(t.ref)).sort((a,b)=>a.ref.localeCompare(b.ref))}:{}),...(q.kind==='history'?{items:q.refs.flatMap(ref=>{const t=c.initialTasks.find(t=>t.ref===ref)!;const {ref:_,...after}=t,open={...after,status:'open',version:1};return [...(t.version>1?[{ref,kind:t.status==='cancelled'?'cancel':'complete',beforeVersion:1,afterVersion:2,before:open,after}]:[]),{ref,kind:'create',beforeVersion:null,afterVersion:1,before:null,after:open}];})}:{})})),pendingChoices: c.expected.pendingChoicesAfter};
  return {id:c.id,set:c.id.startsWith('H')?'control':'regression',mode:'R',family:c.family,category:c.category,execution,critical:true,expected:{effects:c.expected.effects,unchanged:expectedUnchanged,choices:c.expected.choices}};
 }
