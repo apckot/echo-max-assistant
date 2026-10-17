@@ -2,10 +2,8 @@
   "date": "2026-10-17",
   "codeSha": "b1d30d6deca1e0743a6b4619df42ca06081a5db4",
   "scope": "owner_authorised_unfinished_67_70_local_completion_only",
-  "codeReady": false,
-  "pendingLocal": [
-    "final_secret_scan"
-  ],
+  "codeReady": true,
+  "pendingLocal": [],
   "stageComplete": false,
   "review": {
     "reviewer": "/root/checkpoint70_review",
@@ -87,5 +85,23 @@
   "stage4Started": false,
   "untrackedDiagnosticSha256": "d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade",
   "evidenceDirectory": "/tmp/echo-stage3-70-local",
-  "historyPreserved": "stage-3-checkpoint-70-verification.json"
+  "historyPreserved": "stage-3-checkpoint-70-verification.json",
+  "secretScan": {
+    "historyExit": 0,
+    "treeExit": 0,
+    "findings": 0,
+    "historyCommits": 153,
+    "scanSha": "81042ad4d3971c2f097f64be2ee1289387b4217c",
+    "image": "ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f",
+    "configSha256": "84f55f30e69f8f5ac38d57231423539eec45945b50196da1a9fecdab970644b8",
+    "historyLogSha256": "914d883220128dc7697f1e3f15f0995abc4dd3ffdda64cbdd1fa7c2f33700c62",
+    "treeLogSha256": "745d2d4cf38fb68446dd7be3f74e8d9f2a907e72a1c1b5c8e1d2295707a7dc17",
+    "allHistoryScanned": true,
+    "globalRuleDisabled": false,
+    "ignoreCommentsDisabled": true,
+    "targetedLookalikeDetected": true,
+    "sameSyntheticValueAtOtherPathDetected": true,
+    "exception": "exact extracted synthetic value AND exact privacy test path, generic-api-key rule only"
+  },
+  "publication": "docs-only final evidence commit follows; no source changes after frozen code SHA"
 }
