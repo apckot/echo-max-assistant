@@ -1,0 +1,152 @@
+{
+  "kind": "checkpoint70_incomplete_acceptance",
+  "reportClientDate": "2026-10-17",
+  "executionDate": "2026-10-16",
+  "baseSha": "18b201a6a7996d8759c3623d05ae2b1c003d3d7c",
+  "codeSha": "ebaf1319c333bf736e95d77bdaaad19f9642ed51",
+  "node": "22.23.3",
+  "npm": "11.16.0",
+  "independentReviews": 1,
+  "reviewFindings": {
+    "P2": 3,
+    "confirmedSameReviewer": true,
+    "fixes": "prototype lookup and truthful load outcomes; local eval preparation explicitly remains incomplete"
+  },
+  "fullGate": {
+    "invocations": 1,
+    "cleanClone": true,
+    "files": 111,
+    "totalTests": 838,
+    "passed": 833,
+    "failedTests": 1,
+    "skippedByFailedHook": 4,
+    "failedSuites": 2,
+    "durationSeconds": 1288.6,
+    "exitCode": 1,
+    "singleCommandPass": false
+  },
+  "targetedClosure": {
+    "invocations": 1,
+    "passed": 5,
+    "otherPassedCaseSkipped": 1,
+    "durationSeconds": 4.63,
+    "codeChanged": false,
+    "scope": "migrations four unexecuted cases; timed-out C034 only",
+    "rootCause": "timeouts did not reproduce; cause not established"
+  },
+  "distinctTestsWithPassingEvidence": 838,
+  "fullGateRepeated": false,
+  "functionalSuiteRepeated": false,
+  "reviewFocusRepeated": false,
+  "imageBuilds": 1,
+  "restoreInvocations": 1,
+  "checks": {
+    "install": true,
+    "typecheck": true,
+    "architecture": true,
+    "build": true,
+    "containerSmoke": true,
+    "cleanClone": true,
+    "whitespace": true,
+    "todoScan": true
+  },
+  "restore": {
+    "stage3": {
+      "expiredChoiceRetired": true,
+      "acceptedDecisionReused": true,
+      "committedGroupReused": true,
+      "transcriptReused": true,
+      "semanticCalls": 0,
+      "sttCalls": 0,
+      "secondEffects": 0,
+      "expiredChoicePreserved": true
+    },
+    "taskFixtureRestored": true,
+    "taskPostBaseWALMutationRecovered": true,
+    "taskSurvivingReceiptReplay": true,
+    "lostTaskNotReplayed": true,
+    "taskCounts": {
+      "tasks": 2,
+      "events": 3,
+      "receipts": 3
+    },
+    "postBaseAcknowledgedMarkerRecovered": true,
+    "recoverySource": "authenticated encrypted archived WAL",
+    "kind": "isolated_physical_restore",
+    "postgres": 17,
+    "authenticatedEncryption": true,
+    "pgVerifybackup": true,
+    "replayEligibleOldOutbound": 0,
+    "rpoMs": 0,
+    "rtoMs": 10238,
+    "productionStorageVerified": false
+  },
+  "load": {
+    "invocations": 1,
+    "status": "failed_timeout",
+    "configuredTimeoutMs": 240000,
+    "reportedTestDurationMs": 308610,
+    "durationSeconds": 309.35,
+    "requestedTenants": 1000,
+    "requestedSeedTasks": 5000,
+    "requestedOperations": 160,
+    "actualCompletedOperations": null,
+    "actualCalls": null,
+    "actualCreatedTasks": null,
+    "finalMetricsProduced": false,
+    "rootCause": "not established; no repeat authorised",
+    "repeat": false
+  },
+  "gitleaks": {
+    "historyExitCode": 1,
+    "treeExitCode": 1,
+    "historyCommits": 146,
+    "historyFindings": 1,
+    "treeFindings": 1,
+    "classification": "same synthetic privacy-refusal fixture; generic-api-key at tests/functional/privacy/egress-contract.test.ts:13",
+    "confirmedActualCredentialExposure": false,
+    "allowlistAdded": false,
+    "historyFingerprint": "9e8fe4210952e59397bb876a7238508b6da2ec23:tests/functional/privacy/egress-contract.test.ts:generic-api-key:13",
+    "diagnostic": "checkpoint-range redacted report; no second full history scan"
+  },
+  "readiness": {
+    "automaticCodeCandidate": "838 distinct tests pass via full-run plus narrow closure; single-command gate did not pass",
+    "codeReady": false,
+    "stage3Complete": false,
+    "openLocal": [
+      "full typed78R fixtures and application observation collector wiring",
+      "successful bounded fake-provider load proof",
+      "resolve documented synthetic gitleaks failure for future automated gate policy"
+    ],
+    "openExternal": [
+      "real MAX callback and duplicate canary",
+      "native isolated sandbox codec qualification",
+      "independent unused H20",
+      "permitted audio assets and route admission",
+      "strict spend-cap proof and owner live-eval authorisation",
+      "real full R/H/audio/MAX quality and latency evidence"
+    ]
+  },
+  "externalAiCalls": 0,
+  "externalSttCalls": 0,
+  "realMaxCalls": 0,
+  "serverChanges": false,
+  "deployment": false,
+  "untrackedDiagnosticSha256": "d596baa6203db961ea83317b09ad60e1a6cf1bbd71388db3a9e3369d08963ade",
+  "evidenceSha256": {
+    "gate.log": "8f1a1d3e2fc2a58f9876d6b765889905773ded16f56c4d813857eb080a3fdb2b",
+    "gate-results.json": "4b23e2f3b9e72755c870d9724b4774545b5e690326b125986843f8d748d4f08b",
+    "gate-targeted.log": "1f0a05c9cd2be3f70718eb74f933de440682bca58ea1bd893b3b561d08e2f97f",
+    "gate-targeted-results.json": "ffb0fe4a9d84c0e1a3b5da155a7006681554a2fd2ac35811aa5596ce2bab3278",
+    "load.log": "39ad7edf2b76ddc947a97d9982a8ac6adeb0cb6915337b9891da8bb872b1545a",
+    "restore-report.json": "71b7346bcaad37c5027f75cb21eba56c9cc983bba0b6d6edf238ef9ed85bde6d",
+    "eval-profile.json": "ba0094fe88e275e5e5a832d5b68625063763806256b1212e0e62389b2fd6b762",
+    "gitleaks-history.log": "190a5d2b231e1ba02b559cbcef4631235f6af506a238b1d9d6517b6bb7a1c0e3",
+    "gitleaks-checkpoint-redacted.json": "9a15f8ad588b1db65018065718c7d28b41a5c94b2a2707252c4b62b280a69e4c",
+    "gitleaks-tree.log": "b67b82ce9374f89102297575ad0f70ffcf76c15ae914b1cc43a268f882408800",
+    "gitleaks-tree-redacted.json": "746e3087044c7b89bcb6f673704b723dbfa2ee188bb2ffa9c3e4b5e65c8b4578",
+    "review-red.log": "05a03f887240e6677f90385a87f6abce2d5c86773241e980e0e366a335521f82",
+    "review-green.log": "7ac5146efbf5d46a6ec756bd45f65fbc61ec2618b2d7e7354b9fa73d3f3c3928",
+    "review-load-green.log": "b1a8f96b42e2fa0285d43018dd42d5dad9369582b62ff539ee8edf8b3f3a9035"
+  }
+}

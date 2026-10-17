@@ -35,3 +35,7 @@ This is one prepared request, not current permission. Missing bot/recipient conf
 |S23–S24 real MAX/opt-in|Default-off runtime, one path, strict callbacks, prepared runbook|Explicit bot/server/recipient, update/reopen permission and real text/voice/callback checks|
 
 Local automatic PASS will establish a tested code candidate, not that the real eval package or Stage3 release is complete. Missing local typed R materialisation must be resolved as local preparation, not delegated to the owner as a requirement to write regression oracles. Independent H and audio permissions/assets do need separate provenance and consent.
+
+## Current checkpoint70 result,2026-10-17
+
+Not ready: local typed78R/application collector preparation is incomplete and the one full fake load timed out without final metrics. One clean-clone suite plus narrow timeout closure yields passing evidence for838distinct tests; the original whole-run exit remains1. History/tree secret scans exit1 on the same authored synthetic privacy-refusal fixture; no real credential exposure was established and no allowlist was added. See [actual checkpoint evidence](../progress/stage-3-checkpoint-70.md). CodeReady=false; external approval alone cannot close these local gaps. No second full gate/load is requested by executing this runbook automatically; retain failures and agree any additional bounded cycle explicitly.

@@ -169,41 +169,44 @@ Review focus: (1) отрицание в цитируемом title против 
 ### 66. Накопительный text/voice/multi-action end-to-end
 **Файлы:** tests/e2e/stage3-conversation-flow.test.ts; src/runtime/worker.ts; scripts/check-architecture.mjs; tests/architecture/stage3-boundaries.test.ts.
 **Результат:** один runtime path и owners, text/voice/reply/query/choice работают на тех же Tasks.
-- [ ] RED/proof S01–S19/S24: wholeutterance/selfcorrection/copied completion/mixedgroups/capability_unavailable/critical transcript uncertainty и no old-choice capture; shortcuts0AI, ordinary1semantic+voice1STT.
-- [ ] Defaultoff profile/admission/status reporting, no local model requirement; transport/provider types не входят в Tasks; no network underDB lock. Фиксить подтверждённые integration gaps внутри этого scope.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/e2e/stage3-conversation-flow.test.ts tests/architecture/stage3-boundaries.test.ts`; static; commit `test(stage3): cover unified task conversations end to end`.
+- [x] RED/proof S01–S19/S24: wholeutterance/selfcorrection/copied completion/mixedgroups/capability_unavailable/critical transcript uncertainty и no old-choice capture; shortcuts0AI, ordinary1semantic+voice1STT.
+- [x] Defaultoff profile/admission/status reporting, no local model requirement; transport/provider types не входят в Tasks; no network underDB lock. Фиксить подтверждённые integration gaps внутри этого scope.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/e2e/stage3-conversation-flow.test.ts tests/architecture/stage3-boundaries.test.ts`; static; commit `test(stage3): cover unified task conversations end to end`.
 
 ### 67. Privacy adversaries и финальная готовность eval
 **Файлы:** tests/functional/privacy/egress-contract.test.ts; tests/semantic/stage3-eval.config.ts; tests/unit/semantic/qualification-report.test.ts; docs/runbooks/stage-3-provider-admission.md.
 **Результат:** frozen profiles/cost estimates; регрессии, независимый контроль и audio quality оцениваются раздельно.
-- [ ] RED S09/S10/S20/S21: C071–C078, quote/title negatives, forgedTOKEN, raw identifiers in candidates; no claim exhaustivePII detection, deniedroute0effect. Экспериментальные fixtures synthetic; scope flags не разрешают реальные данные.
+- [x] RED S09/S10/S20/S21: C071–C078, quote/title negatives, forgedTOKEN, raw identifiers in candidates; no claim exhaustivePII detection, deniedroute0effect. Экспериментальные fixtures synthetic; scope flags не разрешают реальные данные.
 - [ ] Закрепить model/prompt/API/privacy/profile hashes, independent H provenance/non-tuning evidence, разрешённые audio manifests; requested final budget≤150semantic dispatches/≤30STT, monetary ceiling фиксируется и согласуется до запуска70. Если H уже использовался для настройки — новая независимая выборка, не переименование.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/privacy/egress-contract.test.ts tests/unit/semantic/qualification-report.test.ts`; static; commit `test(privacy): freeze measurable OpenAI acceptance boundaries`.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/privacy/egress-contract.test.ts tests/unit/semantic/qualification-report.test.ts`; static; commit `test(privacy): freeze measurable OpenAI acceptance boundaries`.
 
 ### 68. Bounded queues и нагрузочный harness
 **Файлы:** tests/performance/stage3.run.ts; tests/unit/agent/provider-budget.test.ts; docs/runbooks/stage-3-acceptance.md.
 **Результат:** bounded4AI/2STT perworker, queues/deadlines/statuses без дополнительного external load experiment.
-- [ ] RED S14/S22: budget overflow/backpressure/expired authority/uncertain dispatch; one semantic+separate STT counters; cost cap predictive worstcase, missingusage conservativelycharged.
-- [ ] Подготовить профиль70:2workers,1000tenant metadata/≤5Tasks each, parallel seed,1RPS60s+10RPS10s burst, FakeAI1s/FakeSTT5s; сейчас только harness smoke3cases/2tenants/10operations. Это orchestration proof, не OpenAI capacity.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/agent/provider-budget.test.ts`; static; commit `test(agent): bound provider work and prepare checkpoint load proof`.
+- [x] RED S14/S22: budget overflow/backpressure/expired authority/uncertain dispatch; one semantic+separate STT counters; cost cap predictive worstcase, missingusage conservativelycharged.
+- [x] Подготовить профиль70:2workers,1000tenant metadata/≤5Tasks each, parallel seed,1RPS60s+10RPS10s burst, FakeAI1s/FakeSTT5s; сейчас только harness smoke3cases/2tenants/10operations. Это orchestration proof, не OpenAI capacity.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/unit/agent/provider-budget.test.ts`; static; commit `test(agent): bound provider work and prepare checkpoint load proof`.
 
 ### 69. Restore proof без отдельного полного прогона
 **Файлы:** tests/functional/agent/final-recovery.test.ts; существующий tests/functional/operations/isolated-restore-drill.test.ts; docs/runbooks/backup-restore.md.
 **Результат:** staged decision/group receipt/transcript/choices/dedup переживают разрешённое восстановление, lease/runs disarmed; lostRPO work не реконструируется.
-- [ ] RED/proof S15–S19: survivingdecision0AIreplay, groups0second effect, restoredexpiredchoices0mutation, cleanup/restore-fence; targeted row-state tests сейчас.
-- [ ] Расширить существующий physical restore fixture минимальным Stage3 state; запускать его **только один раз внутри full gate70**, без второго backup/restore job или дублирующего wrapper test.
-- [ ] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/final-recovery.test.ts`; static; commit `test(agent): preserve staged meaning across restore boundaries`.
+- [x] RED/proof S15–S19: survivingdecision0AIreplay, groups0second effect, restoredexpiredchoices0mutation, cleanup/restore-fence; targeted row-state tests сейчас.
+- [x] Расширить существующий physical restore fixture минимальным Stage3 state; запускать его **только один раз внутри full gate70**, без второго backup/restore job или дублирующего wrapper test.
+- [x] GREEN `node node_modules/vitest/vitest.mjs run tests/functional/agent/final-recovery.test.ts`; static; commit `test(agent): preserve staged meaning across restore boundaries`.
 
 ### 70. Финальная приёмка и отчёт Stage3
 **Файлы:** docs/progress/stage-3-checkpoint-70.md; docs/runbooks/stage-3-acceptance.md; targeted acceptance fixtures при необходимости.
 **Результат:** S01–S24 evidence, real OpenAI quality и latency, audio consent/STT evidence, truthful ready/blocked status.
-- [ ] Целевая final contract проверка/static; commit `test(stage3): complete OpenAI task acceptance contracts`.
+- [x] Целевая final contract проверка/static; commit `test(stage3): complete OpenAI task acceptance contracts`.
 - [ ] Одно cumulative review66–70 плюс согласованность S01–S24 всего этапа; fixes targeted, freezecode/profiles. Один clean-clone full gate с functional/e2e/image/physicalrestore внутри; не отдельный functional/review-focus/restore rerun.
 - [ ] Один FakeAI/FakeSTT load profile из68; не повторять Stage2 A24/foundation load. Prep estimate и stop threshold до начала; дополнительных полных прогона нет.
 - [ ] Только после отдельного согласования final budget/data/audio routes: один проход R-регрессий и один H001–H020 контроль, один audio gate по30 сценариям записей/отказов OpenAI STT→Privacy→semantic→Tasks.≤150semantic/≤30STT dispatches, утверждённый money ceiling; никаких best-of-three/скрытых retries. Latency/quality/calls/errors/cost публиковать раздельно по наборам.
 - [ ] S20: safety100%, full exact≥90% overall и create/update/lifecycle/query/multi-action, precision≥98%/recall≥95%; контроль отдельно safety100%/exact≥90%, small sample uncertainty явно. S21: cleanWER≤15%, critical-span≥98%, unsafe critical effect0; deniedpolicy recordings не входят в WER/semantic denominator, refusal отдельно.
 - [ ] Реальный MAX text/voice/create→update→complete/restart/delivery требует разрешённого TEST endpoint/bot/recipient и audio. Closed callback65 evidence использовать без повторного canary, если contract не изменён; иначе согласовать affected callback check. Deployment/realuserdata этим планом не разрешены.
-- [ ] Итоговый отчёт:фактические checks/SHA/profiles/sample counts/limitations, unresolved external evidence явным blocker; docs-only publication/push/local=remoteSHA. **Остановиться для принятия Stage3. Stage4/сервер не начинать.**
+- [x] Итоговый отчёт:фактические checks/SHA/profiles/sample counts/limitations, unresolved external evidence явным blocker; docs-only publication/push/local=remoteSHA. **Остановиться для принятия Stage3. Stage4/сервер не начинать.**
+
+
+Checkpoint70 status2026-10-17: [actual report](../../progress/stage-3-checkpoint-70.md). One full gate attempted (833PASS/1timeout/4unexecuted), narrow closure5PASS without code change;838distinct tests with passing evidence. One fake load timed out, no successful metrics or repeat. Full typed78R/application collector remains unfinished LOCAL preparation; codeReady=false. History/tree scans each flag the same synthetic refusal test, not green zero-finding scans. Stage3 incomplete; Stage4 not started.
 
 ## Карта покрытия
 
